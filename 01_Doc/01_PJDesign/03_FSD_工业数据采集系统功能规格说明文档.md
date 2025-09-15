@@ -1,9 +1,9 @@
 # FSD_工业数据采集系统功能规格说明文档
 
 **项目名称**: 工业数据采集通用后台系统  
-**文档版本**: v1.1  
+**文档版本**: v1.1
 **创建日期**: 2025-08-30  
-**最后更新**: 2025-09-11  
+**最后更新**: 2025-09-15  
 **文档作者**: eatbs0956
 **依据文档**: 02_PRD_工业数据采集系统产品需求文档.md
 
@@ -22,7 +22,8 @@
 9. [性能与安全规范](#9-性能与安全规范)
 10. [配置与运维设计](#10-配置与运维设计)
 11. [关键业务流程](#11-关键业务流程)
-12. [扩展性设计](#12-扩展性设计)
+12. [边缘节点兼容性设计](#12-边缘节点兼容性设计)
+13. [扩展性设计](#12-扩展性设计)
 
 ---
 
@@ -59,6 +60,13 @@
 ### 1.3 技术架构概览
 
 基于.NET 8.0 + Vue.js 3.x的前后端分离架构，采用Docker容器化部署，使用RabbitMQ作为消息中间件，InfluxDB作为时序数据存储，PostgreSQL作为关系数据存储。
+
+> **注意：本系统所有PostgreSQL均指PostgreSQL 14版本。**
+
+**兼容性架构**：为适应工业现场老旧设备（Windows 7/i3 3系/4GB内存），边缘采集节点采用分层兼容设计：
+- **现代设备**：.NET 8.0完整功能版本，Docker容器化部署
+- **老旧设备**：.NET Framework 4.5+基础功能版本，Windows服务部署
+- **统一数据格式**：两个版本输出相同格式数据，确保中心处理兼容
 
 ---
 
@@ -1421,7 +1429,7 @@ public class CircuitBreaker
 
 | 数据层级 | 保留期 | 存储介质 | 访问频率 | 查询性能 | 存储成本 | 适用场景 |
 |----------|--------|----------|----------|----------|----------|----------|
-| **热数据(Hot)** | 7-30天 | SSD/内存 | 高频访问 | 毫秒级 | 高 | 实时监控、告警分析 |
+| **热数据(Hot)** | 30天 | SSD/内存 | 高频访问 | 毫秒级 | 高 | 实时监控、告警分析 |
 | **温数据(Warm)** | 30天-1年 | SSD | 中频访问 | 秒级 | 中 | 历史查询、报表统计 |
 | **冷数据(Cold)** | 1-7年 | HDD/对象存储 | 低频访问 | 分钟级 | 低 | 长期存档、合规审计 |
 | **归档数据(Archive)** | >7年 | 磁带/云存储 | 很少访问 | 小时级 | 极低 | 法规要求、历史备份 |
@@ -1615,7 +1623,7 @@ CREATE INDEX ON ts_point_raw (device_id, tag_id, time DESC);
 | 层级 | 范围 | 分辨率 | 存储 | 操作 |
 |------|------|--------|------|------|
 | 实时缓存 | 最近15分钟 | 原始 | Redis/内存 | WebSocket推送 |
-| 热数据 | 0~90天 | 原始秒级 | InfluxDB rp_hot | 查询主来源 |
+| 热数据 | 0~30天 | 原始秒级 | InfluxDB rp_hot | 查询主来源 |
 | 温数据 | 90~365天 | 降采样(5m/1h) | rp_warm / agg表 | 趋势分析 |
 | 冷数据 | >365天 | 归档(天级) | 压缩文件(Parquet) | 需导入后查询 |
 | 过期 | >3年(可配) | - | 删除 | 节省成本 |
@@ -2349,7 +2357,7 @@ New -> Acknowledged(确认) -> Resolved(自动/手动恢复) -> Closed(归档)
 ### 9.1 关键性能指标(KPI)
 | 指标 | 目标 | 说明 |
 |------|------|------|
-| 单节点采集吞吐 | ≥10,000 点/秒 | 批量+异步；可水平扩展 |
+| 单节点采集吞吐 | ≥5,000 点/秒 | 批量+异步；可水平扩展 |
 | 单点读延迟 | P95 ≤ 150ms | OPC订阅更低延迟 |
 | IoT数据缓存命中率 | ≥ 90% | NB-IoT/LoRa数据主动上报缓存策略 |
 | 下行控制响应时间 | ≤ 30s | IoT设备休眠模式考虑 |
@@ -2776,7 +2784,223 @@ sequenceDiagram
 ```
 
 ---
-## 12. 后续扩展与留白
+## 12. 边缘节点兼容性设计
+
+### 12.1 兼容性需求分析
+
+**老旧设备环境特征**：
+- **操作系统**：Windows 7（主流）、Windows 8
+- **硬件配置**：4GB内存、i3 3系CPU
+- **网络环境**：按Windows 7系统标准，基础网络安全协议
+- **功能需求**：仅需基础数据采集功能，可接受性能降级
+
+### 12.2 分层兼容架构设计
+
+#### 12.2.1 双平台技术栈
+
+| 组件 | .NET 8.0版本 | .NET Framework 4.5+版本 |
+|------|-------------|------------------------|
+| **运行时** | .NET 8.0 Runtime | .NET Framework 4.5+ |
+| **框架** | ASP.NET Core 8.0 | .NET Framework WCF |
+| **异步模型** | async/await + Task | Task-based Async Pattern |
+| **配置** | appsettings.json + IConfiguration | app.config + ConfigurationManager |
+| **依赖注入** | Microsoft.Extensions.DependencyInjection | Simple DI Container |
+| **日志** | Serilog + ILogger | NLog + File Logging |
+| **HTTP客户端** | HttpClient + Polly | HttpClient (Basic) |
+| **消息队列** | RabbitMQ.Client 6.x | RabbitMQ.Client 3.6.x |
+
+#### 12.2.2 协议适配器兼容设计
+
+```csharp
+// .NET Standard 2.0 - 跨平台协议接口
+namespace IndustrialProtocol.Abstractions
+{
+    public interface IProtocolAdapter
+    {
+        string ProtocolName { get; }
+        Task<ConnectionStatus> ConnectAsync(DeviceConfig config);
+        Task<DataResult> ReadAsync(TagConfig tag);
+        Task<bool> WriteAsync(TagConfig tag, object value);
+        event EventHandler<DataChangedEventArgs> DataChanged;
+    }
+    
+    // 简化的数据结果（兼容老版本JSON序列化）
+    public class DataResult
+    {
+        public bool IsSuccess { get; set; }
+        public object Value { get; set; }
+        public QualityCode Quality { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+}
+
+// .NET Framework 4.5+实现（简化版）
+namespace IndustrialProtocol.Legacy
+{
+    public class LegacyOpcUaAdapter : IProtocolAdapter
+    {
+        private readonly Timer _pollingTimer;
+        private readonly ConcurrentQueue<DataResult> _dataCache;
+        
+        public async Task<DataResult> ReadAsync(TagConfig tag)
+        {
+            // 简化的同步读取逻辑
+            try
+            {
+                var value = ReadTagValue(tag.Address);
+                return new DataResult 
+                { 
+                    IsSuccess = true, 
+                    Value = value, 
+                    Quality = QualityCode.Good,
+                    Timestamp = DateTime.UtcNow 
+                };
+            }
+            catch (Exception ex)
+            {
+                return new DataResult 
+                { 
+                    IsSuccess = false, 
+                    ErrorMessage = ex.Message,
+                    Quality = QualityCode.Bad 
+                };
+            }
+        }
+        
+        // 轮询模式替代订阅（降低复杂度）
+        private void StartPolling(int intervalMs)
+        {
+            _pollingTimer = new Timer(OnPollingTick, null, 0, intervalMs);
+        }
+    }
+}
+```
+
+#### 12.2.3 功能降级策略
+
+**完整功能版本（.NET 8.0）**：
+- 实时订阅 + 轮询双模式
+- 智能重连和指数退避
+- 本地缓存 + 断线重放
+- 详细性能监控
+- 配置热更新
+- 容器化部署
+
+**简化功能版本（.NET Framework 4.5+）**：
+- 仅轮询模式
+- 基础重连机制
+- 简单文件缓存
+- 基础状态监控
+- 重启生效配置
+- Windows服务部署
+
+### 12.3 部署策略设计
+
+#### 12.3.1 双部署包策略
+
+**现代设备部署**：
+```dockerfile
+# Dockerfile.modern
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "IndustrialCollector.dll"]
+```
+
+**老旧设备部署**：
+```xml
+<!-- IndustrialCollector.Legacy.exe.config -->
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <add key="RabbitMQ.Host" value="192.168.1.100" />
+    <add key="CollectionInterval" value="5000" />
+    <add key="MaxMemoryMB" value="512" />
+    <add key="LogLevel" value="Warning" />
+  </appSettings>
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
+  </startup>
+</configuration>
+```
+
+#### 12.3.2 运维管理策略
+
+**统一监控**：
+- 两个版本上报相同格式的心跳和状态信息
+- 中心监控系统无差别处理
+- 统一的故障告警和恢复策略
+
+**配置管理**：
+- 现代版本：热更新配置
+- 老旧版本：配置文件 + 重启服务
+- 统一的配置下发接口
+
+### 12.4 性能与资源优化
+
+#### 12.4.1 老旧设备资源限制应对
+
+**内存优化**：
+```csharp
+// 老旧版本内存限制处理
+public class ResourceLimitedCollector
+{
+    private const int MAX_CACHE_SIZE = 1000;      // 限制缓存大小
+    private const int MAX_CONCURRENT_TASKS = 5;   // 限制并发数
+    private readonly LimitedConcurrencyLevelTaskScheduler _scheduler;
+    
+    public ResourceLimitedCollector()
+    {
+        _scheduler = new LimitedConcurrencyLevelTaskScheduler(MAX_CONCURRENT_TASKS);
+        
+        // 定期GC清理
+        var gcTimer = new Timer(_ => {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+    }
+}
+```
+
+**CPU优化**：
+- 降低采集频率（默认5秒间隔）
+- 减少并发任务数量
+- 简化数据处理逻辑
+- 使用轻量级序列化
+
+### 12.5 数据一致性保证
+
+#### 12.5.1 统一数据格式
+
+```json
+// 两个版本输出相同的数据消息格式
+{
+  "MessageId": "uuid",
+  "SourceVersion": "NET8|NET45",
+  "DeviceId": "device-001", 
+  "TagId": "tag-001",
+  "Value": 123.45,
+  "Quality": "Good",
+  "Timestamp": "2025-09-15T12:00:00Z",
+  "CollectorInfo": {
+    "NodeId": "edge-01",
+    "Platform": "NET8.0|NET45",
+    "Version": "1.0.0"
+  }
+}
+```
+
+#### 12.5.2 版本标识与监控
+
+- 每个采集节点标识运行平台版本
+- 中心监控系统区分显示不同版本状态
+- 支持版本升级路径规划
+
+本兼容性设计确保系统能够在现代化设备上发挥最佳性能，同时兼容工业现场的老旧设备环境，实现全场景覆盖的数据采集能力。
+
+---
+## 13. 后续扩展与留白
 | 方向 | 说明 | 预留点 |
 |------|------|-------|
 | 边缘计算 | 本地推理/预处理 | 适配器处理链插入点 |
@@ -2803,6 +3027,9 @@ sequenceDiagram
 - **标准化接口**：RESTful API和实时推送的统一外部集成方案
 - **企业级安全**：完整的RBAC权限模型和审计追踪机制
 - **IoT设备管理**：专门针对低功耗、长距离、间歇上报的IoT设备特性优化
+- **兼容性架构**：.NET 8.0和.NET Framework 4.5+双重支持，适应现代和老旧设备环境
+
+---
 
 **实施指导价值**：
 - 为开发团队提供明确的技术实现路径

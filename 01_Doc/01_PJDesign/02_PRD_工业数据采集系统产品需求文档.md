@@ -3,7 +3,7 @@
 **项目名称**: 工业数据采集通用后台系统  
 **文档版本**: v1.1  
 **创建日期**: 2025-08-28  
-**最后更新**: 2025-09-12  
+**最后更新**: 2025-09-15  
 **文档作者**: eatbs0956  
 
 ---
@@ -914,7 +914,8 @@ sequenceDiagram
 ### 6.1 技术架构选型
 
 **后端技术栈**：
-- **.NET 8.0**：最新LTS版本，性能优异，适合工业环境长期运行
+- **.NET 8.0**：最新LTS版本，性能优异，适合工业环境长期运行（中心服务主架构）
+- **.NET Framework 4.5+**：兼容老旧设备（Windows 7/i3 3系/4GB内存），提供基础采集功能
 - **ASP.NET Core 8.0**：微服务框架，内置容器支持，生产环境稳定
 - **Entity Framework Core 8.0**：ORM框架，支持多种数据库，性能优化
 - **Serilog**：结构化日志记录框架，支持多种输出目标
@@ -946,7 +947,8 @@ sequenceDiagram
 
 **数据库技术**：
 - **InfluxDB 2.x**：时序数据库，专为IoT和监控数据设计
-- **PostgreSQL/MySQL**：关系数据库，存储配置和业务数据
+- **PostgreSQL 14**：关系数据库，存储配置和业务数据。本系统所有PostgreSQL均指PostgreSQL 14版本。
+- **MySQL**：关系数据库，兼容选型
 - **SQLite**：边缘节点本地存储，支持离线操作
 
 ### 6.2 系统架构技术组件
@@ -1361,9 +1363,53 @@ public class RabbitMQPublisher : IMessagePublisher, IDisposable
 }
 ```
 
-### 6.4 容器化部署架构
+### 6.3 边缘节点兼容性设计
 
-#### 6.4.1 Docker容器化策略
+#### 6.3.1 分层兼容架构
+
+**现代设备节点（.NET 8.0）**：
+- 适用环境：Windows 10/11、Linux、现代硬件（8GB+内存、多核CPU）
+- 功能特性：完整功能支持，高性能采集，容器化部署
+- 协议支持：所有协议的完整功能
+- 部署方式：Docker容器化，自动化运维
+
+**老旧设备节点（.NET Framework 4.5+）**：
+- 适用环境：Windows 7、老旧硬件（4GB内存、i3 3系CPU）
+- 功能特性：基础采集功能，简化的协议支持，轻量级运行
+- 协议支持：核心协议（OPC UA、Modbus、MQTT），功能简化
+- 部署方式：Windows服务，手动部署
+
+#### 6.3.2 功能差异对比
+
+| 功能模块 | .NET 8.0版本 | .NET Framework 4.5+版本 |
+|---------|-------------|------------------------|
+| **协议支持** | 全协议完整功能 | 核心协议基础功能 |
+| **数据采集** | 高并发、实时订阅 | 轮询模式、中等并发 |
+| **本地缓存** | 高性能内存+磁盘缓存 | 基础文件缓存 |
+| **断线重连** | 智能重连、指数退避 | 简单重连机制 |
+| **配置热更新** | 完整支持 | 重启生效 |
+| **监控指标** | 详细性能监控 | 基础状态监控 |
+| **日志记录** | 结构化日志、链路追踪 | 基础文件日志 |
+| **部署运维** | 容器化、自动化 | Windows服务、手动 |
+
+#### 6.3.3 兼容性实现策略
+
+**统一接口设计**：
+- 采用.NET Standard 2.0编写核心接口和协议适配器
+- 确保.NET 8.0和.NET Framework 4.5+的双重兼容
+- 通过条件编译处理平台差异
+
+**渐进式部署**：
+- 新建设备优先使用.NET 8.0版本
+- 老旧设备使用.NET Framework 4.5+版本
+- 支持同一工厂混合部署两种版本
+
+**数据格式统一**：
+- 两个版本输出相同格式的数据消息
+- 中心处理服务无需区分数据来源
+- 保证数据一致性和兼容性
+
+#### 6.4.1 Docker容器化策略（现代设备）
 
 **为什么选择Docker而不是Kubernetes？**
 - **运维复杂度**：工业现场IT运维人员技术水平有限，Kubernetes过于复杂
@@ -1491,7 +1537,7 @@ services:
 
   # PostgreSQL关系数据库
   postgresql:
-    image: postgres:15-alpine
+    image: postgres:14
     environment:
       - POSTGRES_DB=industrial_data
       - POSTGRES_USER=postgres
@@ -1564,11 +1610,61 @@ echo "InfluxDB界面: http://localhost:8086"
 
 **分布式部署（多节点）**：
 ```yaml
-# docker-compose.edge.yml - 边缘采集节点
+# docker-compose.edge.yml - 边缘采集节点(.NET 8.0)
 version: '3.8'
 
 services:
   edge-collector:
+```
+
+#### 6.4.2 Windows服务部署策略（老旧设备）
+
+**老旧设备部署特点**：
+- **操作系统**：Windows 7/8，不支持Docker
+- **硬件限制**：4GB内存，i3 3系CPU
+- **部署方式**：Windows服务，MSI安装包
+- **功能简化**：基础采集，降低资源消耗
+
+**Windows服务部署配置**：
+```xml
+<!-- app.config - .NET Framework 4.5+配置 -->
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <add key="CollectionInterval" value="5000" />
+    <add key="MaxConcurrency" value="5" />
+    <add key="EnableLocalCache" value="true" />
+    <add key="CacheSize" value="1000" />
+    <add key="RabbitMQ.Host" value="192.168.1.100" />
+    <add key="RabbitMQ.Port" value="5672" />
+  </appSettings>
+  <system.serviceModel>
+    <!-- WCF配置简化版 -->
+  </system.serviceModel>
+</configuration>
+```
+
+**部署脚本示例**：
+```batch
+REM install-edge-legacy.bat - 老旧设备部署脚本
+@echo off
+echo 安装工业数据采集边缘节点(.NET Framework版本)...
+
+REM 检查.NET Framework 4.5
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" /v Release | find "461808" >nul
+if %errorlevel% neq 0 (
+    echo 请先安装.NET Framework 4.5或更高版本
+    exit /b 1
+)
+
+REM 安装Windows服务
+sc create "IndustrialDataCollector" binPath="%~dp0IndustrialDataCollector.exe" start=auto
+sc description "IndustrialDataCollector" "工业数据采集服务"
+sc start "IndustrialDataCollector"
+
+echo 安装完成！
+echo 服务状态: sc query IndustrialDataCollector
+```
     build: ./src/Services/EdgeCollector
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -1835,6 +1931,18 @@ gantt
 - **运维友好**：简化的容器化部署，降低现场IT运维难度
 - **扩展性设计**：模块化架构支持后续功能扩展和协议增加
 
+
+---
+
+## AI辅助开发策略说明
+
+为提升开发效率和系统质量，项目将充分利用AI辅助开发工具（如GitHub Copilot、ChatGPT等）进行需求分析、架构设计、代码实现、单元测试、文档编写、性能优化、自动化运维等环节。主要策略包括：
+- 利用AI生成协议适配器、数据处理等样板代码，减少重复劳动
+- 借助AI进行代码审查、异常处理、边界条件覆盖，提升代码健壮性
+- 通过AI辅助生成测试用例、性能分析脚本，提升测试覆盖率和系统性能
+- 利用AI工具自动生成配置、部署、运维脚本和技术文档
+- 结合人工经验，确保业务逻辑正确性和工业现场适应性
+
 本PRD文档为系统开发提供了全面的需求指导和技术方案，确保项目能够按计划高质量交付，实现预期的业务价值。在12个月的开发周期中，通过分阶段的迭代开发和严格的质量控制，最终交付一个满足制造业实际需求的工业数据采集系统。
 
 ---
@@ -1847,7 +1955,7 @@ gantt
 - 西门子S7通信协议技术手册
 - 三菱MC协议通信参考手册
 - InfluxDB 2.x 时序数据库最佳实践
-- PostgreSQL 15 官方文档和性能优化指南
+- PostgreSQL 14 官方文档和性能优化指南
 - RabbitMQ 生产环境部署指南
 - Docker 工业应用容器化指南
 - RabbitMQ 生产环境部署指南
