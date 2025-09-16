@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+  influxdb:
+    image: influxdb:2
+    ports: ["8086:8086"]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+  query-api:
+    build: ../platform/center/Query.Api
+    depends_on: [rabbitmq, postgres, influxdb, redis]
+  auth-api:
+    build: ../platform/center/Auth.Api
+  monitor-api:
+    build: ../platform/center/Monitor.Api
+  processor-worker:
+    build: ../platform/center/Processor.Worker
+    depends_on: [rabbitmq]
+  scheduler-worker:
+    build: ../platform/center/Scheduler.Worker

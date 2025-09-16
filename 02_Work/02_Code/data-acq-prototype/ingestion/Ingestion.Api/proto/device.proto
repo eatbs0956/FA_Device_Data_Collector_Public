@@ -1,0 +1,27 @@
+syntax = "proto3";
+package daq;
+
+import "google/protobuf/timestamp.proto";
+
+message DataPoint {
+  string deviceId = 1;
+  string pointId = 2;
+  oneof value {
+    double double_value = 3;
+    string string_value = 4;
+    int64 int_value = 5;
+    bool bool_value = 6;
+    bytes bytes_value = 7;
+  }
+  google.protobuf.Timestamp ts = 8;
+}
+
+message UploadAck {
+  bool ok = 1;
+  string message = 2;
+}
+
+service Ingestion {
+  // 双向流或客户端流（这里示例为客户端流）
+  rpc Upload(stream DataPoint) returns (UploadAck);
+}

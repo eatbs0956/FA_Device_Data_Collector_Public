@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: DevDCP Ingestion API
+  version: 0.1.0
+paths:
+  /api/ingestion/datapoints:  
+    post:
+      summary: Upload datapoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPointUpload'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadAck'
+components:
+  schemas:
+    DataPointUpload:
+      type: object
+      required: [tenantId, tagId, eventTime]
+      properties:
+        tenantId: { type: string }
+        tagId: { type: string }
+        eventTime: { type: string, format: date-time }
+        quality: { type: integer }
+        envelopeId: { type: string }
+        correlationId: { type: string }
+        seq: { type: integer, format: int64 }
+        source: { type: string }
+        headers: { type: object, additionalProperties: true }
+        value:
+          oneOf:
+            - type: number
+            - type: string
+            - type: integer
+            - type: boolean
+            - type: string
+              contentEncoding: base64
+      description: |
+        统一上传模型。兼容字段 pointName/timestamp 仍可接受但将被废弃。
+    UploadAck:
+      type: object
+      properties:
+        ok: { type: boolean }
+        message: { type: string }

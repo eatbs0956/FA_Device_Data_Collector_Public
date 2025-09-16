@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Dotnet
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userprefs
+
+# Node
+**/node_modules/
+**/dist/
+**/.vite/
+**/.turbo/
+
+# Logs
+**/*.log
+
+# VSCode
+.vscode/
+
+# Archives
+**/*.zip
+**/*.7z
+**/*.tar
+
+# Env
+.env
+**/.env.local

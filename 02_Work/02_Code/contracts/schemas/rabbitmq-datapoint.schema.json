@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://devdcp/schemas/rabbitmq/datapoint.json",
+  "title": "RabbitMQ DataPoint",
+  "type": "object",
+  "required": ["tenantId", "tagId", "eventTime"],
+  "properties": {
+    "tenantId": { "type": "string" },
+    "tagId": { "type": "string" },
+    "eventTime": { "type": "string", "format": "date-time" },
+    "quality": { "type": "integer" },
+    "envelopeId": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "seq": { "type": "integer" },
+    "source": { "type": "string" },
+    "headers": { "type": "object", "additionalProperties": true },
+    "value": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "integer" },
+        { "type": "boolean" },
+        { "type": "string", "contentEncoding": "base64" }
+      ]
+    },
+    "pointName": { "type": "string", "deprecated": true },
+    "timestamp": { "type": "string", "format": "date-time", "deprecated": true }
+  }
+}
