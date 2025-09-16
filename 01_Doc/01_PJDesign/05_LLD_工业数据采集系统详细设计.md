@@ -26,12 +26,13 @@
     1.3.5 [多租户数据隔离](#135-多租户数据隔离)
     1.3.6 [合规性要求](#136-合规性要求)
 2. [系统上下文与模块边界](#2-系统上下文与模块边界)
-  2.1 [分层系统架构图](#21-分层系统架构图)
-  2.2 [模块边界与职责](#22-模块边界与职责)
-    2.2.1 [边缘采集层](#221-边缘采集层)
-    2.2.2 [中心服务层](#222-中心服务层)
-    2.2.3 [数据存储层](#223-数据存储层)
-    2.2.4 [外部集成](#224-外部集成)
+  2.1 [分层架构视角（概念）](#21-分层架构视角概念)
+  2.2 [详细系统架构图](#22-详细系统架构图)
+  2.3 [模块边界与职责](#23-模块边界与职责)
+    2.3.1 [边缘采集层](#231-边缘采集层)
+    2.3.2 [中心服务层](#232-中心服务层)
+    2.3.3 [数据存储层](#233-数据存储层)
+    2.3.4 [外部集成](#234-外部集成)
 3. [领域模型与关键实体](#3-领域模型与关键实体)
   3.1 [领域模型图](#31-领域模型图)
   3.2 [关键实体说明](#32-关键实体说明)
@@ -131,13 +132,17 @@
   14.5 [兼容性与扩展性说明](#145-兼容性与扩展性说明)
 15. [双平台部署策略设计](#15-双平台部署策略设计)
   15.1 [部署架构概述](#151-部署架构概述)
-  15.2 [现代设备容器化部署](#152-现代设备容器化部署)
-    15.2.1 [Docker Compose配置](#1521-docker-compose配置)
-    15.2.2 [一键部署脚本](#1522-一键部署脚本)
-  15.3 [老旧设备Windows服务部署](#153-老旧设备windows服务部署)
-    15.3.1 [MSI安装包生成](#1531-msi安装包生成)
-  15.4 [统一配置管理](#154-统一配置管理)
-  15.5 [部署监控与运维](#155-部署监控与运维)
+  15.2 [生产部署架构（参考SSA设计）](#152-生产部署架构参考ssa设计)
+    15.2.1 [生产部署拓扑](#1521-生产部署拓扑)
+    15.2.2 [网络安全策略](#1522-网络安全策略)
+    15.2.3 [高可用要点](#1523-高可用要点)
+  15.3 [开发环境容器化部署](#153-开发环境容器化部署)
+    15.3.1 [Docker Compose配置](#1531-docker-compose配置)
+    15.3.2 [一键部署脚本](#1532-一键部署脚本)
+  15.4 [老旧设备Windows服务部署](#154-老旧设备windows服务部署)
+    15.4.1 [MSI安装包生成](#1541-msi安装包生成)
+  15.5 [统一配置管理](#155-统一配置管理)
+  15.6 [部署监控与运维](#156-部署监控与运维)
 16. [性能与容量基线](#16-性能与容量基线)
   16.1 [设计目标](#161-设计目标)
   16.2 [性能基线](#162-性能基线)
@@ -181,15 +186,19 @@
   - **.NET 8.0**：中心服务主架构，现代边缘节点（Windows 10+/Linux）
   - **.NET Framework 4.5+**：老旧设备兼容版本（Windows 7/8）
 - **设备协议适配器以插件方式装配**，支持热插拔与版本升级
-- **采集节点运行环境**：Linux/amd64、arm64（推荐）、Windows（兼容）
+- **采集节点运行环境**：
+  - **Windows（主推荐）**：完整工业协议支持，现场总线驱动丰富
+  - **Linux/amd64、arm64（特定场景）**：边缘计算、资源受限环境
+  - **优先级说明**：Windows环境可获得最佳的工业协议兼容性和驱动支持
 - **时间戳统一采用UTC+ISO8601格式**，确保全球时区兼容
 - **PostgreSQL均指PostgreSQL 14版本**，充分利用其企业级特性
-- **Docker Compose为主要部署方案**，K8s仅做高级参考
+- **Docker Compose为主要部署方案**，Windows Server支持Windows容器
 - **JWT算法支持HS256/RS256**，设备侧证书接口预留
 
 #### 1.2.2 性能约束
 - **单节点采集并发**：≥5k点/秒（.NET 8.0），≥1k点/秒（.NET Framework 4.5+）
-- **API响应时间**：P95≤2s（中心服务），P95≤5s（边缘节点）
+- **API响应时间**：P95≤2s（中心服务），P95≤5s（边缘节点）  
+  > **说明**：P95（第95百分位）是性能统计中的一个常用指标，表示95%的API请求响应时间低于该值，仅有5%的请求超过此时间。用于衡量系统在高负载下的响应能力和用户体验。
 - **消息延迟**：端到端≤500ms（现代），≤2s（老旧设备）
 - **内存限制**：现代设备≥8GB，老旧设备≤4GB RAM
 
@@ -259,7 +268,62 @@
 
 ## 2. 系统上下文与模块边界
 
-### 2.1 分层系统架构图
+### 2.1 分层架构视角（概念）
+从概念层面，系统采用分层架构设计，各层职责清晰，便于模块化开发和维护：
+
+```mermaid
+graph TB
+  subgraph "应用层"
+    UI[Web管理平台<br/>Vue3 + TypeScript + Element Plus]
+    MES[MES/第三方系统<br/>REST API集成]
+  end
+
+  subgraph "服务层"
+    API[API网关/应用服务<br/>ASP.NET Core 8]
+    AUTH[认证与权限服务<br/>JWT + RBAC]
+    CONFIG[配置中心/任务配置<br/>版本化管理]
+    MON[监控告警服务<br/>指标采集与推送]
+    QUERY[查询与报表服务<br/>多维分析]
+  end
+
+  subgraph "处理层"
+    ING[数据入口/清洗/验证<br/>质量标识与映射]
+    PIPE[处理管道/聚合/规则<br/>实时计算与派生]
+    PUB[数据发布<br/>WebSocket/订阅推送]
+  end
+
+  subgraph "采集层"
+    EDGE1[边缘采集节点<br/>协议适配器]
+    EDGEN[中心采集节点<br/>任务调度与治理]
+  end
+
+  subgraph "数据层"
+    TSDB[(InfluxDB 时序数据<br/>高频写入/范围查询)]
+    RDB[(PostgreSQL<br/>配置/元数据/业务)]
+    CACHE[(Redis<br/>缓存/会话/队列节流)]
+    MQ[(RabbitMQ 消息队列<br/>异步解耦)]
+  end
+
+  UI --> API
+  MES --> API
+  API --> AUTH
+  API --> CONFIG
+  API --> QUERY
+  API --> MON
+  EDGE1 --> MQ
+  EDGEN --> MQ
+  MQ --> ING
+  ING --> PIPE
+  PIPE --> TSDB
+  PIPE --> RDB
+  PIPE --> PUB
+  PUB --> UI
+  API --> CACHE
+  AUTH --> RDB
+  CONFIG --> RDB
+```
+
+### 2.2 详细系统架构图
 ```mermaid
 graph TB
   subgraph "工业现场设备层"
@@ -297,7 +361,7 @@ graph TB
   end
   
   subgraph "应用界面层"
-    Web[Vue.js管理平台]
+    Web[Web管理平台<br/>Vue3 + TypeScript<br/>Element Plus UI<br/>ECharts图表]
     Mobile[移动端应用<br/>预留接口]
   end
   
@@ -347,9 +411,9 @@ graph TB
   class MES,ERP,Third external
 ```
 
-### 2.2 模块边界与职责
+### 2.3 模块边界与职责
 
-#### 2.2.1 边缘采集层
+#### 2.3.1 边缘采集层
 **现代边缘节点 (.NET 8.0)**：
 - **协议适配器**：全协议完整功能，支持订阅、批量、异步处理
 - **本地缓存**：高性能内存+磁盘缓存，断线续传
@@ -364,19 +428,19 @@ graph TB
 - **简单重连**：固定间隔重试
 - **配置重启生效**：配置变更需重启服务
 
-#### 2.2.2 中心服务层
+#### 2.3.2 中心服务层
 - **API网关服务**：统一入口、路由、认证、限流、监控
 - **数据处理服务**：实时数据清洗、规则引擎、批量写入、异常检测
 - **调度管理服务**：采集任务调度、节点管理、配置分发
 - **认证授权服务**：用户认证、权限控制、令牌管理、审计日志
 - **监控告警服务**：系统监控、故障检测、告警通知、性能分析
 
-#### 2.2.3 数据存储层
+#### 2.3.3 数据存储层
 - **InfluxDB 2.x**：时序数据存储，高性能写入和查询
 - **PostgreSQL 14**：关系数据存储，事务支持，复杂查询
 - **Redis**：缓存存储，会话管理，实时计数
 
-#### 2.2.4 外部集成
+#### 2.3.4 外部集成
 - **RESTful API**：标准化接口，支持OpenAPI规范
 - **WebSocket推送**：实时数据推送，设备状态通知
 - **消息队列集成**：异步消息通信，系统解耦
@@ -401,7 +465,11 @@ classDiagram
     +string Model
     +string FirmwareVersion
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class Tag {
     +Guid Id
@@ -416,7 +484,11 @@ classDiagram
     +double Scale
     +double Offset
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class CollectionTask {
     +Guid Id
@@ -428,7 +500,11 @@ classDiagram
     +DateTime EndTime
     +string CronExpression
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class TagValue {
     +Guid Id
@@ -452,7 +528,11 @@ classDiagram
     +string ConfirmedBy
     +DateTime ConfirmedAt
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class User {
     +Guid Id
@@ -463,14 +543,22 @@ classDiagram
     +bool IsActive
     +DateTime LastLoginAt
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class Role {
     +Guid Id
     +string Name
     +string Description
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class Permission {
     +Guid Id
@@ -478,7 +566,11 @@ classDiagram
     +string Resource
     +string Action
     +string Description
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class EdgeNode {
     +Guid Id
@@ -490,7 +582,11 @@ classDiagram
     +string Status
     +DateTime LastHeartbeat
     +Guid TenantId
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class Tenant {
     +Guid Id
@@ -498,7 +594,11 @@ classDiagram
     +string Code
     +bool IsActive
     +DateTime ExpiresAt
-    +AuditFields
+    +string CreatedBy
+    +DateTime CreatedAt
+    +string UpdatedBy
+    +DateTime UpdatedAt
+    +bool DeletedFlag
   }
   class AuditLog {
     +Guid Id
@@ -509,8 +609,7 @@ classDiagram
     +DateTime Timestamp
     +Guid TenantId
   }
-  
-  %% 关系定义
+
   Tenant "1" -- "*" Device
   Tenant "1" -- "*" User
   Tenant "1" -- "*" EdgeNode
@@ -525,15 +624,6 @@ classDiagram
   User "1" -- "*" AuditLog : "操作记录"
   EdgeNode "1" -- "*" TagValue : "采集"
   EdgeNode "1" -- "*" Device : "管理"
-  
-  %% 样式定义
-  classDef entityClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-  classDef auditClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-  classDef tenantClass fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-  
-  class Device,Tag,CollectionTask,TagValue,Alarm entityClass
-  class AuditLog,User,Role,Permission auditClass
-  class Tenant,EdgeNode tenantClass
 ```
 
 ### 3.2 关键实体说明
@@ -559,134 +649,190 @@ classDiagram
 
 ### 4.2 协议适配层类图设计
 
+为满足4.1中的“插件化/热插拔、治理能力、能力模型、连接池与双平台兼容”目标，对类图进行增强如下：
+
 ```mermaid
 classDiagram
+  %% 抽象与能力
   class IProtocolAdapter {
     <<interface>>
     +string ProtocolType
     +string Version
     +ConnectionStatus Status
     +DateTime LastActivity
+    +event StatusChanged
+    +event DataReceived
     +ConnectAsync(config: DeviceConfiguration) Task~bool~
     +DisconnectAsync() Task
     +ReadAsync(tag: TagConfiguration) Task~DataReadResult~
     +WriteAsync(tag: TagConfiguration, value: object) Task~DataWriteResult~
     +SubscribeAsync(tag: TagConfiguration) Task~bool~
     +UnsubscribeAsync(tag: TagConfiguration) Task~bool~
+    +GetCapabilities(): IAdapterCapabilities
   }
-  
-  class IProtocolAdapterFactory {
+
+  class IAdapterCapabilities {
     <<interface>>
-    +CreateAdapter(protocolType: string) IProtocolAdapter
-    +GetSupportedProtocols() IEnumerable~string~
-    +IsProtocolSupported(protocolType: string) bool
+    +bool SupportsRead()
+    +bool SupportsWrite()
+    +bool SupportsSubscribe()
+    +bool SupportsBatchRead()
+    +bool SupportsBrowse()
+    +string[] SecurityModes()  %% 如: None, TLS, Cert
   }
-  
-  class ProtocolAdapterManager {
-    +RegisterAdapter(factory: IProtocolAdapterFactory)
-    +GetAdapter(protocolType: string) IProtocolAdapter
-    +GetAllAdapters() IEnumerable~IProtocolAdapter~
-    +StartAsync() Task
-    +StopAsync() Task
+
+  %% 插件化与注册
+  class IAdapterPlugin {
+    <<interface>>
+    +IAdapterDescriptor Descriptor
+    +CreateAdapter(): IProtocolAdapter
   }
-  
-  class OpcUaAdapter {
+
+  class IAdapterDescriptor {
     +string ProtocolType
-    +string Version
-    +ConnectionStatus Status
-    +ConnectAsync(config: DeviceConfiguration) Task~bool~
-    +ReadAsync(tag: TagConfiguration) Task~DataReadResult~
-    +SubscribeAsync(tag: TagConfiguration) Task~bool~
-    -Session _session
-    -Subscription _subscription
-    -CreateApplicationConfiguration() ApplicationConfiguration
+    +string[] Aliases
+    +string AdapterVersion
+    +string MinPlatform   %% NET8.0|NET45
+    +string[] Features
   }
-  
-  class ModbusAdapter {
-    +string ProtocolType
-    +string Version
-    +ConnectionStatus Status
-    +ConnectAsync(config: DeviceConfiguration) Task~bool~
-    +ReadAsync(tag: TagConfiguration) Task~DataReadResult~
-    -ModbusMaster _master
-    -TcpClient _tcpClient
+
+  class PluginLoader {
+    +LoadFrom(path: string): IAdapterPlugin[]
+    +LoadFromAssembly(asm: string): IAdapterPlugin[]
   }
-  
-  class MqttAdapter {
-    +string ProtocolType
-    +string Version
-    +ConnectionStatus Status
-    +ConnectAsync(config: DeviceConfiguration) Task~bool~
-    +SubscribeAsync(tag: TagConfiguration) Task~bool~
-    -IMqttClient _mqttClient
-    -MqttFactory _factory
+
+  class AdapterRegistry {
+    +Register(plugin: IAdapterPlugin)
+    +GetAdapter(protocolType: string): IProtocolAdapter
+    +ListProtocols(): string[]
   }
-  
-  class DeviceConfiguration {
-    +string DeviceId
-    +string Name
-    +string ProtocolType
-    +string ConnectionString
-    +Dictionary~string,object~ Parameters
-    +int ConnectionTimeout
-    +int ReadTimeout
-    +bool EnableSubscription
+
+  %% 治理策略与健康
+  class IRetryPolicy { <<interface>> +ExecuteAsync(Func~Task~): Task }
+  class IReconnectPolicy { <<interface>> +OnDisconnected(): Task }
+  class IRateLimiter { <<interface>> +ShouldPass(): bool }
+  class ICircuitBreaker { <<interface>> +IsOpen(): bool +OnSuccess() +OnFailure(Exception) }
+  class IHealthCheck { <<interface>> +CheckAsync(): Task~HealthStatus~ }
+  class IAdapterMetrics { <<interface>> +IncCounter(name) +ObserveLatency(name,ms) }
+
+  %% 连接与连接池
+  class IConnection { <<interface>> +OpenAsync(): Task +CloseAsync(): Task +IsOpen: bool }
+  class IConnectionPool {
+    <<interface>>
+    +AcquireAsync(): Task~IConnection~
+    +Release(conn: IConnection): void
+    +WarmupAsync(): Task
   }
-  
-  class TagConfiguration {
-    +string TagId
-    +string Name
-    +string Address
-    +DataType DataType
-    +AccessMode AccessMode
-    +int PollingInterval
-    +double Scale
-    +double Offset
-    +string Unit
-  }
-  
-  class DataReadResult {
-    +bool IsSuccess
-    +object Value
-    +QualityCode Quality
-    +DateTime Timestamp
-    +string ErrorMessage
-    +string TagId
-    +TimeSpan ResponseTime
-  }
-  
-  class ConnectionStatus {
-    <<enumeration>>
-    Disconnected
-    Connecting
-    Connected
-    Reconnecting
-    Faulted
-    Disposed
-  }
-  
-  %% 关系定义
-  IProtocolAdapter <|.. OpcUaAdapter
-  IProtocolAdapter <|.. ModbusAdapter
-  IProtocolAdapter <|.. MqttAdapter
-  IProtocolAdapterFactory <|.. OpcUaAdapterFactory
-  ProtocolAdapterManager o-- IProtocolAdapterFactory
-  ProtocolAdapterManager o-- IProtocolAdapter
+
+  %% 典型适配器（示例，更多通过插件扩展）
+  class OpcUaAdapter
+  class ModbusAdapter
+  class MqttAdapter
+  class S7Adapter
+  class McAdapter
+
+  %% 配置与结果
+  class DeviceConfiguration
+  class TagConfiguration
+  class DataReadResult
+  class DataWriteResult
+  class ConnectionStatus
+  class HealthStatus
+
+  %% 关系
+  IProtocolAdapter ..> IAdapterCapabilities
+  IProtocolAdapter ..> IConnectionPool
+  IProtocolAdapter ..> IRetryPolicy
+  IProtocolAdapter ..> IReconnectPolicy
+  IProtocolAdapter ..> IRateLimiter
+  IProtocolAdapter ..> ICircuitBreaker
+  IProtocolAdapter ..> IHealthCheck
+  IProtocolAdapter ..> IAdapterMetrics
   IProtocolAdapter ..> DeviceConfiguration
   IProtocolAdapter ..> TagConfiguration
   IProtocolAdapter ..> DataReadResult
-  IProtocolAdapter ..> ConnectionStatus
-  
-  %% 样式定义
-  classDef interfaceClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
-  classDef adapterClass fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-  classDef configClass fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-  classDef resultClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-  
-  class IProtocolAdapter,IProtocolAdapterFactory interfaceClass
-  class OpcUaAdapter,ModbusAdapter,MqttAdapter,ProtocolAdapterManager adapterClass
-  class DeviceConfiguration,TagConfiguration configClass
-  class DataReadResult,ConnectionStatus resultClass
+  IProtocolAdapter ..> DataWriteResult
+
+  IAdapterPlugin ..> IProtocolAdapter
+  IAdapterPlugin ..> IAdapterDescriptor
+  PluginLoader ..> IAdapterPlugin
+  AdapterRegistry o-- IAdapterPlugin
+  AdapterRegistry ..> IProtocolAdapter
+
+  IProtocolAdapter <|.. OpcUaAdapter
+  IProtocolAdapter <|.. ModbusAdapter
+  IProtocolAdapter <|.. MqttAdapter
+  IProtocolAdapter <|.. S7Adapter
+  IProtocolAdapter <|.. McAdapter
+```
+
+```csharp
+namespace IndustrialDataCollection.Protocols.Abstractions
+{
+    public interface IAdapterCapabilities
+    {
+        bool SupportsRead { get; }
+        bool SupportsWrite { get; }
+        bool SupportsSubscribe { get; }
+        bool SupportsBatchRead { get; }
+        bool SupportsBrowse { get; }
+        string[] SecurityModes { get; } // e.g. None, TLS, Cert
+    }
+
+    public interface IRetryPolicy { Task ExecuteAsync(Func<Task> action, CancellationToken ct = default); }
+    public interface IReconnectPolicy { Task OnDisconnectedAsync(Func<Task> reconnect, CancellationToken ct = default); }
+    public interface IRateLimiter { bool TryPass(); }
+    public interface ICircuitBreaker
+    {
+        bool IsOpen { get; }
+        void OnSuccess();
+        void OnFailure(Exception ex);
+    }
+    public interface IHealthCheck { Task<HealthStatus> CheckAsync(CancellationToken ct = default); }
+    public enum HealthStatus { Healthy, Degraded, Unhealthy }
+
+    public interface IConnection
+    {
+        bool IsOpen { get; }
+        Task OpenAsync(CancellationToken ct = default);
+        Task CloseAsync(CancellationToken ct = default);
+    }
+
+    public interface IConnectionPool
+    {
+        Task<IConnection> AcquireAsync(CancellationToken ct = default);
+        void Release(IConnection connection);
+        Task WarmupAsync(CancellationToken ct = default);
+    }
+
+    public interface IAdapterDescriptor
+    {
+        string ProtocolType { get; }
+        string[] Aliases { get; }
+        string AdapterVersion { get; }
+        string MinPlatform { get; } // NET8.0 | NET45
+        string[] Features { get; }
+    }
+
+    public interface IAdapterPlugin
+    {
+        IAdapterDescriptor Descriptor { get; }
+        IProtocolAdapter CreateAdapter();
+    }
+
+    public interface IPluginLoader
+    {
+        IEnumerable<IAdapterPlugin> LoadFrom(string path);
+        IEnumerable<IAdapterPlugin> LoadFromAssembly(string assemblyPath);
+    }
+
+    public interface IAdapterRegistry
+    {
+        void Register(IAdapterPlugin plugin);
+        IProtocolAdapter GetAdapter(string protocolType);
+        IEnumerable<string> ListProtocols();
+    }
+}
 ```
 
 ### 4.3 双平台架构设计
@@ -1539,35 +1685,130 @@ namespace IndustrialDataCollection.Protocols.OpcUa.Legacy
 ### 5.2 类图与接口
 ```mermaid
 classDiagram
+  %% 策略与触发
   class IScheduleStrategy {
-    +string Name
-    +TimeSpan GetNextInterval(TaskConfig task)
+    <<interface>>
+    +Name: string
+    +GetNextInterval(task: TaskConfig): TimeSpan
   }
+  class FixedIntervalStrategy
+  class CronStrategy
+  class EventDrivenStrategy
+
+  class ITrigger {
+    <<interface>>
+    +Name: string
+    +StartAsync(): Task
+    +StopAsync(): Task
+    +OnTriggered: event(TaskTriggerContext)
+  }
+  class TimeTrigger
+  class CronTrigger
+  class EventTrigger
+
+  %% 任务、调度与分发
   class TaskScheduler {
-    +Task StartAsync()
-    +Task StopAsync()
-    +Task AddTask(TaskConfig task)
-    +Task RemoveTask(Guid taskId)
-    +Task PauseTask(Guid taskId)
-    +Task ResumeTask(Guid taskId)
-    +Task UpdateTask(TaskConfig task)
-    +IEnumerable<ScheduledTask> GetAll()
+    +StartAsync(): Task
+    +StopAsync(): Task
+    +AddTask(task: TaskConfig): Task
+    +RemoveTask(taskId: Guid): Task
+    +PauseTask(taskId: Guid): Task
+    +ResumeTask(taskId: Guid): Task
+    +UpdateTask(task: TaskConfig): Task
+    +GetAll(): IEnumerable~ScheduledTask~
   }
   class ScheduledTask {
-    +Guid Id
-    +TaskConfig Config
-    +TaskStatus Status
-    +DateTime NextRun
-    +int RetryCount
-    +DateTime LastRun
-    +DateTime LastSuccess
-    +DateTime LastFail
+    +Id: Guid
+    +Config: TaskConfig
+    +Status: TaskStatus
+    +NextRun: DateTime
+    +RetryCount: int
+    +LastRun: DateTime
+    +LastSuccess: DateTime
+    +LastFail: DateTime
   }
+  class TaskConfig {
+    +TaskId: Guid
+    +DeviceId: string
+    +TenantId: string
+    +Priority: int
+    +NodeAffinity: string
+    +FrequencyMs: int
+    +BatchSize: int
+    +WindowMs: int
+    +MaxConcurrency: int
+    +Strategy: string  %% fixed|cron|event
+    +Cron: string
+    +Enabled: bool
+  }
+
+  class ITaskDispatcher {
+    <<interface>>
+    +DispatchAsync(task: ScheduledTask): Task
+  }
+  class IWorker {
+    <<interface>>
+    +ExecuteAsync(task: ScheduledTask): Task
+    +CanAccept(): bool
+    +Capacity: int
+  }
+  class IPriorityQueue~ScheduledTask~ {
+    <<interface>>
+    +Enqueue(task: ScheduledTask): void
+    +TryDequeue(): ScheduledTask
+    +Count: int
+  }
+
+  %% 治理与自适应
+  class IRetryPolicy { <<interface>> +ExecuteAsync(Func~Task~): Task }
+  class ICircuitBreaker { <<interface>> +IsOpen(): bool +OnSuccess() +OnFailure(Exception) }
+  class IRateLimiter { <<interface>> +ShouldPass(): bool }
+  class IAdaptiveController {
+    <<interface>>
+    +Observe(metrics: ScheduleMetrics): void
+    +Adjust(task: TaskConfig): TaskConfig
+  }
+  class ScheduleMetrics {
+    +LagMs: double
+    +SuccessRate: double
+    +Backlog: int
+    +AvgExecMs: double
+    +NodeLoad: double
+  }
+
+  %% 分布式与持久化
+  class ITaskStore {
+    <<interface>>
+    +SaveAsync(task: TaskConfig): Task
+    +LoadAsync(taskId: Guid): TaskConfig
+    +ListAsync(filter): IEnumerable~TaskConfig~
+    +UpdateStateAsync(taskId: Guid, state: TaskStatus): Task
+  }
+  class IDistributedLock { <<interface>> +Acquire(key: string): IDisposable }
+  class ILeaderElector { <<interface>> +IsLeader(): bool +OnChanged: event(bool) }
+
+  %% 关系
   IScheduleStrategy <|.. FixedIntervalStrategy
   IScheduleStrategy <|.. CronStrategy
   IScheduleStrategy <|.. EventDrivenStrategy
-  TaskScheduler o-- ScheduledTask
-  ScheduledTask o-- IScheduleStrategy
+
+  ITrigger <|.. TimeTrigger
+  ITrigger <|.. CronTrigger
+  ITrigger <|.. EventTrigger
+
+  TaskScheduler o-- IScheduleStrategy
+  TaskScheduler o-- ITrigger
+  TaskScheduler o-- IPriorityQueue~ScheduledTask~
+  TaskScheduler ..> ITaskDispatcher
+  TaskScheduler ..> IRetryPolicy
+  TaskScheduler ..> ICircuitBreaker
+  TaskScheduler ..> IRateLimiter
+  TaskScheduler ..> IAdaptiveController
+  TaskScheduler ..> ITaskStore
+  TaskScheduler ..> IDistributedLock
+  TaskScheduler ..> ILeaderElector
+
+  ITaskDispatcher o-- IWorker
 ```
 
 ### 5.3 关键接口签名（C#示例）
@@ -1601,46 +1842,325 @@ public class ScheduledTask
     public DateTime LastSuccess { get; set; }
     public DateTime LastFail { get; set; }
 }
+
+public interface ITrigger
+{
+    string Name { get; }
+    event Action<TaskTriggerContext> OnTriggered;
+    Task StartAsync(CancellationToken ct = default);
+    Task StopAsync(CancellationToken ct = default);
+}
+
+public sealed class TaskTriggerContext
+{
+    public Guid TaskId { get; set; }
+    public DateTime TriggeredAt { get; set; }
+    public string Reason { get; set; } // cron|fixed|event:xxx
+}
+
+public interface ITaskDispatcher
+{
+    Task DispatchAsync(ScheduledTask task, CancellationToken ct = default);
+}
+
+public interface IWorker
+{
+    int Capacity { get; }
+    bool CanAccept();
+    Task ExecuteAsync(ScheduledTask task, CancellationToken ct = default);
+}
+
+public interface IPriorityQueue<T>
+{
+    void Enqueue(T item, int priority);
+    bool TryDequeue(out T item);
+    int Count { get; }
+}
+
+public interface ITaskStore
+{
+    Task SaveAsync(TaskConfig task, CancellationToken ct = default);
+    Task<TaskConfig> LoadAsync(Guid taskId, CancellationToken ct = default);
+    Task<IEnumerable<TaskConfig>> ListAsync(TaskQuery query, CancellationToken ct = default);
+    Task UpdateStateAsync(Guid taskId, TaskStatus state, CancellationToken ct = default);
+}
+
+public interface IDistributedLock : IDisposable
+{
+    IDisposable Acquire(string key, TimeSpan ttl);
+}
+
+public interface ILeaderElector
+{
+    bool IsLeader();
+    event Action<bool> OnChanged;
+}
+
+public sealed class ScheduleMetrics
+{
+    public double LagMs { get; set; }
+    public double SuccessRate { get; set; }
+    public int Backlog { get; set; }
+    public double AvgExecMs { get; set; }
+    public double NodeLoad { get; set; }
+}
+
+public interface IAdaptiveController
+{
+    void Observe(ScheduleMetrics m);
+    TaskConfig Adjust(TaskConfig input);
+}
+
 ```
 
 ### 5.4 任务状态机
 ```mermaid
 stateDiagram-v2
+    %% 创建/启停
     [*] --> Created
-    Created --> Scheduled : AddTask
-    Scheduled --> Running : 触发/到期
-    Running --> Success : 采集成功
-    Running --> Failed : 采集失败
-    Failed --> Retrying : 重试策略
-    Retrying --> Running : 重试触发
-    Success --> Scheduled : 下周期
-    Retrying --> Failed : 超过最大重试
-    Scheduled --> Paused : PauseTask
-    Paused --> Scheduled : ResumeTask
-    Scheduled --> Cancelled : RemoveTask
-    AnyState --> Faulted : 异常/熔断
+    Created --> Disabled: Disable
+    Created --> Scheduled: AddTask
+
+    %% 触发→排队→分发→执行
+    Scheduled --> Queued: Triggered(time|cron|event)
+    Queued --> Throttled: RateLimiter.Deny
+    Throttled --> Queued: RetryAfter
+    Queued --> Dispatching: AcquireLock(tenant) && HasWorker
+    Dispatching --> Running: Dispatched
+
+    %% 执行结果与治理
+    Running --> Success: Completed
+    Running --> Failed: Error
+    Failed --> Retrying: RetryPolicy.Backoff(+jitter)
+    Retrying --> Queued: BackoffElapsed
+    Running --> Degraded: Circuit.Open
+    Degraded --> Queued: Circuit.Closed
+
+    %% 运维控制
+    Scheduled --> Paused: PauseTask
+    Paused --> Scheduled: ResumeTask
+    state AnyState {
+      [*] --> Any
+      Any --> [*]
+    }
+    AnyState --> Cancelled: RemoveTask
+    AnyState --> Faulted: UnhandledException
+
+    %% 周期闭环（含自适应）
+    Success --> Scheduled: NextInterval(strategy + adaptive)
 ```
 
 ### 5.5 调度策略与伪代码
-- 固定周期（FixedInterval）：每N秒/分钟触发
-- Cron表达式（CronStrategy）：灵活调度
-- 事件驱动（EventDriven）：如配置变更、外部信号
-- 动态频率调整：根据负载/队列水位/设备状态自适应
+为满足5.1设计目标（周期/定时/事件触发、优先级与负载均衡、治理与自适应、分布式防重与持久化），提供现代平台与老旧平台两套实现示例，并引入限流、熔断、退避重试、自适应调参与分布式锁/选主。
+
+- 触发策略：FixedInterval、Cron、Event
+- 优先级与队列：基于优先队列进行调度
+- 分布式协同：Leader选举 + 分布式锁防重复执行
+- 治理策略：限流、熔断、退避重试（含抖动）
+- 自适应：根据滞后、执行耗时、节点负载调整频率/并发/窗口
+- 持久化：任务状态、下次时间持久化至TaskStore
+- 多租户：按租户键加锁，保证隔离
 
 ```csharp
-// 固定周期调度伪代码
-while (running)
+// .NET 8 版本（推荐）：Channel + PriorityQueue + PeriodicTimer + 分布式锁/熔断/限流/自适应
+public sealed class ModernScheduler
 {
-    foreach (var task in tasks)
+    private readonly Channel<ScheduledTask> _inbox = Channel.CreateUnbounded<ScheduledTask>();
+    private readonly PriorityQueue<ScheduledTask, int> _pq = new();
+    private readonly IScheduleStrategy _strategy;
+    private readonly IEnumerable<ITrigger> _triggers;
+    private readonly ITaskDispatcher _dispatcher;
+    private readonly IRateLimiter _rateLimiter;
+    private readonly ICircuitBreaker _circuit;
+    private readonly IRetryPolicy _retry;
+    private readonly IAdaptiveController _adaptive;
+    private readonly ITaskStore _store;
+    private readonly IDistributedLock _dlock;
+    private readonly ILeaderElector _leader;
+    private readonly CancellationToken _ct;
+
+    public ModernScheduler(
+        IScheduleStrategy strategy,
+        IEnumerable<ITrigger> triggers,
+        ITaskDispatcher dispatcher,
+        IRateLimiter rateLimiter,
+        ICircuitBreaker circuit,
+        IRetryPolicy retry,
+        IAdaptiveController adaptive,
+        ITaskStore store,
+        IDistributedLock dlock,
+        ILeaderElector leader,
+        CancellationToken ct)
     {
-        if (DateTime.UtcNow >= task.NextRun)
+        _strategy = strategy;
+        _triggers = triggers;
+        _dispatcher = dispatcher;
+        _rateLimiter = rateLimiter;
+        _circuit = circuit;
+        _retry = retry;
+        _adaptive = adaptive;
+        _store = store;
+        _dlock = dlock;
+        _leader = leader;
+        _ct = ct;
+    }
+
+    public async Task RunAsync()
+    {
+        foreach (var t in _triggers)
+            _ = Task.Run(async () => {
+                t.OnTriggered += async ctx => {
+                    var task = await _store.LoadAsync(ctx.TaskId, _ct);
+                    if (task != null) _inbox.Writer.TryWrite(new ScheduledTask { Id = task.TaskId, Config = task, Status = TaskStatus.Scheduled });
+                };
+                await t.StartAsync(_ct);
+            }, _ct);
+
+        using var tick = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        while (await tick.WaitForNextTickAsync(_ct))
         {
-            RunTask(task);
-            task.NextRun = DateTime.UtcNow + strategy.GetNextInterval(task.Config);
+            if (!_leader.IsLeader()) continue;
+
+            while (_inbox.Reader.TryRead(out var task))
+            {
+                if (task.Config.Enabled && task.Status != TaskStatus.Paused)
+                    _pq.Enqueue(task, task.Config.Priority);
+            }
+
+            if (!_rateLimiter.TryPass()) continue;
+            if (_circuit.IsOpen) continue;
+
+            while (_pq.Count > 0)
+            {
+                var next = _pq.Peek();
+                if (DateTime.UtcNow < next.NextRun) break;
+
+                using var lease = _dlock.Acquire($"tenant:{next.Config.TenantId}:task:{next.Id}", TimeSpan.FromSeconds(5));
+                if (lease == null) { _pq.Dequeue(); continue; }
+
+                _pq.Dequeue();
+                _ = DispatchOneAsync(next);
+            }
         }
     }
-    await Task.Delay(1000);
+
+    private async Task DispatchOneAsync(ScheduledTask task)
+    {
+        try
+        {
+            await _dispatcher.DispatchAsync(task, _ct);
+            task.Status = TaskStatus.Success;
+            task.LastSuccess = DateTime.UtcNow;
+            var tuned = _adaptive.Adjust(task.Config);
+            task.NextRun = DateTime.UtcNow + _strategy.GetNextInterval(tuned);
+            await _store.UpdateStateAsync(task.Id, task.Status, _ct);
+            _circuit.OnSuccess();
+        }
+        catch (Exception ex)
+        {
+            task.Status = TaskStatus.Failed;
+            task.RetryCount++;
+            var backoff = TimeSpan.FromSeconds(Math.Min(60, Math.Pow(2, task.RetryCount))) + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250));
+            task.NextRun = DateTime.UtcNow + backoff;
+            await _store.UpdateStateAsync(task.Id, task.Status, _ct);
+            _circuit.OnFailure(ex);
+            _inbox.Writer.TryWrite(task);
+        }
+    }
 }
+```
+
+```csharp
+// .NET Framework 4.5+ 版本（简化）：Timer + BlockingCollection，降级实现，控制资源占用
+public sealed class LegacyScheduler
+{
+    private readonly System.Threading.Timer _timer;
+    private readonly BlockingCollection<ScheduledTask> _queue = new(new ConcurrentQueue<ScheduledTask>());
+    private readonly IScheduleStrategy _strategy;
+    private readonly ITaskDispatcher _dispatcher;
+    private readonly IRateLimiter _rateLimiter;
+    private readonly ITaskStore _store;
+    private volatile bool _running = false;
+
+    public LegacyScheduler(IScheduleStrategy strategy, ITaskDispatcher dispatcher, IRateLimiter rateLimiter, ITaskStore store)
+    {
+        _strategy = strategy;
+        _dispatcher = dispatcher;
+        _rateLimiter = rateLimiter;
+        _store = store;
+        _timer = new System.Threading.Timer(Tick, null, 1000, 1000);
+        _running = true;
+        var worker = new Thread(Worker) { IsBackground = true };
+        worker.Start();
+    }
+
+    private void Tick(object state)
+    {
+        if (!_running) return;
+        foreach (var task in LoadDueTasks())
+        {
+            if (task.Config.Enabled && _rateLimiter.ShouldPass())
+                _queue.Add(task);
+        }
+    }
+
+    private IEnumerable<ScheduledTask> LoadDueTasks()
+    {
+        // 简化：从持久化中查询到期任务
+        // 伪代码：return _store.ListDueTasks(DateTime.UtcNow);
+        return Enumerable.Empty<ScheduledTask>();
+    }
+
+    private void Worker()
+    {
+        foreach (var task in _queue.GetConsumingEnumerable())
+        {
+            try
+            {
+                _dispatcher.DispatchAsync(task, CancellationToken.None).Wait();
+                task.Status = TaskStatus.Success;
+                task.LastSuccess = DateTime.UtcNow;
+                task.NextRun = DateTime.UtcNow + _strategy.GetNextInterval(task.Config);
+                _store.UpdateStateAsync(task.Id, task.Status, CancellationToken.None).Wait();
+            }
+            catch
+            {
+                task.Status = TaskStatus.Failed;
+                task.RetryCount++;
+                task.NextRun = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Min(60, 2 * task.RetryCount));
+                _store.UpdateStateAsync(task.Id, task.Status, CancellationToken.None).Wait();
+            }
+        }
+    }
+}
+```
+
+```mermaid
+flowchart LR
+  subgraph 触发源
+    TT[TimeTrigger]
+    CT[CronTrigger]
+    ET[EventTrigger]
+  end
+  subgraph 调度核心
+    PQ[优先队列<br/>PriorityQueue]
+    RL[限流器<br/>RateLimiter]
+    CB[熔断器<br/>CircuitBreaker]
+    AD[自适应控制<br/>Adaptive]
+    DL[分布式锁/选主<br/>Lock/Leader]
+  end
+  subgraph 执行层
+    DISP[Dispatcher]
+    WP[WorkerPool]
+  end
+  subgraph 持久化
+    STORE[TaskStore]
+  end
+
+  TT -->|Triggered| PQ
+  CT -->|Triggered| PQ
+  ET -->|Triggered| PQ
+  PQ --> RL --> CB --> AD --> DL --> DISP --> WP --> STORE
 ```
 
 ### 5.6 兼容性与迁移说明
@@ -1661,69 +2181,101 @@ while (running)
 ### 6.2 类图与接口
 ```mermaid
 classDiagram
+  %% Source-Processor-Sink 主干
+  class ISource {
+    <<interface>>
+    +Name: string
+    +StartAsync(): Task
+    +StopAsync(): Task
+    +OnData: event(DataPacket)
+  }
+
   class IDataProcessor {
     <<interface>>
     +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
+    +DegreeOfParallelism: int
+    +CanProcess(packet: DataPacket): bool
+    +ProcessAsync(packet: DataPacket, ctx: IProcessorContext): Task~ProcessResult~
   }
+
+  class ISink {
+    <<interface>>
+    +Name: string
+    +WriteAsync(result: ProcessResult, ctx: IProcessorContext): Task
+    +FlushAsync(): Task
+  }
+
   class ProcessingPipeline {
-    +HandleAsync(input: DataPacket): Task~DataResult~
-    +AddStage(stage: IDataProcessor): void
-    +GetStages(): IEnumerable~IDataProcessor~
-    -_stages: List~IDataProcessor~
+    +AddSource(src: ISource): void
+    +AddStage(proc: IDataProcessor): void
+    +AddSink(sink: ISink): void
+    +RunAsync(ct: CancellationToken): Task
   }
-  class DataCleaner {
-    +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
-    -ValidateDataTypes(data: object): bool
-    -RemoveInvalidValues(data: object): object
+
+  %% 上下文、治理、存储
+  class IProcessorContext {
+    <<interface>>
+    +TenantId: string
+    +TraceId: string
+    +Now(): DateTime
+    +Metrics: IMetrics
+    +Idempotency: IIdempotencyStore
+    +StateStore: IStateStore
+    +ErrorHandler: IErrorHandler
+    +Retry: IRetryPolicy
+    +Circuit: ICircuitBreaker
+    +RateLimiter: IRateLimiter
   }
-  class RuleEngine {
-    +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
-    -LoadRules(): List~Rule~
-    -EvaluateRules(data: object): ValidationResult
+
+  class IMetrics { <<interface>> +Inc(name: string) +Observe(name: string, value: double) }
+  class IErrorHandler { <<interface>> +ToDLQ(packet: DataPacket, reason: string): Task }
+  class IIdempotencyStore { <<interface>> +Seen(messageId: string, window: TimeSpan): Task~bool~ }
+  class IStateStore { <<interface>> +Get(key: string): Task~byte[]~ +Put(key: string, value: byte[]): Task }
+
+  %% 窗口与水位
+  class IWindowStrategy {
+    <<interface>>
+    +Assign(timestamp: DateTime): Window
+    +Type: string  %% tumbling|sliding|session
+    +Size: TimeSpan
+    +Slide: TimeSpan
   }
-  class Aggregator {
-    +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
-    -AggregateByTimeWindow(data: List~DataPoint~): AggregateResult
-    -CalculateStatistics(values: List~double~): Statistics
+  class IWatermarkStrategy {
+    <<interface>>
+    +Advance(eventTime: DateTime): void
+    +GetWatermark(): DateTime
+    +AllowedLateness(): TimeSpan
   }
-  class AnomalyDetector {
-    +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
-    -DetectOutliers(values: List~double~): List~Anomaly~
-    -ApplyThresholds(value: double, thresholds: Threshold): bool
-  }
-  class BatchWriter {
-    +Name: string
-    +ProcessAsync(input: DataPacket): Task~DataResult~
-    -WriteBatch(data: List~DataPoint~): Task~bool~
-    -RetryOnFailure(operation: Func): Task
-  }
-  class DataPacket {
-    +Id: string
-    +Timestamp: DateTime
-    +Source: string
-    +DataPoints: List~DataPoint~
-    +Metadata: Dictionary~string,object~
-  }
-  class DataResult {
-    +IsSuccess: bool
-    +ErrorMessage: string
-    +ProcessedCount: int
-    +Metrics: Dictionary~string,object~
-  }
+
+  %% 典型处理器与Sink
+  class DataCleaner
+  class RuleEngine
+  class Aggregator
+  class AnomalyDetector
+  class BatchWriterTsdb
+  class BatchWriterRdb
+  class EventPublisher
+
+  %% 关系
+  ProcessingPipeline o-- ISource
+  ProcessingPipeline o-- IDataProcessor
+  ProcessingPipeline o-- ISink
+  IDataProcessor ..> IProcessorContext
+  ISink ..> IProcessorContext
+  IProcessorContext ..> IMetrics
+  IProcessorContext ..> IIdempotencyStore
+  IProcessorContext ..> IStateStore
+  IDataProcessor ..> IWindowStrategy
+  IDataProcessor ..> IWatermarkStrategy
 
   IDataProcessor <|.. DataCleaner
   IDataProcessor <|.. RuleEngine
   IDataProcessor <|.. Aggregator
   IDataProcessor <|.. AnomalyDetector
-  IDataProcessor <|.. BatchWriter
-  ProcessingPipeline o-- IDataProcessor
-  IDataProcessor ..> DataPacket
-  IDataProcessor ..> DataResult
+
+  ISink <|.. BatchWriterTsdb
+  ISink <|.. BatchWriterRdb
+  ISink <|.. EventPublisher
 ```
 
 ### 6.3 关键接口签名（C#示例）
@@ -1741,6 +2293,96 @@ public class ProcessingPipeline
     public Task<DataResult> HandleAsync(DataPacket input, CancellationToken ct = default);
 }
 
+public interface ISource
+{
+    string Name { get; }
+    event Action<DataPacket> OnData;
+    Task StartAsync(CancellationToken ct = default);
+    Task StopAsync(CancellationToken ct = default);
+}
+
+public interface IDataProcessor
+{
+    string Name { get; }
+    int DegreeOfParallelism { get; }
+    bool CanProcess(DataPacket packet);
+    Task<ProcessResult> ProcessAsync(DataPacket packet, IProcessorContext ctx, CancellationToken ct = default);
+}
+
+public interface ISink
+{
+    string Name { get; }
+    Task WriteAsync(ProcessResult result, IProcessorContext ctx, CancellationToken ct = default);
+    Task FlushAsync(CancellationToken ct = default);
+}
+
+public sealed class DataPacket
+{
+    public string MessageId { get; set; }          // 幂等键
+    public string TenantId { get; set; }
+    public string Source { get; set; }             // edge node
+    public DateTime EventTime { get; set; }        // 事件时间
+    public DateTime ReceivedAt { get; set; }       // 摄取时间
+    public List<DataPoint> DataPoints { get; set; }
+    public Dictionary<string, object> Meta { get; set; } = new();
+}
+
+public sealed class ProcessResult
+{
+    public bool IsSuccess { get; set; }
+    public List<DataPoint> CleanPoints { get; set; } = new();
+    public List<DataPoint> Aggregates { get; set; } = new();
+    public List<DataPoint> Anomalies { get; set; } = new();  // 侧输出
+    public string ErrorMessage { get; set; }
+    public Dictionary<string, object> Metrics { get; set; } = new();
+}
+
+public interface IProcessorContext
+{
+    string TenantId { get; }
+    string TraceId { get; }
+    DateTime Now();
+    IMetrics Metrics { get; }
+    IIdempotencyStore Idempotency { get; }
+    IStateStore StateStore { get; }
+    IErrorHandler ErrorHandler { get; }
+    IRetryPolicy Retry { get; }
+    ICircuitBreaker Circuit { get; }
+    IRateLimiter RateLimiter { get; }
+}
+
+public interface IWindowStrategy
+{
+    string Type { get; }              // tumbling|sliding|session
+    TimeSpan Size { get; }
+    TimeSpan Slide { get; }
+    Window Assign(DateTime eventTime);
+}
+
+public interface IWatermarkStrategy
+{
+    void Advance(DateTime eventTime);
+    DateTime GetWatermark();
+    TimeSpan AllowedLateness { get; }
+}
+
+public interface IIdempotencyStore
+{
+    // 返回true表示已处理（重复），false表示首次
+    Task<bool> SeenAsync(string messageId, TimeSpan window, CancellationToken ct = default);
+}
+
+public interface IStateStore
+{
+    Task<byte[]> GetAsync(string key, CancellationToken ct = default);
+    Task PutAsync(string key, byte[] value, CancellationToken ct = default);
+}
+
+// 典型Sink
+public interface ITsdbSink : ISink { }
+public interface IRdbSink : ISink { }
+public interface IEventSink : ISink { }
+
 // 典型处理器实现
 public class DataCleaner : IDataProcessor { /* ... */ }
 public class RuleEngine : IDataProcessor { /* ... */ }
@@ -1750,25 +2392,203 @@ public class BatchWriter : IDataProcessor { /* ... */ }
 ```
 
 ### 6.4 处理流程与伪代码
-- 数据流：入口 → 清洗 → 校验 → 规则 → 聚合 → 批量写入 → 推送/存储
-- 支持批量窗口（如1000条/5s）、流式逐条处理、异常分流
-
+// .NET 8：Channel + 并行处理 + 幂等 + 多Sink + 水位/窗口 + 治理策略
 ```csharp
-// 处理管道伪代码
-var pipeline = new ProcessingPipeline();
-pipeline.AddStage(new DataCleaner());
-pipeline.AddStage(new RuleEngine());
-pipeline.AddStage(new Aggregator());
-pipeline.AddStage(new AnomalyDetector());
-pipeline.AddStage(new BatchWriter());
-
-foreach (var packet in inputQueue.GetBatch(batchSize, batchTimeout))
+public sealed class RealtimeEngine
 {
-    var result = await pipeline.HandleAsync(packet);
-    if (!result.IsSuccess) {
-        // 记录异常，触发告警
+    private readonly Channel<DataPacket> _inbox = Channel.CreateBounded<DataPacket>(
+        new BoundedChannelOptions(10_000) { SingleReader = false, SingleWriter = false, FullMode = BoundedChannelFullMode.Wait });
+
+    private readonly IEnumerable<IDataProcessor> _stages;
+    private readonly IEnumerable<ISink> _sinks;
+    private readonly IProcessorContext _ctx;
+    private readonly IWatermarkStrategy _watermark;
+    private readonly IWindowStrategy _window;
+
+    public RealtimeEngine(IEnumerable<IDataProcessor> stages, IEnumerable<ISink> sinks,
+                          IProcessorContext ctx, IWatermarkStrategy watermark, IWindowStrategy window)
+    {
+        _stages = stages;
+        _sinks = sinks;
+        _ctx = ctx;
+        _watermark = watermark;
+        _window = window;
+    }
+
+    // Source（RabbitMQ/HTTP）消费协程
+    public Task StartSourceAsync(IMessageConsumer mq, CancellationToken ct)
+        => Task.Run(async () =>
+        {
+            await mq.SubscribeAsync("dcp.data.raw.*", async env =>
+            {
+                var packet = ConvertToPacket(env);
+                await _inbox.Writer.WriteAsync(packet, ct);
+            }, ct);
+        }, ct);
+
+    // 主处理循环（并行度 = CPU * k）
+    public async Task RunAsync(CancellationToken ct)
+    {
+        var parallelism = Math.Max(1, Environment.ProcessorCount - 1);
+        var workers = Enumerable.Range(0, parallelism).Select(_ => Worker(ct)).ToArray();
+        await Task.WhenAll(workers);
+    }
+
+    private async Task Worker(CancellationToken ct)
+    {
+        while (await _inbox.Reader.WaitToReadAsync(ct))
+        {
+            if (!_inbox.Reader.TryRead(out var packet)) continue;
+
+            // 幂等检查（at-least-once -> 去重）
+            if (await _ctx.Idempotency.SeenAsync(packet.MessageId, TimeSpan.FromMinutes(10), ct))
+                continue;
+
+            _watermark.Advance(packet.EventTime);
+
+            // 顺序执行管道阶段，每阶段内可内部并行（DegreeOfParallelism）
+            ProcessResult result = new() { IsSuccess = true };
+            foreach (var stage in _stages.Where(s => s.CanProcess(packet)))
+            {
+                // 限流/熔断检查
+                if (!_ctx.RateLimiter.TryPass() || _ctx.Circuit.IsOpen) { result.IsSuccess = false; result.ErrorMessage = "Throttled/Break"; break; }
+
+                result = await _ctx.Retry.ExecuteAsync(() => stage.ProcessAsync(packet, _ctx), ct)
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            _ctx.Circuit.OnFailure(t.Exception);
+                            return new ProcessResult { IsSuccess = false, ErrorMessage = t.Exception!.GetBaseException().Message };
+                        }
+                        _ctx.Circuit.OnSuccess();
+                        return t.Result;
+                    }, ct);
+
+                if (!result.IsSuccess) break;
+            }
+
+            // 成功 -> 多Sink并发落地；失败 -> DLQ
+            if (result.IsSuccess)
+            {
+                await Parallel.ForEachAsync(_sinks, ct, async (sink, token) =>
+                    await sink.WriteAsync(result, _ctx, token));
+            }
+            else
+            {
+                await _ctx.ErrorHandler.ToDLQ(packet, result.ErrorMessage ?? "unknown");
+            }
+        }
+    }
+
+    private static DataPacket ConvertToPacket(MessageEnvelope env)
+    {
+        return new DataPacket
+        {
+            MessageId = env.MessageId,
+            TenantId = env.TenantId,
+            Source = env.Source,
+            EventTime = env.Timestamp,
+            ReceivedAt = DateTime.UtcNow,
+            DataPoints = /* map payload -> datapoints */
+                new List<DataPoint>()
+        };
     }
 }
+```
+
+```csharp
+// .NET Framework 4.5+：BlockingCollection + 有限并发 + 简化治理与窗口
+public sealed class LegacyRealtimeEngine
+{
+    private readonly BlockingCollection<DataPacket> _queue = new(new ConcurrentQueue<DataPacket>(), 5000);
+    private readonly IList<IDataProcessor> _stages;
+    private readonly IList<ISink> _sinks;
+    private readonly IProcessorContext _ctx;
+
+    public LegacyRealtimeEngine(IList<IDataProcessor> stages, IList<ISink> sinks, IProcessorContext ctx)
+    { _stages = stages; _sinks = sinks; _ctx = ctx; }
+
+    public void Enqueue(DataPacket p) { _queue.Add(p); }
+
+    public void Start(int workers = 2, CancellationToken ct = default(CancellationToken))
+    {
+        for (int i = 0; i < workers; i++)
+        {
+            var t = new Thread(() => Worker(ct)) { IsBackground = true };
+            t.Start();
+        }
+    }
+
+    private void Worker(CancellationToken ct)
+    {
+        foreach (var packet in _queue.GetConsumingEnumerable())
+        {
+            if (_ctx.Idempotency.SeenAsync(packet.MessageId, TimeSpan.FromMinutes(10), ct).Result) continue;
+
+            var result = new ProcessResult { IsSuccess = true };
+            foreach (var stage in _stages)
+            {
+                try
+                {
+                    if (!stage.CanProcess(packet)) continue;
+                    result = stage.ProcessAsync(packet, _ctx, ct).Result;
+                    if (!result.IsSuccess) break;
+                }
+                catch (Exception ex)
+                {
+                    result = new ProcessResult { IsSuccess = false, ErrorMessage = ex.Message };
+                    break;
+                }
+            }
+
+            if (result.IsSuccess)
+            {
+                foreach (var sink in _sinks)
+                    sink.WriteAsync(result, _ctx, ct).Wait();
+            }
+            else
+            {
+                _ctx.ErrorHandler.ToDLQ(packet, result.ErrorMessage ?? "unknown").Wait();
+            }
+        }
+    }
+}
+```
+
+```mermaid
+flowchart LR
+  subgraph Source
+    MQ[MQ Consumer]
+    HTTP[HTTP Ingest]
+  end
+  subgraph Pipeline
+    Clean[Cleaner]
+    Rule[Rule Engine]
+    Agg[Windowed Aggregator<br/>Tumbling/Sliding]
+    Anom[Anomaly Detector]
+  end
+  subgraph Governance
+    IDEM[Idempotency]
+    RL[RateLimiter]
+    CB[CircuitBreaker]
+    RET[Retry]
+    MET[Metrics/Tracing]
+  end
+  subgraph Sink
+    TS[TSDB Sink]
+    DB[RDB Sink]
+    EVT[Event Sink]
+    DLQ[Dead Letter Queue]
+  end
+
+  MQ --> Clean --> Rule --> Agg --> Anom
+  HTTP --> Clean
+  Clean --> IDEM
+  IDEM -->|dup| DLQ
+  IDEM --> Rule
+  Rule --> RL --> CB --> RET --> MET
+  Anom --> TS & DB & EVT
 ```
 
 ### 6.5 治理与一致性策略
@@ -1796,15 +2616,37 @@ foreach (var packet in inputQueue.GetBatch(batchSize, batchTimeout))
 ```mermaid
 classDiagram
   class IMessagePublisher {
-    +Task PublishAsync<T>(string exchange, string routingKey, T message)
+    +PublishAsync(exchange, routingKey, envelope, options)
   }
   class IMessageConsumer {
-    +Task SubscribeAsync(string queue, Func<MessageEnvelope, Task> handler)
-    +Task AckAsync(string deliveryTag)
-    +Task NackAsync(string deliveryTag, bool requeue)
+    +SubscribeAsync(queue, handler, options)
+  }
+  class PublishOptions {
+    +bool Persistent
+    +bool Mandatory
+    +int ConfirmTimeoutMs
+    +int ExpirationMs
+    +Dictionary~string, string~ Headers
+  }
+  class ConsumerOptions {
+    +ushort Prefetch
+    +bool AutoAck
+    +bool RequeueOnError
+    +int MaxRetry
+    +string RetryExchange
+    +string DlqExchange
+  }
+  class DeliveryContext {
+    +string Queue
+    +ulong DeliveryTag
+    +MessageEnvelope Envelope
+    +Dictionary~string, object~ Headers
+    +byte[] Body
+    +Ack()
+    +Nack(requeue)
   }
   class MessageEnvelope {
-    +string MessageId
+    +string EnvelopeId
     +string CorrelationId
     +DateTime Timestamp
     +string Type
@@ -1812,77 +2654,191 @@ classDiagram
     +string Source
     +string TenantId
     +int RetryCount
+    +string Version
   }
   IMessagePublisher <|.. RabbitMqPublisher
   IMessageConsumer <|.. RabbitMqConsumer
+  DeliveryContext --> MessageEnvelope
+  IMessagePublisher ..> PublishOptions
+  IMessageConsumer ..> ConsumerOptions
 ```
 
 ### 7.3 关键接口签名（C#示例）
 ```csharp
+public sealed record PublishResult(bool Confirmed, string? Reason = null);
+
+public sealed class PublishOptions
+{
+    public bool Persistent { get; init; } = true;           // 投递模式 2（持久化）
+    public bool Mandatory  { get; init; } = true;           // 强制路由，未路由则返回
+    public int? ExpirationMs { get; init; }                 // 单条消息过期时间（可用于延迟/重试）
+    public IDictionary<string, object>? Headers { get; init; }
+    public int ConfirmTimeoutMs { get; init; } = 5000;      // 发布确认超时
+}
+
+public sealed class ConsumerOptions
+{
+    public ushort Prefetch { get; init; } = 200;            // 限流，防止单消费者抢占过多
+    public bool AutoAck { get; init; } = false;             // 统一采用手动Ack
+    public bool RequeueOnError { get; init; } = false;      // 业务异常是否直接重回队列
+    public int MaxRetry { get; init; } = 5;                 // 最大重试次数
+    public string? RetryExchange { get; init; }             // 重试交换机
+    public string? DlqExchange { get; init; }               // 死信交换机
+}
+
+public sealed class MessageEnvelope
+{
+    public string EnvelopeId { get; init; } = Guid.NewGuid().ToString("N");
+    public string? CorrelationId { get; init; }
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+    public string Type { get; init; } = "DataPointBatch";  // 统一类型命名
+    public string? TenantId { get; init; }
+    public string? Source { get; init; }                    // edge-01 / ingestion-01
+    public int RetryCount { get; init; } = 0;
+    public string Version { get; init; } = "1.0";          // 契约版本
+    public object Payload { get; init; } = default!;        // 建议批量点位
+}
+
+public sealed class DeliveryContext
+{
+    public string Queue { get; init; } = default!;
+    public ulong DeliveryTag { get; init; }
+    public MessageEnvelope Envelope { get; init; } = default!;
+    public IReadOnlyDictionary<string, object> Headers { get; init; } = new Dictionary<string, object>();
+    public ReadOnlyMemory<byte> Body { get; init; } = ReadOnlyMemory<byte>.Empty;
+
+    public Func<ulong, Task>? AckAsyncDelegate { get; init; }
+    public Func<ulong, bool, Task>? NackAsyncDelegate { get; init; }
+
+    public Task AckAsync() => AckAsyncDelegate?.Invoke(DeliveryTag) ?? Task.CompletedTask;
+    public Task NackAsync(bool requeue) => NackAsyncDelegate?.Invoke(DeliveryTag, requeue) ?? Task.CompletedTask;
+}
+
 public interface IMessagePublisher
 {
-    Task PublishAsync<T>(string exchange, string routingKey, T message, CancellationToken ct = default);
+    Task<PublishResult> PublishAsync(
+        string exchange,
+        string routingKey,
+        MessageEnvelope envelope,
+        PublishOptions? options = null,
+        CancellationToken ct = default);
 }
 
 public interface IMessageConsumer
 {
-    Task SubscribeAsync(string queue, Func<MessageEnvelope, Task> handler, CancellationToken ct = default);
-    Task AckAsync(string deliveryTag, CancellationToken ct = default);
-    Task NackAsync(string deliveryTag, bool requeue, CancellationToken ct = default);
-}
-
-public class MessageEnvelope
-{
-    public string MessageId { get; set; }
-    public string CorrelationId { get; set; }
-    public DateTime Timestamp { get; set; }
-    public string Type { get; set; }
-    public object Payload { get; set; }
-    public string Source { get; set; }
-    public string TenantId { get; set; }
-    public int RetryCount { get; set; }
+    Task SubscribeAsync(
+        string queue,
+        Func<DeliveryContext, Task> handler,
+        ConsumerOptions? options = null,
+        CancellationToken ct = default);
 }
 ```
 
 ### 7.4 消息命名与契约
-- Exchange命名：`dcp.data.raw`, `dcp.data.clean`, `dcp.alarm`, `dcp.config`
-- Queue命名：`dcp.data.raw.{node}`, `dcp.data.clean.{service}`
-- RoutingKey：`site.line.device.tag` 或 `alarm.level`
-- 死信队列（DLX）：`dcp.dlx.{queue}`，消息失败自动转发
-- 幂等键：`MessageId`，消费端需去重
+- Exchange：`dcp.{env}.data.raw`、`dcp.{env}.data.clean`、`dcp.{env}.alarm`、`dcp.{env}.config`
+- Queue：`dcp.{env}.{tenant}.{site}.{service}.{purpose}`，如 `dcp.prod.t1.suzhou.ingestion.clean`
+  - purpose：ingest | clean | enrich | export | alarm
+- RoutingKey：`{tenant}.{site}.{line}.{device}.{tag}`，如 `t1.sz.l01.presser01.speed`
+- DLX/Retry：统一定义 `dcp.{env}.retry` 与 `dcp.{env}.dlx`，便于跨队列复用
+  - 业务队列参数：
+    - `x-dead-letter-exchange = dcp.{env}.retry`
+    - `x-dead-letter-routing-key = {original-queue}`
+  - 重试队列参数：
+    - `x-message-ttl = 5_000 | 30_000 | ...`（分级退避）
+    - `x-dead-letter-exchange = {业务原始exchange}` 或直接指向 `dcp.{env}.dlx`
+- 幂等键：`EnvelopeId`。如需加强，可叠加 `{tenant,site,line,device,tag,timestamp}` 计算复合Key
+- 契约字段：`Version/EnvelopeId/Tenant/Source/Timestamp/Payload/Headers`
 
-#### 7.4.1 消息Schema示例（采集数据）
+#### 7.4.1 消息Schema示例（批量采集数据）
 ```json
 {
-  "MessageId": "uuid",
-  "CorrelationId": "采集任务ID",
-  "Timestamp": "2025-09-12T12:00:00Z",
-  "Type": "DataPoint",
-  "Payload": {
-    "DeviceId": "dev-001",
-    "TagId": "tag-001",
-    "Value": 123.45,
-    "Quality": "Good",
-    "Time": "2025-09-12T12:00:00Z"
+  "ver": "1.0",
+  "env": "prod",
+  "tz": "Asia/Shanghai",
+  "enc": "json", 
+  "envelopeId": "a1b2c3d4e5f6",
+  "correlationId": "task-20250912-001",
+  "ts": "2025-09-12T12:00:00+08:00",
+  "type": "DataPointBatch",
+  "tenant": "t1",
+  "source": "edge-01",
+  "route": {
+    "site": "sz",
+    "line": "l01",
+    "device": "presser01"
   },
-  "Source": "edge-01",
-  "TenantId": "tenant-001",
-  "RetryCount": 0
+  "points": [
+    { "tag": "speed",   "v": 123.45, "q": "Good", "t": "2025-09-12T12:00:00+08:00" },
+    { "tag": "temp",    "v": 36.7,   "q": "Good", "t": "2025-09-12T12:00:00+08:00" }
+  ],
+  "headers": { "schema": "v1", "compress": false }
 }
 ```
 
 ### 7.5 伪代码示例
 ```csharp
-// 发布消息
-await publisher.PublishAsync("dcp.data.raw", "site1.line1.dev1.tag1", dataEnvelope);
+// 发布：开启发布确认、强制路由与持久化
+var model = channel; // RabbitMQ IModel
+model.ConfirmSelect();
 
-// 消费消息
-await consumer.SubscribeAsync("dcp.data.raw.edge-01", async envelope => {
-    if (IsDuplicate(envelope.MessageId)) return;
-    var data = (DataPoint)envelope.Payload;
-    // 处理数据
-    await consumer.AckAsync(envelope.MessageId);
-});
+var props = model.CreateBasicProperties();
+props.Persistent = options?.Persistent ?? true; // true => delivery mode 2 (persistent)
+props.MessageId = envelope.EnvelopeId;
+props.CorrelationId = envelope.CorrelationId;
+props.Timestamp = new AmqpTimestamp(envelope.Timestamp.ToUnixTimeSeconds());
+props.Type = envelope.Type;
+props.ContentType = "application/json";
+props.Headers = options?.Headers as IDictionary<string, object>;
+if (options?.ExpirationMs is int ttl) props.Expiration = ttl.ToString();
+
+var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(envelope));
+model.BasicPublish(exchange, routingKey, mandatory: options?.Mandatory ?? true, basicProperties: props, body: body);
+model.WaitForConfirmsOrDie(TimeSpan.FromMilliseconds(options?.ConfirmTimeoutMs ?? 5000));
+
+// 订阅：设置Prefetch与手动Ack；失败走Retry/DLX
+var consumer = new EventingBasicConsumer(model);
+var consumeOptions = new ConsumerOptions { Prefetch = 200 };
+model.BasicQos(0, consumeOptions.Prefetch, global: false);
+
+consumer.Received += async (ch, ea) =>
+{
+    var ctx = new DeliveryContext
+    {
+        Queue = queue,
+        DeliveryTag = ea.DeliveryTag,
+        Headers = ea.BasicProperties.Headers?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? new Dictionary<string, object>(),
+        Body = ea.Body.ToArray(),
+        Envelope = DeserializeEnvelope(ea.Body),
+        AckAsyncDelegate = dt => Task.Run(() => model.BasicAck(dt, multiple: false)),
+        NackAsyncDelegate = (dt, requeue) => Task.Run(() => model.BasicNack(dt, multiple: false, requeue: requeue))
+    };
+
+    // 幂等去重（建议TTL 24h+，按EnvelopeId记录）
+    if (await idempotencyStore.ExistsAsync(ctx.Envelope.EnvelopeId))
+    {
+        await ctx.AckAsync();
+        return;
+    }
+
+    try
+    {
+        await handler(ctx); // 业务处理
+        await idempotencyStore.RecordAsync(ctx.Envelope.EnvelopeId, TimeSpan.FromHours(24));
+        await ctx.AckAsync();
+    }
+    catch (TransientException)
+    {
+        // 进入重试队列（通过DLX/TTL回流），避免热重试抖动
+        await ctx.NackAsync(requeue: false);
+    }
+    catch (Exception ex)
+    {
+        LogError(ex, ctx);
+        await ctx.NackAsync(requeue: false); // 入DLX，后续人工/脚本处理
+    }
+};
+
+model.BasicConsume(queue, autoAck: false, consumer: consumer);
 ```
 
 ### 7.6 异常与重试、DLX策略
@@ -1909,92 +2865,218 @@ await consumer.SubscribeAsync("dcp.data.raw.edge-01", async envelope => {
 ```mermaid
 classDiagram
   class IDataQueryService {
-    +Task<PagedResult<DataPoint>> QueryRealtimeAsync(QueryParams param)
-    +Task<PagedResult<DataPoint>> QueryHistoryAsync(QueryParams param)
-    +Task<IEnumerable<AggregateResult>> AggregateAsync(AggregateParams param)
+    +QueryRealtimeAsync(req)
+    +QueryHistoryAsync(req)
+    +AggregateAsync(req)
   }
   class IRealtimePushService {
-    +Task SubscribeAsync(string topic, Func<DataPoint, Task> onData)
-    +Task UnsubscribeAsync(string topic)
-    +Task PushAsync(string topic, DataPoint data)
+    +SubscribeAsync(req, onData)
+    +UnsubscribeAsync(subscriptionId)
   }
-  class QueryParams {
-    +string DeviceId
-    +string TagId
-    +DateTime? StartTime
-    +DateTime? EndTime
-    +int Page
-    +int PageSize
+  class QueryRequest {
+    +QueryContext Context
+    +Filter Filter
+    +TimeWindow Window
+    +Paging Paging
+    +Sort Sort
+  }
+  class AggregateRequest {
+    +QueryContext Context
+    +Filter Filter
+    +TimeWindow Window
+    +AggregateSpec Aggregate
+  }
+  class QueryContext {
     +string TenantId
+    +string PrincipalId
+    +string Timezone
+    +DataScope Scope
+    +int TimeoutMs
   }
-  class AggregateParams {
-    +string DeviceId
-    +string TagId
-    +DateTime StartTime
-    +DateTime EndTime
-    +string Function // avg, min, max, sum
-    +string Interval // 1m, 5m, 1h
+  class Filter {
+    +string[] DeviceIds
+    +string[] TagIds
+    +string Expr
+  }
+  class TimeWindow {
+    +DateTimeOffset Start
+    +DateTimeOffset End
+    +string Align
+    +string Bucket
+    +string Fill
+  }
+  class Paging {
+    +int PageSize
+    +string ContinuationToken
+  }
+  class Sort {
+    +string Order
+    +string TieBreaker
+  }
+  class AggregateSpec {
+    +string[] Functions
+    +string Bucket
+    +string Align
+    +string Fill
+    +string Timezone
+  }
+  class PageResult {
+    +List~DataPoint~ Items
+    +string NextToken
+    +Stats Stats
+  }
+  class Stats {
+    +string Source
+    +long Scanned
+    +long ElapsedMs
+  }
+  class SubscribeRequest {
+    +string TenantId
+    +Filter Filter
+    +int LastSeconds
+    +int ThrottleMs
+    +AggregateSpec Aggregate
+    +string StartAfterToken
   }
   IDataQueryService <|.. DataQueryService
   IRealtimePushService <|.. SignalRPushService
+  PageResult --> DataPoint
 ```
 
 ### 8.3 关键接口签名（C#示例）
 ```csharp
+// 统一查询上下文与请求模型
+public sealed record DataScope(string[]? Sites = null, string[]? Lines = null, string[]? Devices = null);
+public sealed record QueryContext(string TenantId, string PrincipalId, DataScope Scope, string Timezone = "Asia/Shanghai", TimeSpan? Timeout = null);
+public sealed record Paging(int PageSize = 200, string? ContinuationToken = null);
+public enum FillPolicy { None, Previous, Linear, Zero }
+public sealed record TimeWindow(DateTimeOffset Start, DateTimeOffset End, string? Align = null, string? Bucket = null, FillPolicy Fill = FillPolicy.None);
+public sealed record Sort(string Order = "asc", string TieBreaker = "seq");
+public sealed record Filter(string[]? DeviceIds = null, string[]? TagIds = null, string? Expr = null);
+
+public sealed record QueryRequest(QueryContext Context, Filter Filter, TimeWindow Window, Paging Paging, Sort? Sort = null);
+public sealed record AggregateSpec(string[] Functions, string Bucket, string? Align = null, FillPolicy Fill = FillPolicy.None, string? Timezone = null);
+public sealed record AggregateRequest(QueryContext Context, Filter Filter, TimeWindow Window, AggregateSpec Aggregate);
+
+public sealed record Stats(string Source, long Scanned, long ElapsedMs);
+public sealed record Page<T>(IReadOnlyList<T> Items, string? NextToken, Stats Stats);
+
+public sealed record DataPoint(string TenantId, string DeviceId, string TagId, double Value, string Quality, DateTimeOffset Time, int Seq = 0);
+public sealed record AggregateBucket(DateTimeOffset WindowStart, DateTimeOffset WindowEnd, IDictionary<string,double> Values);
+
 public interface IDataQueryService
 {
-    Task<PagedResult<DataPoint>> QueryRealtimeAsync(QueryParams param, CancellationToken ct = default);
-    Task<PagedResult<DataPoint>> QueryHistoryAsync(QueryParams param, CancellationToken ct = default);
-    Task<IEnumerable<AggregateResult>> AggregateAsync(AggregateParams param, CancellationToken ct = default);
+  Task<Page<DataPoint>> QueryRealtimeAsync(QueryRequest req, CancellationToken ct = default);
+  Task<Page<DataPoint>> QueryHistoryAsync(QueryRequest req, CancellationToken ct = default);
+  Task<IReadOnlyList<AggregateBucket>> AggregateAsync(AggregateRequest req, CancellationToken ct = default);
+}
+
+// WebSocket 推送：结构化订阅请求与推送信封（与7.x命名契约对齐）
+public sealed record SubscribeRequest(
+  string TenantId,
+  Filter Filter,
+  int LastSeconds = 60,
+  int ThrottleMs = 500,
+  AggregateSpec? Aggregate = null,
+  string? StartAfterToken = null
+);
+
+public sealed class Route { public string Site { get; init; } = ""; public string Line { get; init; } = ""; public string Device { get; init; } = ""; }
+public sealed class DataPushEnvelope
+{
+  public string Ver { get; init; } = "1.0";
+  public string EnvelopeId { get; init; } = Guid.NewGuid().ToString("N");
+  public string Tz { get; init; } = "Asia/Shanghai";
+  public string Type { get; init; } = "RealtimeDataPoint"; // 或 RealtimeAggBucket
+  public string Tenant { get; init; } = default!;
+  public Route Route { get; init; } = new();
+  public IReadOnlyList<DataPoint> Points { get; init; } = Array.Empty<DataPoint>();
+  public IReadOnlyList<AggregateBucket>? Buckets { get; init; }
+  public string? NextToken { get; init; }
 }
 
 public interface IRealtimePushService
 {
-    Task SubscribeAsync(string topic, Func<DataPoint, Task> onData, CancellationToken ct = default);
-    Task UnsubscribeAsync(string topic, CancellationToken ct = default);
-    Task PushAsync(string topic, DataPoint data, CancellationToken ct = default);
+  Task<string> SubscribeAsync(SubscribeRequest req, Func<DataPushEnvelope, Task> onData, CancellationToken ct = default);
+  Task UnsubscribeAsync(string subscriptionId, CancellationToken ct = default);
 }
 ```
 
 ### 8.4 查询策略与索引优化
-- 实时数据优先查Redis缓存，历史数据查InfluxDB/PostgreSQL。
-- 支持设备/点位/时间范围多条件过滤。
-- 分页查询（Page/PageSize），大数据量下游标分页。
-- 关键字段（DeviceId, TagId, Time）建立复合索引。
-- 聚合查询支持avg/min/max/sum，按时间窗口分组。
+- 冷热分层与路由：
+  - t ∈ [now-LastSeconds, now] → Redis（ZSET，key: `ts:{tenant}:{device}:{tag}`，score=time）
+  - t ∈ (now-coldThreshold, now-LastSeconds) → InfluxDB（热分区/retention）
+  - t ≤ now-coldThreshold → PostgreSQL 归档分区表
+- 批量拉取：按 Window.Bucket 切片分段查询并合并，去重键 `(tenant,device,tag,time,seq)`，按 time asc 输出
+- 分页：优先使用 Keyset（after={time,seq}），NextToken base64({lastTime,lastSeq,sourceIndex})；必要时退回 offset 仅限小页
+- 预聚合与下采样：写入或定时计算 `agg_{1m,5m,1h}`，Aggregate 优先命中预聚合，缺口回补原始表
+- InfluxDB：measurement 分离 raw/clean/agg，tag：tenant/site/device/tag；合理控制高基数标签
+- PostgreSQL：
+  - 按日/月 + tenant/site 分区；主键 `(tenant,site,device,tag,time,seq)`
+  - 覆盖索引 on `(tenant,site,device,tag,time DESC)` INCLUDE (value, quality)
+- Redis：TTL=LastSeconds 或策略阈值，避免缓存膨胀；批量 MGET/ZRANGEBYSCORE 减少往返
 
 ### 8.5 WebSocket推送与订阅
-- 基于SignalR实现，支持分组/主题订阅。
-- 客户端可动态订阅/取消订阅设备/点位/告警等主题。
-- 推送消息结构：
+- 基于 SignalR，使用结构化订阅请求 `SubscribeRequest`；服务端按 DataScope/权限校验
+- 可靠性：维护 per-connection 的 `lastToken`；断线后客户端带 `StartAfterToken` 重连回放
+- 流控与背压：`ThrottleMs` 节流，合并同一 bucket 内多条为一条聚合推送；限制最大订阅数与并发
+- 心跳与超时：定期 ping-pong，回收空闲订阅
+- 推送消息示例（对齐 7.x 命名/契约）：
 ```json
 {
-  "Type": "DataPointUpdate",
-  "DeviceId": "dev-001",
-  "TagId": "tag-001",
-  "Value": 123.45,
-  "Quality": "Good",
-  "Time": "2025-09-12T12:00:00Z"
+  "ver": "1.0",
+  "envelopeId": "b7c9a1...",
+  "tz": "Asia/Shanghai",
+  "type": "RealtimeDataPoint",
+  "tenant": "t1",
+  "route": { "site": "sz", "line": "l01", "device": "presser01" },
+  "points": [
+    { "tenant": "t1", "deviceId": "presser01", "tagId": "speed", "value": 123.45, "quality": "Good", "time": "2025-09-12T12:00:00+08:00", "seq": 0 }
+  ],
+  "nextToken": "eyJsYXN0VGltZSI6IjIwMjUtMDktMTJUMTI6MDA6MDArMDg6MDAiLCJzZXEiOjB9"
 }
 ```
-- 支持断线重连与消息补发。
 
 ### 8.6 伪代码示例
 ```csharp
-// 查询历史数据
-var result = await queryService.QueryHistoryAsync(new QueryParams {
-    DeviceId = "dev-001",
-    TagId = "tag-001",
-    StartTime = DateTime.UtcNow.AddHours(-1),
-    EndTime = DateTime.UtcNow,
-    Page = 1,
-    PageSize = 100
-});
+// 查询（带冷热路由与游标分页）
+var req = new QueryRequest(
+  Context: new QueryContext("t1", principalId, new DataScope(Devices: new[]{"presser01"}), "Asia/Shanghai"),
+  Filter: new Filter(TagIds: new[]{"speed"}),
+  Window: new TimeWindow(DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow, Align: "00:00", Bucket: "1m", Fill: FillPolicy.Previous),
+  Paging: new Paging(PageSize: 500),
+  Sort: new Sort("asc", "seq")
+);
 
-// 订阅实时推送
-await pushService.SubscribeAsync("dev-001.tag-001", async data => {
-    // 实时数据处理
-});
+var page1 = await queryService.QueryHistoryAsync(req, ct);
+var next = page1.NextToken;
+if (next != null)
+{
+  var page2 = await queryService.QueryHistoryAsync(req with { Paging = new Paging(500, next) }, ct);
+}
+
+// WebSocket 订阅（结构化、可回放、带节流）
+var subReq = new SubscribeRequest(
+  TenantId: "t1",
+  Filter: new Filter(Devices: new[]{"presser%"}, TagIds: new[]{"speed"}),
+  LastSeconds: 60,
+  ThrottleMs: 500,
+  Aggregate: null,
+  StartAfterToken: lastToken
+);
+
+string subId = await pushService.SubscribeAsync(subReq, async envelope =>
+{
+  foreach (var p in envelope.Points)
+  {
+    // 处理实时点位
+  }
+  // 记录 nextToken 用于断线回放
+  lastToken = envelope.NextToken ?? lastToken;
+}, ct);
+
+// ... 需要时取消订阅
+await pushService.UnsubscribeAsync(subId, ct);
 ```
 
 ### 8.7 兼容性与迁移说明
@@ -2012,119 +3094,194 @@ await pushService.SubscribeAsync("dev-001.tag-001", async data => {
 - 兼容边缘节点与中心节点的不同安全需求。
 - 支持统一认证（JWT，HS256/RS256）、接口鉴权、操作审计。
 
-### 9.2 类图与接口设计
+### 9.2 类图与接口设计（增强）
 ```mermaid
 classDiagram
-    class IAuthService {
-        +Authenticate(token: string): UserPrincipal
-        +GenerateToken(user: User, alg: string): string
-        +ValidateToken(token: string): bool
-    }
-    class IAuthorizationService {
-        +HasPermission(user: UserPrincipal, action: string, resource: string): bool
-        +GetUserPermissions(user: UserPrincipal): List<Permission>
-        +GetDataScope(user: UserPrincipal): DataScope
-    }
-    class UserPrincipal {
-        +UserId: string
-        +Roles: List<string>
-        +Permissions: List<Permission>
-        +DataScope: DataScope
-    }
-    class Permission {
-        +Name: string
-        +Resource: string
-        +Action: string
-    }
-    class DataScope {
-        +ScopeType: string
-        +ScopeValues: List<string>
-    }
-    class AuditService {
-        +LogOperation(user: UserPrincipal, action: string, resource: string, result: string)
-    }
-    IAuthService <|.. UserPrincipal
-    IAuthorizationService <|.. UserPrincipal
-    UserPrincipal o-- Permission
-    UserPrincipal o-- DataScope
-    IAuthorizationService ..> Permission
-    IAuthorizationService ..> DataScope
-    AuditService ..> UserPrincipal
+  class IAuthService {
+    +ValidateAsync(token, options): (UserPrincipal, TokenValidationResult)
+    +IssueAsync(principal, options): TokenPair
+    +RevokeAsync(jti, until)
+  }
+  class IAuthorizationService {
+    +AuthorizeAsync(user, action, resource): AuthorizationResult
+  }
+  class ITokenStore {
+    +IsRevokedAsync(jti): bool
+    +RevokeAsync(jti, until)
+  }
+  class IKeySetProvider {
+    +GetSigningKeysAsync(issuer): List~SecurityKey~
+  }
+  class UserPrincipal {
+    +UserId: string
+    +TenantId: string
+    +Roles: List~string~
+    +Permissions: List~string~
+    +DataScope: DataScope
+    +Attributes: Map~string,string~
+  }
+  class DataScope {
+    +Sites: List~string~
+    +Lines: List~string~
+    +Devices: List~string~
+  }
+  class Resource {
+    +ResourceType: string
+    +TenantId: string
+    +Site: string
+    +Line: string
+    +Device: string
+    +ResourceId: string
+    +Attributes: Map~string,string~
+  }
+  class TokenPair {
+    +AccessToken: string
+    +RefreshToken: string
+    +ExpiresAt: datetime
+    +Jti: string
+    +Kid: string
+  }
+  class AuditService {
+    +WriteAsync(evt: AuditEvent)
+  }
+  class AuditEvent {
+    +TenantId: string
+    +UserId: string
+    +Action: string
+    +Resource: Resource
+    +CorrelationId: string
+    +SourceIp: string
+    +UserAgent: string
+    +Time: datetime
+    +Result: string
+    +DurationMs: long
+  }
+  IAuthService ..> ITokenStore
+  IAuthService ..> IKeySetProvider
+  IAuthorizationService ..> UserPrincipal
+  IAuthorizationService ..> Resource
+  AuditService ..> AuditEvent
 ```
 
-### 9.3 主要接口定义（C#）
+### 9.3 主要接口定义（C#，增强）
 ```csharp
-public interface IAuthService
-{
-    UserPrincipal Authenticate(string token);
-    string GenerateToken(User user, string alg = "HS256");
-    bool ValidateToken(string token);
+public sealed record DataScope(string[]? Sites = null, string[]? Lines = null, string[]? Devices = null);
+public sealed record UserPrincipal(string UserId, string TenantId,
+  IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions,
+  DataScope Scope, IReadOnlyDictionary<string,string>? Attributes = null);
+
+public sealed record Resource(string ResourceType, string? TenantId = null,
+  string? Site = null, string? Line = null, string? Device = null,
+  string? ResourceId = null, IReadOnlyDictionary<string,string>? Attributes = null);
+
+public sealed record TokenPair(string AccessToken, string RefreshToken,
+  DateTimeOffset ExpiresAt, string Jti, string Kid);
+
+public sealed record TokenIssueOptions(string TenantId, string Audience,
+  TimeSpan AccessTtl, TimeSpan RefreshTtl, string[] Scopes,
+  IDictionary<string,string>? ExtraClaims = null);
+
+public sealed record TokenValidationOptions(string Audience, string Issuer,
+  TimeSpan ClockSkew, bool RequireSigned = true, bool ValidateLifetime = true);
+
+public sealed record AuthorizationResult(bool Allowed, string? DenyReason = null);
+
+public sealed record AuditEvent(string TenantId, string UserId, string Action, Resource Resource,
+  string CorrelationId, string SourceIp, string? UserAgent, DateTimeOffset Time,
+  string Result, long DurationMs, IDictionary<string,string>? Extra = null);
+
+public interface IAuthService {
+  Task<(UserPrincipal Principal, TokenValidationResult Result)> ValidateAsync(
+    string token, TokenValidationOptions opts, CancellationToken ct = default);
+  Task<TokenPair> IssueAsync(UserPrincipal principal, TokenIssueOptions opts, CancellationToken ct = default);
+  Task RevokeAsync(string jti, DateTimeOffset? until = null, CancellationToken ct = default);
 }
 
-public interface IAuthorizationService
-{
-    bool HasPermission(UserPrincipal user, string action, string resource);
-    IEnumerable<Permission> GetUserPermissions(UserPrincipal user);
-    DataScope GetDataScope(UserPrincipal user);
+public interface IAuthorizationService {
+  Task<AuthorizationResult> AuthorizeAsync(UserPrincipal user, string action, Resource resource, CancellationToken ct = default);
 }
 
-public class UserPrincipal
-{
-    public string UserId { get; set; }
-    public List<string> Roles { get; set; }
-    public List<Permission> Permissions { get; set; }
-    public DataScope DataScope { get; set; }
+public interface ITokenStore {
+  Task<bool> IsRevokedAsync(string jti, CancellationToken ct = default);
+  Task RevokeAsync(string jti, DateTimeOffset? until = null, CancellationToken ct = default);
 }
 
-public class Permission
-{
-    public string Name { get; set; }
-    public string Resource { get; set; }
-    public string Action { get; set; }
+public interface IKeySetProvider {
+  Task<IReadOnlyList<SecurityKey>> GetSigningKeysAsync(string issuer, CancellationToken ct = default);
 }
 
-public class DataScope
-{
-    public string ScopeType { get; set; } // e.g. Tenant, Project, Device
-    public List<string> ScopeValues { get; set; }
-}
-
-public interface IAuditService
-{
-    void LogOperation(UserPrincipal user, string action, string resource, string result);
+public interface IAuditService {
+  Task WriteAsync(AuditEvent evt, CancellationToken ct = default);
 }
 ```
 
-### 9.4 认证与鉴权流程
+### 9.4 认证与鉴权流程（增强）
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant API
-    participant AuthService
-    participant AuthorizationService
-    participant AuditService
-    Client->>API: 请求(带JWT)
-    API->>AuthService: 验证JWT
-    AuthService-->>API: UserPrincipal
-    API->>AuthorizationService: 权限校验
-    AuthorizationService-->>API: 是否有权
-    API->>AuditService: 记录操作
-    API-->>Client: 返回结果
+  participant Client
+  participant API
+  participant mTLS as mTLS/Edge
+  participant KeySet as JWKS
+  participant TokenStore as Revocation
+  participant Authz as Authorization
+  participant Audit as AuditService
+
+  Client->>API: 请求(可携带证书 + Authorization: Bearer)
+  API->>mTLS: 校验客户端证书(边缘/设备)
+  API->>KeySet: 根据 kid 获取并缓存签名密钥(JWKS)
+  API->>API: 验签并校验 iss/aud/exp/nbf/alg
+  API->>TokenStore: 检查 jti 是否吊销
+  API->>API: 构建 UserPrincipal(TenantId/DataScope)
+  API->>Authz: 按 RBAC+ABAC 校验(action, resource)
+  Authz-->>API: AuthorizationResult
+  API->>Audit: 写入审计(含 correlationId/sourceIp/ua/耗时)
+  API-->>Client: 结果
 ```
 
-### 9.5 伪代码示例
+### 9.5 伪代码示例（增强）
 ```csharp
-// API 层伪代码
-public IActionResult DoAction(string token, string action, string resource)
-{
-    var user = authService.Authenticate(token);
-    if (!authService.ValidateToken(token))
-        return Unauthorized();
-    if (!authorizationService.HasPermission(user, action, resource))
-        return Forbid();
+public async Task<IResult> DoAction(HttpContext ctx, string action, Resource resource) {
+  var sw = Stopwatch.StartNew();
+  var correlationId = ctx.Request.Headers["x-correlation-id"].FirstOrDefault()
+            ?? Guid.NewGuid().ToString("N");
+  try {
+    // 可选：mTLS 验证（边缘/设备调用）
+    if (RequireMtls && ctx.Connection.ClientCertificate is null)
+      return Results.Unauthorized();
+
+    var authzHeader = ctx.Request.Headers.Authorization.ToString();
+    if (!authzHeader.StartsWith("Bearer ")) return Results.Unauthorized();
+    var token = authzHeader.Substring("Bearer ".Length);
+
+    var (principal, result) = await authService.ValidateAsync(
+      token,
+      new TokenValidationOptions(Audience: "dcp-api", Issuer: "https://idp/",
+                     ClockSkew: TimeSpan.FromMinutes(2)),
+      ctx.RequestAborted);
+
+    if (principal.TenantId != (resource.TenantId ?? principal.TenantId))
+      return Results.Forbid(); // 租户一致性校验
+
+    var ar = await authorizationService.AuthorizeAsync(principal, action, resource, ctx.RequestAborted);
+    if (!ar.Allowed) return Results.Forbid();
+
     // ...执行业务逻辑...
-    auditService.LogOperation(user, action, resource, "Success");
-    return Ok();
+    return Results.Ok();
+  }
+  catch (SecurityTokenException) {
+    return Results.Unauthorized();
+  }
+  finally {
+    sw.Stop();
+    await auditService.WriteAsync(new AuditEvent(
+      resource.TenantId ?? "-",
+      /* user */ ctx.User?.Identity?.Name ?? "-",
+      action, resource, correlationId,
+      ctx.Connection.RemoteIpAddress?.ToString() ?? "-",
+      ctx.Request.Headers["User-Agent"].ToString(),
+      DateTimeOffset.UtcNow, "Completed", sw.ElapsedMilliseconds
+    ));
+  }
 }
 ```
 
@@ -3037,33 +4194,47 @@ namespace IndustrialDataCollection.DataAccess
             _logger = logger;
         }
 
-        public async Task<bool> SaveRealtimeDataAsync(RealtimeDataBatch batch)
+  public async Task<bool> SaveRealtimeDataAsync(RealtimeDataBatch batch)
         {
             await using var connection = await _dataSource.OpenConnectionAsync();
             await using var transaction = await connection.BeginTransactionAsync();
 
             try
             {
-                const string insertSql = @"
-                    INSERT INTO realtime_data 
-                    (device_id, tag_id, source_platform, value_numeric, value_text, 
-                     quality, timestamp, collected_at, edge_node_id)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
+    const string insertSql = @"
+        INSERT INTO realtime_data 
+        (tenant_id, device_id, tag_id, source_platform, source,
+         value_numeric, value_text, quality,
+         event_time, ingest_time, timestamp, collected_at,
+         edge_node_id, envelope_id, correlation_id, seq, headers)
+        VALUES ($1, $2, $3, $4, $5,
+          $6, $7, $8,
+          $9, $10, $11, $12,
+          $13, $14, $15, $16, $17)
+        ON CONFLICT (tenant_id, device_id, tag_id, event_time, seq) DO NOTHING";
 
                 await using var cmd = new NpgsqlCommand(insertSql, connection, transaction);
 
                 foreach (var dataPoint in batch.DataPoints)
                 {
                     cmd.Parameters.Clear();
-                    cmd.Parameters.AddWithValue(dataPoint.DeviceId);
-                    cmd.Parameters.AddWithValue(dataPoint.TagId);
-                    cmd.Parameters.AddWithValue("NET8.0"); // 平台标识
-                    cmd.Parameters.AddWithValue(dataPoint.NumericValue ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue(dataPoint.TextValue ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue(dataPoint.Quality);
-                    cmd.Parameters.AddWithValue(dataPoint.Timestamp);
-                    cmd.Parameters.AddWithValue(dataPoint.CollectedAt);
-                    cmd.Parameters.AddWithValue(batch.EdgeNodeId);
+        cmd.Parameters.AddWithValue(batch.TenantId ?? "t0");
+        cmd.Parameters.AddWithValue(dataPoint.DeviceId);
+        cmd.Parameters.AddWithValue(dataPoint.TagId);
+        cmd.Parameters.AddWithValue("NET8.0"); // 平台标识
+        cmd.Parameters.AddWithValue(batch.Source ?? "edge"); // 采集来源
+        cmd.Parameters.AddWithValue(dataPoint.NumericValue ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue(dataPoint.TextValue ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue(dataPoint.Quality);
+        cmd.Parameters.AddWithValue(dataPoint.Timestamp); // event_time
+        cmd.Parameters.AddWithValue(batch.IngestTime ?? dataPoint.CollectedAt); // ingest_time
+        cmd.Parameters.AddWithValue(dataPoint.Timestamp); // 兼容历史列 timestamp
+        cmd.Parameters.AddWithValue(dataPoint.CollectedAt);
+        cmd.Parameters.AddWithValue(batch.EdgeNodeId);
+        cmd.Parameters.AddWithValue(dataPoint.EnvelopeId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue(dataPoint.CorrelationId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue(dataPoint.Seq.HasValue ? dataPoint.Seq.Value : 0);
+        cmd.Parameters.AddWithValue(dataPoint.HeadersJson ?? (object)DBNull.Value);
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -3097,7 +4268,7 @@ namespace IndustrialDataCollection.DataAccess
             return Task.FromResult(SaveRealtimeDataSync(batch));
         }
 
-        private bool SaveRealtimeDataSync(RealtimeDataBatch batch)
+  private bool SaveRealtimeDataSync(RealtimeDataBatch batch)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -3106,12 +4277,17 @@ namespace IndustrialDataCollection.DataAccess
                 {
                     try
                     {
-                        const string insertSql = @"
-                            INSERT INTO realtime_data 
-                            (device_id, tag_id, source_platform, value_numeric, value_text, 
-                             quality, timestamp, collected_at, edge_node_id)
-                            VALUES (@deviceId, @tagId, @platform, @numericValue, @textValue, 
-                                   @quality, @timestamp, @collectedAt, @edgeNodeId)";
+      const string insertSql = @"
+          INSERT INTO realtime_data 
+          (tenant_id, device_id, tag_id, source_platform, source,
+           value_numeric, value_text, quality,
+           event_time, ingest_time, timestamp, collected_at,
+           edge_node_id, envelope_id, correlation_id, seq, headers)
+          VALUES (@tenantId, @deviceId, @tagId, @platform, @source,
+            @numericValue, @textValue, @quality,
+            @eventTime, @ingestTime, @ts, @collectedAt,
+            @edgeNodeId, @envelopeId, @correlationId, @seq, @headers)
+          ON CONFLICT (tenant_id, device_id, tag_id, event_time, seq) DO NOTHING";
 
                         using (var cmd = new NpgsqlCommand(insertSql, connection, transaction))
                         {
@@ -3122,15 +4298,23 @@ namespace IndustrialDataCollection.DataAccess
                             foreach (var dataPoint in batch.DataPoints)
                             {
                                 cmd.Parameters.Clear();
-                                cmd.Parameters.AddWithValue("@deviceId", dataPoint.DeviceId);
-                                cmd.Parameters.AddWithValue("@tagId", dataPoint.TagId);
-                                cmd.Parameters.AddWithValue("@platform", "NET45"); // 平台标识
-                                cmd.Parameters.AddWithValue("@numericValue", dataPoint.NumericValue ?? (object)DBNull.Value);
-                                cmd.Parameters.AddWithValue("@textValue", dataPoint.TextValue ?? (object)DBNull.Value);
-                                cmd.Parameters.AddWithValue("@quality", dataPoint.Quality);
-                                cmd.Parameters.AddWithValue("@timestamp", dataPoint.Timestamp);
-                                cmd.Parameters.AddWithValue("@collectedAt", dataPoint.CollectedAt);
-                                cmd.Parameters.AddWithValue("@edgeNodeId", batch.EdgeNodeId);
+        cmd.Parameters.AddWithValue("@tenantId", batch.TenantId ?? "t0");
+        cmd.Parameters.AddWithValue("@deviceId", dataPoint.DeviceId);
+        cmd.Parameters.AddWithValue("@tagId", dataPoint.TagId);
+        cmd.Parameters.AddWithValue("@platform", "NET45"); // 平台标识
+        cmd.Parameters.AddWithValue("@source", batch.Source ?? "edge");
+        cmd.Parameters.AddWithValue("@numericValue", dataPoint.NumericValue ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@textValue", dataPoint.TextValue ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@quality", dataPoint.Quality);
+        cmd.Parameters.AddWithValue("@eventTime", dataPoint.Timestamp);
+        cmd.Parameters.AddWithValue("@ingestTime", batch.IngestTime ?? dataPoint.CollectedAt);
+        cmd.Parameters.AddWithValue("@ts", dataPoint.Timestamp); // 兼容历史列 timestamp
+        cmd.Parameters.AddWithValue("@collectedAt", dataPoint.CollectedAt);
+        cmd.Parameters.AddWithValue("@edgeNodeId", batch.EdgeNodeId);
+        cmd.Parameters.AddWithValue("@envelopeId", dataPoint.EnvelopeId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@correlationId", dataPoint.CorrelationId ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("@seq", dataPoint.Seq.HasValue ? dataPoint.Seq.Value : 0);
+        cmd.Parameters.AddWithValue("@headers", dataPoint.HeadersJson ?? (object)DBNull.Value);
 
                                 cmd.ExecuteNonQuery();
                                 processedCount++;
@@ -3161,62 +4345,241 @@ namespace IndustrialDataCollection.DataAccess
 }
 ```
 
-### 11.2 时序数据模型（InfluxDB）
+> 说明（模型补充）：
+- RealtimeDataBatch 新增字段：
+  - TenantId: string（租户ID，默认"t0"）
+  - Source: string（数据来源，如 edge/gw/import）
+  - IngestTime: DateTime?（入库时间，未提供则用每条 CollectedAt）
+- DataPoint 新增字段：
+  - EnvelopeId: string?（幂等ID）
+  - CorrelationId: string?（关联ID）
+  - Seq: int?（序号，默认0）
+  - HeadersJson: string?（附加头部，JSON 文本）
 
-#### 11.2.1 数据存储结构
-采用measurement+tags+fields模式，支持高效的写入与查询：
+#### 11.1.3 采集与适配器建模扩展（对齐 2/3/4 章）
+为支撑模块边界（2章）、采集流程与调度（3章）以及适配器/治理（4章），补充如下精简表结构与索引建议：
 
-```sql
--- InfluxDB 2.x 数据模型定义
--- 原始数据测量（raw_data）
--- measurement: raw_data
--- tags: device_id, tenant_id, point_name, edge_node_id
--- fields: value, quality, status
--- retention policy: 30天
+  ```sql
+  -- 1) 采集任务与调度
+  CREATE TABLE IF NOT EXISTS acquisition_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id VARCHAR(64) NOT NULL,
+    env VARCHAR(16) NOT NULL DEFAULT 'prod',
+    site VARCHAR(64),
+    line VARCHAR(64),
+    device_id VARCHAR(64) NOT NULL,
+    schedule_type VARCHAR(16) NOT NULL CHECK (schedule_type IN ('cron','interval','event')),
+    cron VARCHAR(128),
+    interval_ms INT,
+    priority SMALLINT DEFAULT 5,
+    enabled BOOLEAN DEFAULT TRUE,
+    version INT DEFAULT 1,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS ix_tasks_tenant_device ON acquisition_tasks(tenant_id, device_id);
 
--- 聚合数据测量（agg_data）  
--- measurement: agg_data
--- tags: device_id, tenant_id, point_name, agg_type（min/max/avg/sum）
--- fields: agg_value, count, min_timestamp, max_timestamp
--- retention policy: 1年
+  CREATE TABLE IF NOT EXISTS task_assignment (
+    task_id UUID NOT NULL REFERENCES acquisition_tasks(id) ON DELETE CASCADE,
+    edge_node_id UUID NOT NULL REFERENCES edge_nodes(id) ON DELETE CASCADE,
+    status VARCHAR(16) NOT NULL CHECK (status IN ('assigned','running','failed','completed')),
+    lease_until TIMESTAMPTZ,
+    last_heartbeat TIMESTAMPTZ,
+    PRIMARY KEY (task_id, edge_node_id)
+  );
+  CREATE INDEX IF NOT EXISTS ix_task_assignment_status ON task_assignment(status, lease_until);
 
--- 设备状态测量（device_status）
--- measurement: device_status
--- tags: device_id, tenant_id, edge_node_id
--- fields: status, cpu_usage, memory_usage, network_latency
--- retention policy: 90天
+  -- 2) 适配器插件与能力
+  CREATE TABLE IF NOT EXISTS adapter_plugins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(128) NOT NULL,
+    provider VARCHAR(128),
+    version VARCHAR(32) NOT NULL,
+    entry_point VARCHAR(256) NOT NULL,
+    arch VARCHAR(32) NOT NULL CHECK (arch IN ('win-x64','linux-x64','linux-arm64')),
+    protocols JSONB NOT NULL DEFAULT '[]',
+    checksum VARCHAR(128),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS adapter_capabilities (
+    plugin_id UUID NOT NULL REFERENCES adapter_plugins(id) ON DELETE CASCADE,
+    capability VARCHAR(64) NOT NULL,
+    value VARCHAR(128),
+    PRIMARY KEY (plugin_id, capability)
+  );
+
+  -- 3) 连接池与资源分配
+  CREATE TABLE IF NOT EXISTS connection_pools (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    plugin_id UUID NOT NULL REFERENCES adapter_plugins(id) ON DELETE CASCADE,
+    edge_node_id UUID NOT NULL REFERENCES edge_nodes(id) ON DELETE CASCADE,
+    max_size INT NOT NULL DEFAULT 10,
+    min_size INT NOT NULL DEFAULT 0,
+    acquire_timeout_ms INT NOT NULL DEFAULT 5000,
+    policy_json JSONB NOT NULL DEFAULT '{"retry":"exp-backoff","circuit":"half-open"}'
+  );
+  CREATE TABLE IF NOT EXISTS connection_allocations (
+    pool_id UUID NOT NULL REFERENCES connection_pools(id) ON DELETE CASCADE,
+    resource_key VARCHAR(128) NOT NULL, -- 如 COM3 / TCP:ip:port
+    allocated_by VARCHAR(128) NOT NULL,
+    allocated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    lease_until TIMESTAMPTZ,
+    PRIMARY KEY (pool_id, resource_key)
+  );
+  CREATE INDEX IF NOT EXISTS ix_conn_alloc_lease ON connection_allocations(lease_until);
+
+  -- 4) 治理策略与限流/熔断
+  CREATE TABLE IF NOT EXISTS governance_policies (
+    scope VARCHAR(32) NOT NULL, -- tenant/site/device/plugin
+    key VARCHAR(128) NOT NULL,
+    policy JSONB NOT NULL,       -- { retry:{max:5,backoff:"exp"}, circuit:{...}, rate:{rps:100} }
+    PRIMARY KEY(scope, key)
+  );
+
+  -- 5) 健康/错误审计
+  CREATE TABLE IF NOT EXISTS adapter_health (
+    edge_node_id UUID NOT NULL REFERENCES edge_nodes(id) ON DELETE CASCADE,
+    plugin_id UUID NOT NULL REFERENCES adapter_plugins(id) ON DELETE CASCADE,
+    status VARCHAR(16) NOT NULL CHECK (status IN ('up','down','degraded')),
+    last_heartbeat TIMESTAMPTZ,
+    metrics_json JSONB,
+    PRIMARY KEY(edge_node_id, plugin_id)
+  );
+  CREATE TABLE IF NOT EXISTS adapter_error_log (
+    id BIGSERIAL PRIMARY KEY,
+    ts TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    edge_node_id UUID,
+    plugin_id UUID,
+    device_id UUID,
+    code VARCHAR(64),
+    message TEXT,
+    severity VARCHAR(16) CHECK (severity IN ('info','warn','error','fatal'))
+  );
+  CREATE INDEX IF NOT EXISTS ix_adapter_error_device_ts ON adapter_error_log(device_id, ts DESC);
+
+  -- 6) 配置版本与审计
+  CREATE TABLE IF NOT EXISTS config_sets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scope VARCHAR(32) NOT NULL, -- tenant/site/device/task
+    key VARCHAR(128) NOT NULL,
+    version INT NOT NULL,
+    content_json JSONB NOT NULL,
+    created_by VARCHAR(64),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    comment TEXT
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS uq_config_sets ON config_sets(scope, key, version);
+
+  CREATE TABLE IF NOT EXISTS config_audit (
+    id BIGSERIAL PRIMARY KEY,
+    scope VARCHAR(32) NOT NULL,
+    key VARCHAR(128) NOT NULL,
+    version INT NOT NULL,
+    action VARCHAR(16) NOT NULL, -- create/update/delete/apply/rollback
+    user_name VARCHAR(64),
+    ts TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    diff JSONB
+  );
 ```
 
-#### 11.2.2 查询性能优化
-- **索引策略**：基于时间、设备ID、租户ID的复合索引
-- **分片配置**：按时间和租户ID进行数据分片
-- **压缩策略**：自动压缩超过7天的数据
-- **缓存策略**：热数据内存缓存，冷数据磁盘存储
+#### 11.1.4 建模修订与DDL补丁（对齐 7/8/9 章）
+- 统一多租户与数据范围维度：为元数据与数据表增加 `tenant_id`，可选 `site/line` 字段；唯一约束以租户为前缀。
+- 幂等与去重键：在明细数据中补充 `envelope_id`、`correlation_id`、`seq`、`headers`（JSONB）、`source` 字段；双时间戳 `event_time`（业务）与 `ingest_time`（入库）。
+- 分区与索引：主分区按 `event_time`，子分区按 `tenant_id`（或 schema 按租户拆分）；覆盖索引 `(tenant_id, device_id, tag_id, event_time DESC) INCLUDE (value_numeric, quality)`。
+- 用途定位：PostgreSQL 数据明细主要用于“审计/回放索引/异常兜底”；常规查询默认命中 InfluxDB（见 8.4 冷热分层）。
+
+示例 DDL 补丁（节选）：
+```sql
+-- 元数据补丁
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 't0';
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS site VARCHAR(64);
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS line VARCHAR(64);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_devices_tenant_device ON devices(tenant_id, device_id);
+
+ALTER TABLE tag_definitions ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 't0';
+DROP INDEX IF EXISTS tag_definitions_device_id_tag_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tags_tenant_dev_tag ON tag_definitions(tenant_id, device_id, tag_id);
+
+-- 明细数据补丁（realtime_data / historical_data）
+ALTER TABLE realtime_data 
+  ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 't0',
+  ADD COLUMN IF NOT EXISTS event_time TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ingest_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS envelope_id VARCHAR(64),
+  ADD COLUMN IF NOT EXISTS correlation_id VARCHAR(64),
+  ADD COLUMN IF NOT EXISTS seq INT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS headers JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS source VARCHAR(64);
+
+-- 去重唯一键（并行导入时可用 DEFERRABLE INITIALLY DEFERRED 视场景调整）
+CREATE UNIQUE INDEX IF NOT EXISTS uq_rt_idem ON realtime_data(tenant_id, device_id, tag_id, event_time, seq);
+
+-- 覆盖索引（查询友好）
+CREATE INDEX IF NOT EXISTS ix_rt_query ON realtime_data(tenant_id, device_id, tag_id, event_time DESC) INCLUDE (value_numeric, quality);
+```
+
+### 11.2 时序数据模型（InfluxDB）
+
+#### 11.2.1 数据存储结构（对齐 7/8 章的命名与维度）
+采用 measurement + tags + fields：
+
+```text
+- 原始数据（raw）
+  measurement: raw
+  tags: tenant, site, line, device, tag, source
+  fields: v(double|numeric), q(string|int), extra(string|json-encoded)
+  retention: 30d
+
+- 清洗数据（clean）
+  measurement: clean
+  tags: tenant, site, line, device, tag, source
+  fields: v, q, extra
+  retention: 90d
+
+- 预聚合（agg_1m / agg_5m / agg_1h）
+  measurement: agg_1m | agg_5m | agg_1h
+  tags: tenant, site, line, device, tag, func(avg|min|max|sum|count|p95)
+  fields: val(double), cnt(int)
+  retention: 180d / 180d / 1y
+
+- 设备状态（device_status）
+  measurement: device_status
+  tags: tenant, site, device
+  fields: status, cpu, mem, rtt
+  retention: 90d
+```
+
+#### 11.2.2 查询与写入优化
+- 索引与高基数控制：在 InfluxDB 中以 tags 作为“索引”，谨慎增加高基数维度；`tenant/site/line/device/tag` 为主维度。
+- Shard Group 与保留：按 retention 配置合适的 shardGroupDuration（如 1d/7d），避免过小导致元数据膨胀。
+- Downsampling：写入或定时任务生成 agg_1m/5m/1h，查询优先命中聚合测量，缺口回补 raw/clean。
+- 压缩与存储：开启 TSM 压缩；冷数据归档到对象存储（参见 11.3）。
+- 缓存：最近窗口（如 1-5 分钟）在应用层/Redis 维护热数据缓存（参见 8.4）。
 
 ### 11.3 数据一致性与归档
 
-#### 11.3.1 跨存储一致性
-- **主键关联**：关系型与时序型数据通过唯一ID、时间戳、租户ID关联
-- **事务边界**：InfluxDB写入成功后再更新PostgreSQL状态，保证最终一致性
-- **冲突解决**：基于时间戳的最后写入获胜策略
+#### 11.3.1 跨存储一致性（增强）
+- 幂等与去重：统一使用 `(tenant, device, tag, event_time, seq)` 或 `EnvelopeId` 作为去重键；写入前查询 idempotency store/唯一索引避免重复。
+- Outbox/Inbox：发布侧 outbox、消费侧 inbox 记录处理状态（processed, last_envelope, retry_count），支撑最终一致性和可回放。
+- 写入顺序：优先写 Influx；成功后异步写 PostgreSQL 审计/指纹；跨库不使用分布式事务，采用幂等+重试。
+- 冲突策略：按 `event_time` 与 `seq` 判定；发生冲突时采用“最后写入获胜”或策略化合并（可配置）。
 
-#### 11.3.2 数据归档策略
-- **热数据**：最近7天数据保持在内存+SSD
-- **温数据**：7-30天数据存储在SSD
-- **冷数据**：30天以上数据归档到机械硬盘或对象存储
-- **数据清理**：软删除数据定期物理清理，满足合规要求
+#### 11.3.2 数据归档与回放
+- 分层：热（≤7d）内存+SSD；温（≤30d）SSD；冷（>30d）对象存储/S3 兼容。
+- 指纹与索引：为冷归档生成“回放索引表”（PostgreSQL）链接对象存储位置与去重键，便于按窗口回放。
+- 回补：周期任务对比 Influx 与指纹，缺口回补写入；所有写入带幂等键，避免重复。
+- 清理：软删除+到期清理；保留期与合规策略可按租户/站点配置。
 
 ### 11.4 兼容性与扩展性说明
 
 #### 11.4.1 数据库兼容性
-- **PostgreSQL**：兼容PostgreSQL 12+版本，推荐使用14版本
-- **InfluxDB**：支持InfluxDB 2.x版本，向后兼容1.8版本
-- **云数据库**：支持Amazon RDS、Azure Database、阿里云RDS等
+- PostgreSQL：推荐 14+；如坚持 PG 存时序，建议采用 TimescaleDB（Hypertable + 连续聚合）。
+- InfluxDB：推荐 2.x/IOx；1.8 需注意写入 API 与 RP 差异。
+- 云数据库：支持 Amazon RDS、Azure Database、阿里云 RDS；注意网络延迟与成本，优先本地写入—异步汇聚。
 
 #### 11.4.2 扩展性设计
-- **水平扩展**：支持数据库分片、读写分离
-- **垂直扩展**：支持表分区、索引优化
-- **多租户隔离**：基于租户ID的数据隔离和访问控制
+- 水平扩展：数据库分片、读写分离，写入端幂等支撑重放与故障切换。
+- 垂直扩展：分区/索引优化；聚合表/物化视图/连续聚合。
+- 多租户隔离：统一采用 `tenant_id`；可开启行级安全（RLS）或每租户 schema/库；与 9.x 鉴权联动。
 
 ---
 
@@ -3272,15 +4635,54 @@ components:
     DataPointUpload:
       type: object
       properties:
+        tenantId:
+          type: string
+          description: 租户ID
         deviceId:
           type: string
+          description: 设备ID
+        tagId:
+          type: string
+          description: 点位/标签ID（统一命名）
+        value:
+          description: 点位值，支持数字/字符串/布尔
+          oneOf:
+            - type: number
+            - type: string
+            - type: boolean
+        quality:
+          type: string
+          description: 质量码，如 Good/Bad/Uncertain
+        eventTime:
+          type: string
+          format: date-time
+          description: 业务时间（UTC ISO8601）
+        envelopeId:
+          type: string
+          description: 幂等ID（去重）
+        correlationId:
+          type: string
+          description: 关联ID（链路追踪）
+        seq:
+          type: integer
+          format: int32
+          description: 序号（乱序/补发时使用，默认0）
+        source:
+          type: string
+          description: 来源标识，如 edge/gw/import
+        headers:
+          type: object
+          additionalProperties: true
+          description: 附加头部（JSON 对象）
+        # 兼容字段：建议逐步迁移到 tagId/eventTime
         pointName:
           type: string
-        value:
-          type: number
+          deprecated: true
         timestamp:
           type: string
           format: date-time
+          deprecated: true
+      required: [tenantId, deviceId, tagId, value, eventTime]
 ```
 
 ### 12.2 gRPC 协议（proto 示例）
@@ -3289,10 +4691,29 @@ syntax = "proto3";
 package ingestion;
 
 message DataPoint {
-  string device_id = 1;
-  string point_name = 2;
-  double value = 3;
-  string timestamp = 4;
+  // 新字段（统一契约）
+  string tenant_id = 1;
+  string device_id = 2;
+  string tag_id = 3;
+
+  // 值类型（推荐使用 oneof）
+  oneof v {
+    double v_num = 4;
+    string v_str = 5;
+    bool v_bool = 6;
+  }
+
+  string quality = 7;            // Good/Bad/Uncertain
+  string event_time = 8;         // UTC ISO8601
+  string envelope_id = 9;        // 幂等ID
+  string correlation_id = 10;    // 关联ID
+  int32 seq = 11;                // 序号，默认0
+  string source = 12;            // edge/gw/import
+  string headers_json = 13;      // 附加头（JSON文本）
+
+  // 兼容字段（逐步淘汰）
+  string point_name = 14 [deprecated=true];
+  string timestamp = 15 [deprecated=true];
 }
 
 service IngestionService {
@@ -3312,13 +4733,28 @@ message UploadResult {
   "title": "DataMessage",
   "type": "object",
   "properties": {
+    "tenantId": { "type": "string" },
     "deviceId": { "type": "string" },
-    "pointName": { "type": "string" },
-    "value": { "type": "number" },
-    "timestamp": { "type": "string", "format": "date-time" },
-    "tenantId": { "type": "string" }
+    "tagId": { "type": "string" },
+    "value": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "boolean" }
+      ]
+    },
+    "quality": { "type": "string" },
+    "eventTime": { "type": "string", "format": "date-time" },
+    "envelopeId": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "seq": { "type": "integer" },
+    "source": { "type": "string" },
+    "headers": { "type": "object", "additionalProperties": true },
+
+    "pointName": { "type": "string", "deprecated": true },
+    "timestamp": { "type": "string", "format": "date-time", "deprecated": true }
   },
-  "required": ["deviceId", "pointName", "value", "timestamp", "tenantId"]
+  "required": ["tenantId", "deviceId", "tagId", "value", "eventTime"]
 }
 ```
 
@@ -3337,6 +4773,16 @@ acquisition:
     token: "..."
     org: "myorg"
     bucket: "raw_data"
+  ingestionContract:
+    enforceUnifiedFields: true      # 强制使用统一字段（tenantId/tagId/eventTime/...）
+    acceptDeprecatedFields: true    # 接受兼容字段（pointName/timestamp）
+    deprecatedFieldsDeadline: "2026-06-30" # 兼容字段下线时间
+    valueCoercion:
+      allowStringToNumber: true     # 允许字符串数值自动转为数字
+      allowBoolToNumber: false
+    idempotency:
+      key: "tenantId,deviceId,tagId,eventTime,seq"  # 去重键
+      dropOnConflict: true          # 冲突时丢弃（或 logOnly/override）
 ```
 
 ### 12.5 错误码与响应规范
@@ -3368,6 +4814,22 @@ acquisition:
 - 配置文件支持多环境（dev/prod/edge）与热加载。
 - 错误码体系可扩展，支持国际化。
 - 监控指标可按需扩展，兼容Prometheus/Grafana等主流平台。
+
+#### 12.7.1 字段迁移指引（pointName/timestamp → tagId/eventTime）
+- 背景：为与 7/8/9/11 章契约统一，标准化为 tagId/eventTime，并引入幂等与多租户维度。
+- 灰度阶段：
+  1) 观测期：acceptDeprecatedFields=true，记录兼容字段使用比例与来源；
+  2) 减量期：对使用兼容字段的请求发出 Warning Header，并在文档/变更公告中告知截止期；
+  3) 冻结期：仅白名单来源可继续使用兼容字段；
+  4) 下线：deprecatedFieldsDeadline 后拒绝兼容字段（返回 1001 参数错误）。
+- 客户端改造要点：
+  - 将 pointName 映射为 tagId；timestamp 映射为 eventTime（UTC ISO8601）。
+  - 可选补充 envelopeId/seq/source/headers/quality 以获得更好的去重与诊断能力。
+  - REST/gRPC/消息三端字段名保持一致，便于共用 SDK/模型。
+- 服务端风控与回滚：
+  - 打开 valueCoercion 以降低字符串数值的迁移风险；
+  - 保留 feature flag（enforceUnifiedFields/acceptDeprecatedFields）随时回滚；
+  - 所有写入使用幂等键，确保重复/乱序/重放场景安全。
 
 ---
 
@@ -3530,7 +4992,107 @@ graph TB
     class ModernEdge,IngestionAPI,Database,MessageQueue,TimeSeries,Redis,Monitoring,LegacyEdge,WinConfig,LocalDB containerClass
 ```
 
-### 15.2 现代设备容器化部署
+### 15.2 生产部署架构（参考SSA设计）
+
+#### 15.2.1 生产部署拓扑
+
+生产环境采用多节点分布式部署架构，详细拓扑设计参考《04_SSA_工业数据采集系统架构设计说明.md》第6.2节：
+
+```mermaid
+graph TB
+  subgraph "DMZ/外网区"
+    LB[负载均衡器<br/>Nginx/HAProxy]
+    FW[防火墙<br/>入站白名单]
+  end
+  
+  subgraph "数据中心/内网"
+    subgraph "应用服务集群"
+      API1[API服务1<br/>主活跃]
+      API2[API服务2<br/>备用]
+      PROC1[处理服务1]
+      PROC2[处理服务2]
+    end
+    
+    subgraph "消息队列集群"
+      MQ1[RabbitMQ节点1<br/>主]
+      MQ2[RabbitMQ节点2<br/>镜像]
+      MQ3[RabbitMQ节点3<br/>仲裁]
+    end
+    
+    subgraph "数据存储集群"
+      TS1[InfluxDB节点1<br/>主]
+      TS2[InfluxDB节点2<br/>备份]
+      PG1[PostgreSQL主库]
+      PG2[PostgreSQL从库]
+      Redis1[Redis主]
+      Redis2[Redis从]
+    end
+  end
+  
+  subgraph "车间网络/OT"
+    subgraph "车间A（现代设备）"
+      EdgeA[采集节点A<br/>Docker容器/.NET 8]
+      DevA[PLC/仪表A]
+    end
+    subgraph "车间B（老旧设备）"  
+      EdgeB[采集节点B<br/>Windows服务/.NET Framework 4.5]
+      DevB[PLC/仪表B]
+    end
+    subgraph "车间N（混合设备）"
+      EdgeN1[采集节点N1<br/>Docker容器/.NET 8]
+      EdgeN2[采集节点N2<br/>Windows服务/.NET Framework 4.5]
+      DevN1[现代PLC/仪表N1]
+      DevN2[老旧PLC/仪表N2]
+    end
+  end
+
+  %% 网络连接
+  FW --> LB
+  LB --> API1 & API2
+  API1 & API2 --> PROC1 & PROC2
+  EdgeA & EdgeB & EdgeN1 & EdgeN2 -.->|VPN/专线| MQ1 & MQ2 & MQ3
+  PROC1 & PROC2 --> TS1 & PG1 & Redis1
+  TS1 --> TS2
+  PG1 --> PG2
+  Redis1 --> Redis2
+  
+  %% 设备连接
+  DevA --> EdgeA
+  DevB --> EdgeB  
+  DevN1 --> EdgeN1
+  DevN2 --> EdgeN2
+
+  %% 样式
+  classDef dmz fill:#ffcccc
+  classDef datacenter fill:#ccffcc
+  classDef workshop fill:#ccccff
+  class LB,FW dmz
+  class API1,API2,PROC1,PROC2,MQ1,MQ2,MQ3,TS1,TS2,PG1,PG2,Redis1,Redis2 datacenter
+  class EdgeA,EdgeN1,DevN1 datacenter
+  class EdgeB,EdgeN2,DevA,DevB,DevN2 workshop
+```
+
+#### 15.2.2 网络安全策略
+
+| 源网络段 | 目标网络段 | 协议/端口 | 访问控制 | 说明 |
+|---------|----------|---------|---------|------|
+| **外网** | **DMZ** | HTTPS/443 | 白名单IP | Web访问入口 |
+| **DMZ** | **数据中心** | HTTP/8080 | 内部转发 | API服务调用 |
+| **车间网络** | **数据中心** | AMQP/5672 | VPN/证书 | 数据上报通道 |
+| **车间网络** | **数据中心** | HTTPS/443 | VPN/证书 | 配置拉取 |
+| **数据中心** | **存储** | TCP/专用端口 | 内网隔离 | 数据库访问 |
+| **管理网** | **全网** | SSH/3389 | 堡垒机 | 运维管理 |
+
+#### 15.2.3 高可用要点
+
+- **多节点**: 中心服务(应用/处理/查询) + 多个边缘采集节点
+- **边缘节点分层**: 现代设备(.NET 8.0容器化) + 老旧设备(.NET Framework 4.5+ Windows服务)
+- **老旧设备适配**: 兼容Windows 7、i3 3系CPU、4GB内存等工业现场典型老旧硬件环境
+- **高可用策略**: 队列镜像或仲裁队列、数据库备份策略、服务健康检查与故障转移
+- **网络安全**: 工业内网优先，严格入站策略；边缘到中心仅必要端口开放
+- **证书管理**: 网络隔离、访问控制、审计日志
+
+### 15.3 开发环境容器化部署
 
 #### 15.2.1 Docker Compose配置
 ```yaml
@@ -3897,9 +5459,19 @@ echo "  卸载系统:       docker-compose down -v"
 echo "=================================================="
 ```
 
-### 15.3 老旧设备Windows服务部署
+### 15.3 开发环境容器化部署
 
-#### 15.3.1 MSI安装包生成
+#### 15.3.1 Docker Compose配置
+（继承原有的Docker Compose配置内容）
+
+#### 15.3.2 一键部署脚本
+（继承原有的一键部署脚本内容）
+
+---
+
+### 15.4 老旧设备Windows服务部署
+
+#### 15.4.1 MSI安装包生成
 ```xml
 <!-- IndustrialEdgeCollector.wxs - WiX安装包配置 -->
 <?xml version="1.0" encoding="UTF-8"?>
@@ -4070,7 +5642,7 @@ echo "=================================================="
 
 ---
 
-#### 15.4.1 统一配置管理
+### 15.5 统一配置管理
 ```json
 {
   "deploymentConfig": {
@@ -4125,7 +5697,7 @@ echo "=================================================="
 }
 ```
 
-#### 15.4.2 部署监控与运维
+### 15.6 部署监控与运维
 ```yaml
 # monitoring-config.yml - 双平台监控配置
 monitoring:
