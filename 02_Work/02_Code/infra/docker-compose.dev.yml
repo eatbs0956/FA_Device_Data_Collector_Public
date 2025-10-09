@@ -1,28 +1,165 @@
-version: '3.9'
+# Dev mode docker compose for DevDCP
+# 说明: VS Code schema 报错多为临时网络问题，不影响运行；可忽略或在设置中关闭远程 schema 校验。
+version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: devdcp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: devdcp
+      RABBITMQ_DEFAULT_PASS: devdcp
     ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped
+
   postgres:
     image: postgres:14
+    container_name: devdcp-postgres
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: devdcp
+      POSTGRES_USER: devdcp
+      POSTGRES_PASSWORD: devdcp
     ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devdcp"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: unless-stopped
+
   influxdb:
     image: influxdb:2
+    container_name: devdcp-influx
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: devdcp
+      DOCKER_INFLUXDB_INIT_PASSWORD: devdcp123
+      DOCKER_INFLUXDB_INIT_ORG: devorg
+      DOCKER_INFLUXDB_INIT_BUCKET: raw
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: devdcp-token
     ports: ["8086:8086"]
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - influx-data:/var/lib/influxdb2
+    networks:
+      - backend
+    restart: unless-stopped
+
   redis:
     image: redis:7
+    container_name: devdcp-redis
+    command: ["redis-server", "--save", "60", "1000", "--loglevel", "warning"]
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    restart: unless-stopped
+
   query-api:
     build: ../platform/center/Query.Api
-    depends_on: [rabbitmq, postgres, influxdb, redis]
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      PG_CONN: Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: devdcp-token
+    ports: ["18080:8080"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
   auth-api:
     build: ../platform/center/Auth.Api
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      PG_CONN: "Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp"
+      PASSWORD_EXPIRE_DAYS: "90"
+    ports: ["18081:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - backend
+    restart: unless-stopped
+
   monitor-api:
     build: ../platform/center/Monitor.Api
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    ports: ["18082:8080"]
+    networks:
+      - backend
+    restart: unless-stopped
+
   processor-worker:
     build: ../platform/center/Processor.Worker
-    depends_on: [rabbitmq]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: devdcp
+      RABBITMQ_PASS: devdcp
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: devdcp-token
+      PG_CONN: Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
   scheduler-worker:
     build: ../platform/center/Scheduler.Worker
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+  pg-data:
+  influx-data:
+  redis-data:
