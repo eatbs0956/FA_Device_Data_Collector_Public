@@ -24,6 +24,12 @@ export function createViteProxy(env: Env.ImportMeta, enable: boolean) {
     Object.assign(proxy, createProxyItem(item, isEnableProxyLog));
   });
 
+  // 调试日志：显示代理配置
+  consola.info('Vite Proxy Configuration:');
+  consola.info(`  Pattern: ${proxyPattern}`);
+  consola.info(`  Target: ${baseURL}`);
+  consola.info(`  Proxy keys: ${Object.keys(proxy).join(', ')}`);
+
   return proxy;
 }
 

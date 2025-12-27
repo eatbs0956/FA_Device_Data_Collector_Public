@@ -51,12 +51,23 @@ function transformMenuResponse(response: any) {
   };
 }
 
+// 搜索参数 - 存储分页参数
+const searchParams = {
+  current: 1,
+  size: 10
+};
+
 // 表格配置和数据管理 - 使用分页表格Hook管理菜单列表的显示、加载和分页
 const { columns, columnChecks, data, loading, pagination, getData, getDataByPage } = useUIPaginatedTable({
-  // API接口配置 - 获取菜单列表数据的接口函数
-  api: () => fetchGetMenuList(),
+  // API接口配置 - 获取菜单列表数据的接口函数，使用 searchParams 传递分页参数
+  api: () => fetchGetMenuList(searchParams.current, searchParams.size),
   // 数据转换函数 - 将API响应数据转换为树形结构格式
   transform: transformMenuResponse,
+  // 分页参数变化回调 - 当分页参数改变时更新 searchParams
+  onPaginationParamsChange: params => {
+    searchParams.current = params.currentPage ?? 1;
+    searchParams.size = params.pageSize ?? 10;
+  },
   // 列配置函数 - 定义表格列的结构和渲染方式
   columns: () => [
     { type: 'selection', width: 48 }, // 选择列 - 多选框列，用于批量操作
@@ -147,6 +158,18 @@ const { columns, columnChecks, data, loading, pagination, getData, getDataByPage
     },
     { prop: 'parentId', label: $t('page.manage.menu.parentId'), width: 90 },
     { prop: 'order', label: $t('page.manage.menu.order'), width: 60 },
+    {
+      prop: 'createdAt',
+      label: '创建时间',
+      width: 180,
+      formatter: row => (row.createdAt ? new Date(row.createdAt).toLocaleString('zh-CN') : '')
+    },
+    {
+      prop: 'updatedAt',
+      label: '更新时间',
+      width: 180,
+      formatter: row => (row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '')
+    },
     {
       prop: 'operate',
       label: $t('common.operate'),

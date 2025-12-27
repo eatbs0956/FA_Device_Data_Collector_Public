@@ -9,7 +9,7 @@ import { request } from '../request';
  */
 export function fetchLogin(userName: string, password: string) {
   return request<Api.Auth.LoginToken>({
-    url: '/auth/login',
+    url: '/api/auth/login',
     method: 'post',
     data: {
       userName,
@@ -21,12 +21,12 @@ export function fetchLogin(userName: string, password: string) {
 /**
  * 获取当前用户信息。
  *
- * 该函数会向 `/auth/getUserInfo` 接口发送请求，返回用户信息数据。
+ * 该函数会向 `/api/auth/getUserInfo` 接口发送请求，返回用户信息数据。
  *
  * @returns 包含用户信息的 Promise 对象。
  */
 export function fetchGetUserInfo() {
-  return request<Api.Auth.UserInfo>({ url: '/auth/getUserInfo' });
+  return request<Api.Auth.UserInfo>({ url: '/api/auth/getUserInfo' });
 }
 
 /**
@@ -37,7 +37,7 @@ export function fetchGetUserInfo() {
  */
 export function fetchRefreshToken(refreshToken: string) {
   return request<Api.Auth.LoginToken>({
-    url: '/auth/refreshToken',
+    url: '/api/auth/refreshToken',
     method: 'post',
     data: {
       refreshToken
@@ -53,5 +53,5 @@ export function fetchRefreshToken(refreshToken: string) {
  * @returns 返回一个包含后端响应的 Promise 对象。
  */
 export function fetchCustomBackendError(code: string, msg: string) {
-  return request({ url: '/auth/error', params: { code, msg } });
+  return request({ url: '/api/auth/error', params: { code, msg } });
 }

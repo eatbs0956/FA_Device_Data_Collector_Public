@@ -72,7 +72,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.alarm_history',
           icon: 'material-symbols-light:deployed-code-history-outline-sharp',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 3
         }
       },
       {
@@ -84,7 +85,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.alarm_realtime',
           icon: 'material-symbols-light:alarm-outline',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 1
         }
       },
       {
@@ -96,7 +98,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.alarm_rule',
           icon: 'bi:file-earmark-ruled',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 2
         }
       }
     ]
@@ -123,7 +126,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.collection_node',
           icon: 'carbon:kubernetes-worker-node',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 2
         }
       },
       {
@@ -135,7 +139,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.collection_task',
           icon: 'carbon:task-settings',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 1
         }
       }
     ]
@@ -154,15 +159,16 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
-        name: 'device_label',
-        path: '/device/label',
-        component: 'view.device_label',
+        name: 'device_group',
+        path: '/device/group',
+        component: 'view.device_group',
         meta: {
-          title: 'device_label',
-          i18nKey: 'route.device_label',
-          icon: 'carbon:label',
+          title: 'device_group',
+          i18nKey: 'route.device_group',
+          icon: 'mdi:format-list-group-plus',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 2
         }
       },
       {
@@ -174,19 +180,21 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.device_list',
           icon: 'ri:list-settings-line',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 1
         }
       },
       {
-        name: 'device_protocol',
-        path: '/device/protocol',
-        component: 'view.device_protocol',
+        name: 'device_tag',
+        path: '/device/tag',
+        component: 'view.device_tag',
         meta: {
-          title: 'device_protocol',
-          i18nKey: 'route.device_protocol',
-          icon: 'simple-icons:handshake-protocol',
+          title: 'device_tag',
+          i18nKey: 'route.device_tag',
+          icon: 'mdi:tag-multiple',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 3
         }
       }
     ]
@@ -251,7 +259,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.manage_menu',
           icon: 'material-symbols:route',
           roles: ['R_SUPER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 3
         }
       },
       {
@@ -262,7 +271,9 @@ export const generatedRoutes: GeneratedRoute[] = [
           title: 'manage_role',
           i18nKey: 'route.manage_role',
           icon: 'carbon:user-role',
-          roles: ['R_SUPER']
+          roles: ['R_SUPER'],
+          keepAlive: true,
+          order: 2
         }
       },
       {
@@ -273,7 +284,9 @@ export const generatedRoutes: GeneratedRoute[] = [
           title: 'manage_user',
           i18nKey: 'route.manage_user',
           icon: 'ic:round-manage-accounts',
-          roles: ['R_SUPER', 'R_ADMIN']
+          roles: ['R_SUPER', 'R_ADMIN'],
+          keepAlive: true,
+          order: 1
         }
       }
     ]
@@ -300,7 +313,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.monitor_historical',
           icon: 'iconoir:database-monitor',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 2
         }
       },
       {
@@ -312,7 +326,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.monitor_realtime',
           icon: 'solar:monitor-camera-broken',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 1
         }
       },
       {
@@ -324,7 +339,8 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.monitor_statistics',
           icon: 'mdi:chart-box-outline',
           roles: ['R_SUPER', 'R_ADMIN', 'R_USER'],
-          keepAlive: true
+          keepAlive: true,
+          order: 3
         }
       }
     ]

@@ -9,7 +9,7 @@ import { $t } from '@/locales';
 defineOptions({ name: 'UserAvatar' });
 
 const authStore = useAuthStore();
-const { routerPushByKey, toLogin } = useRouterPush();
+const { toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
@@ -56,9 +56,10 @@ function logout() {
 function handleDropdown(key: DropdownKey) {
   if (key === 'logout') {
     logout();
-  } else {
-    // If your other options are jumps from other routes, they will be directly supported here
-    routerPushByKey(key);
+  } else if (key === 'user-center') {
+    // User center functionality can be implemented here
+    // For now, we just ignore it as the route doesn't exist
+    window.$message?.info($t('common.userCenter'));
   }
 }
 </script>

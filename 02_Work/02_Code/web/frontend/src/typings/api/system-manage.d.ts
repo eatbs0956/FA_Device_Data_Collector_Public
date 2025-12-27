@@ -19,6 +19,18 @@ declare namespace Api {
       roleDesc: string;
       /** role status */
       status: Common.EnableStatus | undefined;
+      /** created by user id - audit field */
+      createdBy?: string;
+      /** updated by user id - audit field */
+      updatedBy?: string;
+      /** created at timestamp - audit field */
+      createdAt?: string;
+      /** updated at timestamp - audit field */
+      updatedAt?: string;
+      /** deleted flag - audit field */
+      deletedFlag?: boolean;
+      /** tenant id - audit field */
+      tenantId?: string;
     };
 
     /** role edit */
@@ -70,6 +82,18 @@ declare namespace Api {
       status: Common.EnableStatus | undefined;
       /** user role code collection */
       userRoles: string[];
+      /** created by user id - audit field */
+      createdBy?: string;
+      /** updated by user id - audit field */
+      updatedBy?: string;
+      /** created at timestamp - audit field */
+      createdAt?: string;
+      /** updated at timestamp - audit field */
+      updatedAt?: string;
+      /** deleted flag - audit field */
+      deletedFlag?: boolean;
+      /** tenant id - audit field */
+      tenantId?: string;
     };
 
     /** user edit */

@@ -32,9 +32,9 @@ declare module "@elegant-router/types" {
     "collection_node": "/collection/node";
     "collection_task": "/collection/task";
     "device": "/device";
-    "device_label": "/device/label";
+    "device_group": "/device/group";
     "device_list": "/device/list";
-    "device_protocol": "/device/protocol";
+    "device_tag": "/device/tag";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
@@ -119,9 +119,9 @@ declare module "@elegant-router/types" {
     | "alarm_rule"
     | "collection_node"
     | "collection_task"
-    | "device_label"
+    | "device_group"
     | "device_list"
-    | "device_protocol"
+    | "device_tag"
     | "home"
     | "manage_menu"
     | "manage_role"

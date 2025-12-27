@@ -74,8 +74,18 @@ function search() {
             </ElCol>
             <ElCol :xs="24" :sm="12" :md="8" :lg="6">
               <ElFormItem>
-                <ElButton type="primary" @click="search">{{ $t('common.search') }}</ElButton>
-                <ElButton @click="reset">{{ $t('common.reset') }}</ElButton>
+                <ElButton type="primary" plain @click="search">
+                  <template #icon>
+                    <icon-ic-round-search class="text-icon" />
+                  </template>
+                  {{ $t('common.search') }}
+                </ElButton>
+                <ElButton @click="reset">
+                  <template #icon>
+                    <icon-ic-round-refresh class="text-icon" />
+                  </template>
+                  {{ $t('common.reset') }}
+                </ElButton>
               </ElFormItem>
             </ElCol>
           </ElRow>

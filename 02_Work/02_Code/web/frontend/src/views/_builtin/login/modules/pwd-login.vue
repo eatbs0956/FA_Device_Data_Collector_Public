@@ -16,7 +16,7 @@ interface FormModel {
 
 const model = ref<FormModel>({
   userName: 'super',
-  password: 'Admin@123'
+  password: 'Super@123'
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -45,6 +45,7 @@ async function handleSubmit() {
         v-model="model.password"
         type="password"
         show-password-on="click"
+        :show-password="true"
         :placeholder="$t('page.login.common.passwordPlaceholder')"
       />
     </ElFormItem>

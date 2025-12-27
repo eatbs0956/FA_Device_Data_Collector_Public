@@ -8,7 +8,7 @@ import { request } from '../request';
  */
 export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
   return request<Api.SystemManage.RoleList>({
-    url: '/systemManage/getRoleList',
+    url: '/api/systemManage/getRoleList',
     method: 'get',
     params
   });
@@ -17,13 +17,13 @@ export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
 /**
  * 获取所有角色列表。
  *
- * 发送 GET 请求到 `/systemManage/getAllRoles`，返回所有角色的数组。
+ * 发送 GET 请求到 `/api/systemManage/getAllRoles`，返回所有角色的数组。
  *
  * @returns 包含所有角色信息的 Promise。
  */
 export function fetchGetAllRoles() {
   return request<Api.SystemManage.AllRole[]>({
-    url: '/systemManage/getAllRoles',
+    url: '/api/systemManage/getAllRoles',
     method: 'get'
   });
 }
@@ -36,7 +36,7 @@ export function fetchGetAllRoles() {
  */
 export function fetchAddRole(data: Api.SystemManage.RoleEdit) {
   return request({
-    url: '/admin/roles',
+    url: '/api/admin/addRoles',
     method: 'post',
     data
   });
@@ -51,7 +51,7 @@ export function fetchAddRole(data: Api.SystemManage.RoleEdit) {
  */
 export function fetchUpdateRole(id: string, data: Api.SystemManage.RoleEdit) {
   return request({
-    url: `/admin/roles/${id}`,
+    url: `/api/admin/updateRoles/${id}`,
     method: 'put',
     data
   });
@@ -65,7 +65,7 @@ export function fetchUpdateRole(id: string, data: Api.SystemManage.RoleEdit) {
  */
 export function fetchDeleteRole(id: string) {
   return request({
-    url: `/admin/roles/${id}`,
+    url: `/api/admin/deleteRoles/${id}`,
     method: 'delete'
   });
 }
@@ -73,14 +73,14 @@ export function fetchDeleteRole(id: string) {
 /**
  * 获取用户列表。
  *
- * 发送 GET 请求到 `/systemManage/getUserList`，根据提供的查询参数返回用户列表数据。
+ * 发送 GET 请求到 `/api/systemManage/getUserList`，根据提供的查询参数返回用户列表数据。
  *
  * @param params 用户查询参数，可选。
  * @returns 包含用户列表的请求结果。
  */
 export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
   return request<Api.SystemManage.UserList>({
-    url: '/systemManage/getUserList',
+    url: '/api/systemManage/getUserList',
     method: 'get',
     params
   });
@@ -94,7 +94,7 @@ export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
  */
 export function fetchAddUser(data: Api.SystemManage.UserEdit) {
   return request({
-    url: '/admin/users',
+    url: '/api/admin/addUsers',
     method: 'post',
     data
   });
@@ -109,7 +109,7 @@ export function fetchAddUser(data: Api.SystemManage.UserEdit) {
  */
 export function fetchUpdateUser(id: string, data: Api.SystemManage.UserEdit) {
   return request({
-    url: `/admin/users/${id}`,
+    url: `/api/admin/updateUsers/${id}`,
     method: 'put',
     data
   });
@@ -123,7 +123,7 @@ export function fetchUpdateUser(id: string, data: Api.SystemManage.UserEdit) {
  */
 export function fetchDeleteUser(id: string) {
   return request({
-    url: `/admin/users/${id}`,
+    url: `/api/admin/deleteUsers/${id}`,
     method: 'delete'
   });
 }
@@ -137,7 +137,7 @@ export function fetchDeleteUser(id: string) {
  */
 export function fetchGetMenuList(current = 1, size = 10) {
   return request<Api.SystemManage.MenuList>({
-    url: '/admin/getMenuList',
+    url: '/api/admin/getMenuList',
     method: 'get',
     params: { current, size }
   });
@@ -150,7 +150,7 @@ export function fetchGetMenuList(current = 1, size = 10) {
  */
 export function fetchGetAllPages() {
   return request<string[]>({
-    url: '/systemManage/getAllPages',
+    url: '/api/systemManage/getAllPages',
     method: 'get'
   });
 }
@@ -163,7 +163,7 @@ export function fetchGetAllPages() {
  */
 export function fetchGetMenu(id: string) {
   return request<Api.SystemManage.Menu>({
-    url: `/admin/menus/${id}`,
+    url: `/api/admin/getMenus/${id}`,
     method: 'get'
   });
 }
@@ -176,7 +176,7 @@ export function fetchGetMenu(id: string) {
  */
 export function fetchAddMenu(data: any) {
   return request({
-    url: '/admin/menus',
+    url: '/api/admin/addMenus',
     method: 'post',
     data
   });
@@ -191,7 +191,7 @@ export function fetchAddMenu(data: any) {
  */
 export function fetchUpdateMenu(id: string, data: any) {
   return request({
-    url: `/admin/menus/${id}`,
+    url: `/api/admin/updateMenus/${id}`,
     method: 'put',
     data
   });
@@ -205,7 +205,7 @@ export function fetchUpdateMenu(id: string, data: any) {
  */
 export function fetchDeleteMenu(id: string) {
   return request({
-    url: `/admin/menus/${id}`,
+    url: `/api/admin/deleteMenus/${id}`,
     method: 'delete'
   });
 }
@@ -218,7 +218,7 @@ export function fetchDeleteMenu(id: string) {
  */
 export function fetchBatchDeleteMenus(ids: string[]) {
   return request({
-    url: '/admin/menus/batch',
+    url: '/api/admin/deleteMenus/batch',
     method: 'delete',
     data: ids
   });
@@ -231,7 +231,7 @@ export function fetchBatchDeleteMenus(ids: string[]) {
  */
 export function fetchGetMenuTree() {
   return request<Api.SystemManage.MenuTree[]>({
-    url: '/systemManage/getMenuTree',
+    url: '/api/systemManage/getMenuTree',
     method: 'get'
   });
 }
@@ -244,22 +244,47 @@ export function fetchGetMenuTree() {
  */
 export function fetchGetRoleMenus(roleId: string) {
   return request<number[]>({
-    url: `/systemManage/getRoleMenus/${roleId}`,
+    url: `/api/systemManage/getRoleMenus/${roleId}`,
     method: 'get'
   });
 }
 
 /**
- * 保存角色的菜单权限 - 更新角色的菜单授权
- *
+ * 保存角色菜单权限
  * @param roleId 角色ID
  * @param menuIds 菜单ID数组
  * @returns 保存结果
  */
 export function fetchSaveRoleMenus(roleId: string, menuIds: number[]) {
   return request({
-    url: `/systemManage/saveRoleMenus/${roleId}`,
+    url: `/api/systemManage/saveRoleMenus/${roleId}`,
     method: 'post',
     data: { menuIds }
+  });
+}
+
+/**
+ * 获取角色的按钮权限
+ * @param roleId 角色ID
+ * @returns 按钮权限编码数组
+ */
+export function fetchGetRoleButtons(roleId: string) {
+  return request<string[]>({
+    url: `/api/systemManage/getRoleButtons/${roleId}`,
+    method: 'get'
+  });
+}
+
+/**
+ * 保存角色按钮权限
+ * @param roleId 角色ID
+ * @param buttonCodes 按钮权限编码数组
+ * @returns 保存结果
+ */
+export function fetchSaveRoleButtons(roleId: string, buttonCodes: string[]) {
+  return request({
+    url: `/api/systemManage/saveRoleButtons/${roleId}`,
+    method: 'post',
+    data: { buttonCodes }
   });
 }

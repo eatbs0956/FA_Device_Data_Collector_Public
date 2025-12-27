@@ -211,12 +211,40 @@ function handleInitModel() {
     const { layout, page } = getLayoutAndPage(component);
     const { path, param } = getPathParamFromRoutePath(rest.routePath);
 
-    // 将数字类型的字段转换为字符串类型
+    // 解析 JSON 字符串字段
+    let parsedQuery = rest.query;
+    let parsedButtons = rest.buttons;
+
+    // 处理 query 字段 - 从 JSON 字符串解析为数组
+    if (parsedQuery && typeof parsedQuery === 'string') {
+      try {
+        parsedQuery = JSON.parse(parsedQuery);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to parse query:', e);
+        parsedQuery = [];
+      }
+    }
+
+    // 处理 buttons 字段 - 从 JSON 字符串解析为数组
+    if (parsedButtons && typeof parsedButtons === 'string') {
+      try {
+        parsedButtons = JSON.parse(parsedButtons);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to parse buttons:', e);
+        parsedButtons = [];
+      }
+    }
+
+    // 将数字类型的字段转换为字符串类型，同时应用解析后的 JSON 字段
     const normalizedData = {
       ...rest,
       menuType: rest.menuType?.toString() || '1',
       status: rest.status?.toString() || '1',
       iconType: rest.iconType?.toString() || '1',
+      query: parsedQuery || [],
+      buttons: parsedButtons || [],
       layout,
       page,
       routePath: path,
@@ -226,6 +254,7 @@ function handleInitModel() {
     Object.assign(model.value, normalizedData);
   }
 
+  // 确保 query 和 buttons 字段为数组
   if (!model.value.query) {
     model.value.query = [];
   }
@@ -255,7 +284,7 @@ function handleUpdateI18nKeyByRouteName() {
 }
 
 function getSubmitParams() {
-  const { layout, page, pathParam, query, buttons: _buttons, ...params } = model.value;
+  const { layout, page, pathParam, query, buttons, ...params } = model.value;
 
   const component = transformLayoutAndPageToComponent(layout, page);
   const routePath = getRoutePathWithParam(model.value.routePath, pathParam);
@@ -276,8 +305,9 @@ function getSubmitParams() {
     hideInMenu: params.hideInMenu || false,
     activeMenu: params.activeMenu || null,
     multiTab: params.multiTab || false,
-    fixedIndexInTab: params.fixedIndexInTab !== null && params.fixedIndexInTab !== undefined,
-    query: query && query.length > 0 ? JSON.stringify(query) : null
+    fixedIndexInTab: params.fixedIndexInTab ?? null,
+    query: query && query.length > 0 ? JSON.stringify(query) : null,
+    buttons: buttons && buttons.length > 0 ? JSON.stringify(buttons) : null
   };
 
   return submitParams;
@@ -290,7 +320,7 @@ async function handleSubmit() {
     const params = getSubmitParams();
 
     // eslint-disable-next-line no-console
-    console.log('params: ', params);
+    // console.log('params: ', params);
 
     // 根据操作类型调用不同的API
     if (props.operateType === 'edit' && props.rowData?.id) {

@@ -30,7 +30,7 @@ const home = shallowRef('');
 
 async function getHome() {
   // eslint-disable-next-line no-console
-  console.log(props.roleId);
+  // console.log(props.roleId);
 
   home.value = 'home';
 }

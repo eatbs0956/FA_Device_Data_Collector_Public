@@ -19,6 +19,7 @@ const local: App.I18n.Schema = {
     columnSetting: 'Column Setting',
     config: 'Config',
     confirm: 'Confirm',
+    createdAt: 'Created At',
     delete: 'Delete',
     deleteSuccess: 'Delete Success',
     confirmDelete: 'Are you sure you want to delete?',
@@ -44,6 +45,15 @@ const local: App.I18n.Schema = {
     update: 'Update',
     updateSuccess: 'Update Success',
     userCenter: 'User Center',
+    status: 'Status',
+    import: 'Import',
+    export: 'Export',
+    pleaseSelect: 'Please select first',
+    pleaseSelectData: 'Please select data first',
+    enableSuccess: 'Enabled successfully',
+    disableSuccess: 'Disabled successfully',
+    enable: 'Enable',
+    disable: 'Disable',
     yesOrNo: {
       yes: 'Yes',
       no: 'No'
@@ -55,7 +65,8 @@ const local: App.I18n.Schema = {
     logoutWithModal: 'Pop up modal after request failed and then log out user',
     logoutWithModalMsg: 'User status is invalid, please log in again',
     refreshToken: 'The requested token has expired, refresh the token',
-    tokenExpired: 'The requested token has expired'
+    tokenExpired: 'The requested token has expired',
+    forbidden: 'You do not have permission to access this resource'
   },
   theme: {
     themeSchema: {
@@ -168,9 +179,9 @@ const local: App.I18n.Schema = {
     'iframe-page': 'Iframe',
     home: 'Home',
     device: 'Device Management',
-    device_label: 'Device Label',
     device_list: 'Device List',
-    device_protocol: 'Device Protocol',
+    device_tag: 'Device Tag Management',
+    device_group: 'Device Group',
     collection: 'Collection Management',
     collection_node: 'Collection Node',
     collection_task: 'Collection Task',
@@ -424,6 +435,359 @@ const local: App.I18n.Schema = {
           local: 'Local Icon'
         }
       }
+    },
+    device: {
+      title: 'Device List',
+      deviceName: 'Device Name',
+      deviceId: 'Device ID',
+      description: 'Description',
+      protocol: 'Protocol Type',
+      protocolTypeLabel: 'Protocol Type',
+      connection: 'Connection Status',
+      edgeNode: 'Collection Node',
+      deviceGroup: 'Device Group',
+      location: 'Location',
+      enabled: 'Enabled',
+      tagCount: 'Tag Count',
+      lastConnectedAt: 'Last Connected At',
+      connectionConfig: 'Connection Config',
+      protocolConfig: 'Protocol Config',
+      tagsConfig: 'Tags Config',
+      testConnection: 'Test Connection',
+      form: {
+        deviceName: 'Please enter device name',
+        deviceId: 'Please enter device ID',
+        description: 'Please enter description',
+        protocol: 'Please select protocol type',
+        edgeNode: 'Please select collection node',
+        deviceGroup: 'Please select device group',
+        location: 'Please enter location',
+        enabled: 'Please select enabled status'
+      },
+      addDevice: 'Add Device',
+      editDevice: 'Edit Device',
+      protocolType: {
+        modbusTcp: 'Modbus TCP',
+        modbusRtu: 'Modbus RTU',
+        opcUa: 'OPC UA',
+        opcDa: 'OPC DA',
+        s7: 'S7',
+        bacnet: 'BACnet',
+        other: 'Other'
+      },
+      connectionStatus: {
+        connected: 'Connected',
+        disconnected: 'Disconnected',
+        error: 'Error',
+        unknown: 'Unknown'
+      },
+      noEdgeNodeFound: 'Collection node not found',
+      noDeviceGroupFound: 'Device group not found',
+      pleaseSelectDevicesToDelete: 'Please select devices to delete',
+      batchDeleteSuccess: 'Successfully deleted {count} devices',
+      deviceDisabled: 'Device disabled',
+      deviceEnabled: 'Device enabled',
+      missingDeviceId: 'Missing device ID',
+      disable: 'Disable',
+      enable: 'Enable',
+      connectionForm: {
+        ip: 'IP Address',
+        ipPlaceholder: 'e.g.: 192.168.1.100',
+        port: 'Port',
+        timeout: 'Timeout(ms)',
+        retryCount: 'Retry Count',
+        enableEncryption: 'Enable Encryption'
+      },
+      protocolForm: {
+        // Common fields
+        ip: 'IP Address',
+        ipPlaceholder: 'e.g.: 192.168.1.100',
+        port: 'Port',
+        // Modbus TCP/RTU
+        unitId: 'Unit ID',
+        pollingInterval: 'Polling Interval(ms)',
+        serialPort: 'Serial Port',
+        serialPortPlaceholder: 'e.g.: COM1',
+        baudRate: 'Baud Rate',
+        dataBits: 'Data Bits',
+        stopBits: 'Stop Bits',
+        parity: 'Parity',
+        slaveId: 'Slave ID',
+        frameInterval: 'Frame Interval(ms)',
+        // OPC UA
+        serverUrl: 'Server URL',
+        serverUrlPlaceholder: 'e.g.: opc.tcp://localhost:4840',
+        securityMode: 'Security Mode',
+        securityModePlaceholder: 'Please select security mode',
+        securityPolicy: 'Security Policy',
+        securityPolicyPlaceholder: 'Please select security policy',
+        authenticationMode: 'Authentication Mode',
+        authenticationModePlaceholder: 'Please select authentication mode',
+        samplingInterval: 'Sampling Interval(ms)',
+        // OPC DA
+        serverName: 'OPC Server Name',
+        serverNamePlaceholder: 'e.g.: Matrikon.OPC.Simulation',
+        clsid: 'CLSID',
+        clsidPlaceholder: 'Optional, e.g.: F8582CF2-88FB-11D0-B850-00C0F0104305',
+        updateRate: 'Update Rate(ms)',
+        // S7
+        cpuType: 'CPU Type',
+        rack: 'Rack',
+        slot: 'Slot'
+      }
+    },
+    deviceGroup: {
+      title: 'Device Groups',
+      tree: 'Group Tree',
+      name: 'Name',
+      description: 'Description',
+      level: 'Level',
+      sortOrder: 'Sort',
+      deviceCount: 'Devices',
+      childCount: 'Children',
+      parent: 'Parent',
+      addChild: 'Add Child',
+      showAll: 'Show All',
+      searchPlaceholder: 'Search by name',
+      namePlaceholder: 'Enter group name',
+      parentPlaceholder: 'Select parent group (leave empty for root)',
+      descriptionPlaceholder: 'Enter group description',
+      nameRequired: 'Please enter group name',
+      nameLength: 'Name must be 1-50 characters',
+      maxLevelReached: 'Max level (4) reached, cannot add child group',
+      levelWarning: 'Already at level 3, child group will be the last level'
+    },
+    tag: {
+      // Page title and list
+      deviceList: 'Device List',
+      tagList: 'Tag List',
+      searchDevice: 'Search device',
+      noDevice: 'No devices',
+      tagCount: 'Tags: {count}',
+      selectDeviceFirst: 'Please select a device first',
+      showEnabledOnly: 'Show enabled only',
+
+      // Tag fields
+      tagId: 'Tag ID',
+      tagName: 'Tag Name',
+      tagAddress: 'Tag Address',
+      dataTypeLabel: 'Data Type',
+      unit: 'Unit',
+      description: 'Description',
+      accessModeLabel: 'Access Mode',
+      minValue: 'Min Value',
+      maxValue: 'Max Value',
+      scalingFactor: 'Scaling Factor',
+      offset: 'Offset',
+      deadband: 'Deadband',
+
+      // Placeholders
+      tagIdPlaceholder: 'Enter tag identifier',
+      tagNamePlaceholder: 'Enter tag name',
+      tagAddressPlaceholder: 'Enter tag address',
+      dataTypePlaceholder: 'Select data type',
+      statusPlaceholder: 'Select status',
+      unitPlaceholder: 'e.g.: ℃, %',
+      descriptionPlaceholder: 'Enter tag description',
+
+      // Validation messages
+      tagIdRequired: 'Tag ID is required',
+      tagNameRequired: 'Tag name is required',
+      dataTypeRequired: 'Data type is required',
+
+      // Operations
+      addTag: 'Add Tag',
+      editTag: 'Edit Tag',
+      batchEnable: 'Batch Enable',
+      batchDisable: 'Batch Disable',
+      confirmBatchDelete: 'Are you sure you want to delete {count} selected tags?',
+      exportSuccess: 'Export successful',
+      importNotImplemented: 'Import function is under development...',
+
+      // Section titles
+      basicInfo: 'Basic Information',
+      addressConfig: 'Address Configuration',
+      advancedConfig: 'Advanced Configuration',
+
+      // Data types
+      dataType: {
+        int16: 'Int16',
+        int32: 'Int32',
+        int64: 'Int64',
+        uint16: 'UInt16',
+        uint32: 'UInt32',
+        uint64: 'UInt64',
+        float: 'Float',
+        double: 'Double',
+        boolean: 'Boolean',
+        string: 'String'
+      },
+
+      // Access modes
+      accessMode: {
+        readOnly: 'Read Only',
+        writeOnly: 'Write Only',
+        readWrite: 'Read/Write'
+      },
+
+      // Modbus address configuration
+      modbus: {
+        functionCode: 'Function Code',
+        address: 'Register Address',
+        slaveId: 'Slave ID',
+        quantity: 'Quantity'
+      },
+
+      // OPC UA address configuration
+      opcua: {
+        nodeId: 'NodeId',
+        nodeIdPlaceholder: 'e.g.: ns=2;s=Channel1.Device1.Tag1',
+        namespaceIndex: 'Namespace Index'
+      },
+
+      // OPC DA address configuration
+      opcda: {
+        itemId: 'ItemId',
+        itemIdPlaceholder: 'e.g.: Channel1.Device1.Tag1'
+      },
+
+      // S7 address configuration
+      s7: {
+        area: 'Area',
+        dbNumber: 'DB Number',
+        offset: 'Byte Offset',
+        bitOffset: 'Bit Offset'
+      }
+    },
+    edgeNode: {
+      title: 'Edge Node List',
+      nodeName: 'Node Name',
+      nodeId: 'Node ID',
+      platform: 'Platform',
+      version: 'Version',
+      status: 'Status',
+      registrationType: 'Registration Type',
+      ipAddress: 'IP Address',
+      port: 'Port',
+      location: 'Location',
+      deviceCount: 'Device Count',
+      lastHeartbeat: 'Last Heartbeat',
+      osInfo: 'OS Info',
+      hardwareInfo: 'Hardware Info',
+      installPath: 'Install Path',
+      resourceLimits: 'Resource Limits',
+      basicInfo: 'Basic Info',
+      systemInfo: 'System Info',
+      advancedConfig: 'Advanced Config',
+      form: {
+        nodeName: 'Please enter node name',
+        nodeId: 'Please enter node ID (must match collector config)',
+        status: 'Please select status',
+        platform: 'Please select platform',
+        location: 'Please enter deployment location',
+        resourceLimits: 'Please enter resource limits config (JSON format)',
+        version: 'Please enter version',
+        ipAddress: 'Please enter IP address',
+        installPath: 'Please enter install path',
+        osInfo: 'Please enter OS info',
+        hardwareInfo: 'Please enter hardware info (JSON format)'
+      },
+      addNode: 'Add Node',
+      editNode: 'Edit Node',
+      nodeStatus: {
+        online: 'Online',
+        offline: 'Offline',
+        error: 'Error'
+      },
+      platformType: {
+        net80: '.NET 8.0',
+        net45: '.NET Framework 4.5'
+      },
+      registrationTypeOptions: {
+        auto: 'Auto Registered',
+        manual: 'Manually Added'
+      },
+      confirmDeleteNode: 'Are you sure to delete node "{name}"?',
+      deleteNodeWithDevicesWarning:
+        'This node is associated with {count} devices. After deletion, these devices will be disassociated.',
+      deleteSuccess: 'Deleted successfully',
+      confirmBatchDelete: 'Are you sure to delete {count} selected nodes?',
+      batchDeleteSuccess: 'Successfully deleted {count} nodes',
+      batchDeletePartialSuccess: 'Deletion completed: {success} succeeded, {fail} failed',
+      editableFieldsNote:
+        'Only node name, location and resource limits can be edited. Other info is auto-reported by collector.',
+      manualNodeNote: 'After adding manually, the collector needs to use the same node ID to register and bindback.',
+      manualNodeEditableNote: 'This node is manually added and not connected. All fields are editable.',
+      manualNodeConnectedNote:
+        'This node has connected to collector. System fields are auto-reported, only basic info is editable.',
+      autoNodeEditNote: 'This node is auto-registered. System fields are auto-reported, only basic info is editable.'
+    },
+    collectionTask: {
+      title: 'Collection Task List',
+      name: 'Task Name',
+      code: 'Task Code',
+      description: 'Description',
+      taskType: 'Task Type',
+      defaultInterval: 'Collection Interval',
+      cronExpression: 'Cron Expression',
+      priority: 'Priority',
+      status: 'Status',
+      isEnabled: 'Enabled',
+      effectiveFrom: 'Effective From',
+      effectiveTo: 'Effective To',
+      deviceCount: 'Device Count',
+      devices: 'Linked Devices',
+      form: {
+        name: 'Please enter task name',
+        code: 'Please enter task code (unique identifier)',
+        description: 'Please enter task description',
+        taskType: 'Please select task type',
+        defaultInterval: 'Please enter collection interval (ms)',
+        cronExpression: 'Please enter cron expression',
+        priority: 'Please select priority',
+        devices: 'Please select linked devices'
+      },
+      addTask: 'Add Task',
+      editTask: 'Edit Task',
+      taskTypeOptions: {
+        periodic: 'Periodic',
+        scheduled: 'Scheduled',
+        eventDriven: 'Event Driven',
+        hybrid: 'Hybrid'
+      },
+      taskStatusOptions: {
+        draft: 'Draft',
+        active: 'Active',
+        paused: 'Paused',
+        stopped: 'Stopped'
+      },
+      taskTypeDescription: {
+        periodic: 'Collect data at fixed time intervals',
+        scheduled: 'Execute collection tasks by cron expression',
+        eventDriven: 'Device pushes data actively, system receives passively',
+        hybrid: 'Mixed mode supporting periodic collection and event push'
+      },
+      confirmDeleteTask: 'Are you sure to delete task "{name}"?',
+      deleteSuccess: 'Delete successfully',
+      confirmBatchDelete: 'Are you sure to delete {count} selected tasks?',
+      batchDeleteSuccess: 'Successfully deleted {count} tasks',
+      batchDeletePartialSuccess: 'Delete completed: {success} success, {fail} failed',
+      statusChangeSuccess: 'Status changed successfully',
+      startTask: 'Start',
+      pauseTask: 'Pause',
+      stopTask: 'Stop',
+      confirmStartTask: 'Are you sure to start task "{name}"?',
+      confirmPauseTask: 'Are you sure to pause task "{name}"?',
+      confirmStopTask: 'Are you sure to stop task "{name}"? After stopped, it cannot be restarted directly.',
+      confirmEnableTask: 'Are you sure to enable task "{name}"?',
+      confirmDisableTask: 'Are you sure to disable task "{name}"?',
+      enableTask: 'Enable',
+      disableTask: 'Disable',
+      cronExpressionHelp: 'Format: second minute hour day month week, e.g.: 0 0/5 * * * ? (every 5 minutes)',
+      intervalMs: 'ms',
+      noDevicesSelected: 'No devices linked',
+      selectDevices: 'Select Devices',
+      selectedDevices: '{count} devices selected'
     }
   },
   form: {

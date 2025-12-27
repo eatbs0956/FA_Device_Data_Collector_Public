@@ -9,7 +9,7 @@ import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { calculateTokenExpiry, clearAuthStorage, getToken, isTokenExpired } from './shared';
 
 /**
  * 用户认证状态管理的 Pinia Store。
@@ -182,7 +182,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     localStg.set('token', loginToken.token);
     localStg.set('refreshToken', loginToken.refreshToken);
 
-    // 2. 获取用户信息 - 使用令牌获取用户详细信息
+    // 2. 计算并存储令牌过期时间 - 到次日0点过期，最少2小时
+    const expireTime = calculateTokenExpiry();
+    localStg.set('tokenExpireTime', expireTime);
+
+    // 3. 获取用户信息 - 使用令牌获取用户详细信息
     const pass = await getUserInfo();
 
     if (pass) {
@@ -221,6 +225,13 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     const hasToken = getToken();
 
     if (hasToken) {
+      // 检查令牌是否已过期 - 基于本地存储的过期时间
+      if (isTokenExpired()) {
+        // 令牌已过期 - 清除认证状态并跳转登录
+        resetStore();
+        return;
+      }
+
       // 尝试获取用户信息 - 验证令牌有效性
       const pass = await getUserInfo();
 

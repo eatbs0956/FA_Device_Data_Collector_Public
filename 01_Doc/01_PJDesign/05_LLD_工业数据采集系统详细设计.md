@@ -1,12 +1,11 @@
 # 工业数据采集系统低级设计说明（LLD）
 
 **项目名称**：工业数据采集通用后台系统  
-**文档版本**：v1.1  
+**文档版本**：v1.3  
 **创建日期**：2025-09-15  
-**最后更新**：2025-09-15  
+**最后更新**：2025-12-27  
 **文档作者**：eatbs0956  
-**依据文档**：02_PRD_工业数据采集系统产品需求文档v1.1、03_FSD_工业数据采集系统功能规格说明文档v1.0、04_SSA_工业数据采集系统架构设计说明v1.0
-
+**依据文档**：02_PRD_工业数据采集系统产品需求文档、03_FSD_工业数据采集系统功能规格说明文档、04_SSA_工业数据采集系统架构设计说明
 ---
 
 
@@ -637,6 +636,36 @@ classDiagram
 ---
 
 ## 4. 协议适配层
+---
+### 4.x 设备采集方式区分说明
+
+工业数据采集系统详细设计需明确两类设备采集方式，指导协议适配、采集调度、数据流、接口实现：
+
+#### 1. 主动采集型设备（系统主动连接设备，拉取数据）
+- **定义**：采集服务主动连接设备，定时/轮询拉取数据。
+- **典型协议**：OPC UA、Modbus TCP/RTU、S7、MC等。
+- **数据流向**：采集服务 → 设备，发起连接/读请求，设备响应。
+- **实现要点**：
+  - 连接池管理、断线重连、采集任务调度、批量优化。
+  - 设备配置需包含连接参数、采集频率、点位映射。
+  - 适用于PLC、仪表、工业控制器等。
+
+#### 2. 主动上报型设备（设备主动连接平台，推送数据）
+- **定义**：设备主动连接平台，定时或事件触发推送数据。
+- **典型协议**：MQTT、NB-IoT、LoRaWAN、Cat.1等。
+- **数据流向**：设备 → 采集服务，设备发起连接/推送，平台被动接收。
+- **实现要点**：
+  - 高并发接入、消息订阅、主题管理、设备认证。
+  - 设备侧需预置凭证/配置，支持断点续传、缓存重发。
+  - 适用于无线传感器、智能终端、远程监控等。
+
+#### 3. 详细设计差异
+- 协议适配层需分别实现主动采集与主动上报的抽象接口。
+- 采集调度模块对主动采集型设备负责任务分发与连接管理，对主动上报型设备负责接入认证与消息路由。
+- 数据流、接口、数据库模型需兼容两种采集模式，统一数据格式。
+- 设备管理、配置、监控、告警等功能需支持两类设备的差异化需求。
+
+> **补充说明**：后续各章节详细设计、接口定义、数据库建模、前端页面均需体现设备采集方式的区分。
 
 ### 4.1 设计目标
 协议适配层是系统的核心模块，负责统一抽象各种工业协议的差异，提供标准化的数据采集接口。设计目标包括：
@@ -4016,6 +4045,10 @@ CREATE TABLE edge_nodes (
     port INTEGER,
     status VARCHAR(16) DEFAULT 'Offline' CHECK (status IN ('Online', 'Offline', 'Error')),
     
+    -- 注册方式：auto=采集器自动注册, manual=运维手动预创建
+    registration_type VARCHAR(16) DEFAULT 'auto' CHECK (registration_type IN ('auto', 'manual')),
+    is_enabled BOOLEAN DEFAULT true, -- 启用/禁用状态
+    
     -- 平台特定配置
     platform_config JSONB NOT NULL DEFAULT '{}', -- 平台差异化配置
     resource_limits JSONB DEFAULT '{"maxMemoryMB": 512, "maxConcurrentTasks": 5}', -- 资源限制
@@ -4026,9 +4059,15 @@ CREATE TABLE edge_nodes (
     install_path VARCHAR(512),
     
     last_heartbeat TIMESTAMP WITH TIME ZONE,
+    last_sync_time TIMESTAMP WITH TIME ZONE, -- 最后配置同步时间
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+COMMENT ON COLUMN edge_nodes.registration_type IS '注册方式: auto=采集器自动注册, manual=运维手动预创建';
+COMMENT ON COLUMN edge_nodes.is_enabled IS '启用状态，禁用后采集器不再响应';
+COMMENT ON COLUMN edge_nodes.last_heartbeat IS '最后心跳时间，NULL表示采集器从未连接';
+COMMENT ON COLUMN edge_nodes.last_sync_time IS '最后配置同步时间';
 
 -- 2. 设备表（跨平台统一管理）
 CREATE TABLE devices (
@@ -4037,11 +4076,11 @@ CREATE TABLE devices (
     device_name VARCHAR(128) NOT NULL,
     device_type VARCHAR(32) NOT NULL,
     protocol_type VARCHAR(32) NOT NULL,
-    edge_node_id UUID NOT NULL REFERENCES edge_nodes(id) ON DELETE CASCADE,
+    edge_node_id UUID REFERENCES edge_nodes(id) ON DELETE SET NULL, -- 边缘节点可选
     
     -- 连接配置（平台兼容）
     connection_config JSONB NOT NULL, -- 连接参数
-    protocol_config JSONB NOT NULL,   -- 协议特定配置
+    protocol_config JSONB NOT NULL,   -- 协议特定配置（详见下方协议配置数据结构）
     
     -- 状态信息
     connection_status VARCHAR(16) DEFAULT 'Disconnected',
@@ -4685,6 +4724,306 @@ components:
       required: [tenantId, deviceId, tagId, value, eventTime]
 ```
 
+#### 12.1.1 采集节点管理 API
+
+```yaml
+  # 采集节点管理接口
+  /api/edge-nodes:
+    get:
+      summary: 获取采集节点列表
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: 搜索关键词（节点ID/名称）
+        - in: query
+          name: isEnabled
+          schema:
+            type: boolean
+          description: 启用状态筛选
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeNodePagedResult'
+    post:
+      summary: 创建采集节点（手动注册）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEdgeNodeRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeNodeResponse'
+        '400':
+          description: 节点ID已存在
+
+  /api/edge-nodes/{id}:
+    get:
+      summary: 获取节点详情
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeNodeResponse'
+        '404':
+          description: 节点不存在
+    put:
+      summary: 更新节点信息
+      description: |
+        更新规则：
+        - 基本信息（nodeName, location, resourceLimits）始终可更新
+        - 系统信息仅当 registrationType='manual' 且 lastHeartbeat=null 时可更新
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEdgeNodeRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '400':
+          description: 参数错误或字段不可编辑
+    delete:
+      summary: 删除节点
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/edge-nodes/{nodeId}/heartbeat:
+    put:
+      summary: 节点心跳上报（采集器调用）
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+          description: 节点标识（非UUID）
+      responses:
+        '200':
+          description: 成功
+        '404':
+          description: 节点不存在
+
+  /api/edge-nodes/{nodeId}/register:
+    post:
+      summary: 节点注册（采集器启动时调用）
+      description: |
+        若NodeId不存在则新建（auto类型）；
+        若NodeId已存在则更新系统信息并记录心跳
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeNodeRegisterRequest'
+      responses:
+        '200':
+          description: 已存在节点，更新成功
+        '201':
+          description: 新节点创建成功
+
+components:
+  schemas:
+    # ... 已有定义 ...
+
+    EdgeNodeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nodeId:
+          type: string
+          description: 节点唯一标识
+        nodeName:
+          type: string
+        registrationType:
+          type: string
+          enum: [auto, manual]
+          description: 注册方式
+        platform:
+          type: string
+          enum: [NET8.0, NET45]
+        version:
+          type: string
+        location:
+          type: string
+        ipAddress:
+          type: string
+        port:
+          type: integer
+        isEnabled:
+          type: boolean
+        resourceLimits:
+          type: object
+        osInfo:
+          type: string
+        hardwareInfo:
+          type: object
+        installPath:
+          type: string
+        lastHeartbeat:
+          type: string
+          format: date-time
+          nullable: true
+          description: 最后心跳时间，null表示从未连接
+        lastSyncTime:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateEdgeNodeRequest:
+      type: object
+      required: [nodeId, nodeName]
+      properties:
+        nodeId:
+          type: string
+          description: 节点唯一标识（需与采集器配置一致）
+        nodeName:
+          type: string
+        platform:
+          type: string
+          default: NET8.0
+        version:
+          type: string
+        location:
+          type: string
+        ipAddress:
+          type: string
+        port:
+          type: integer
+        isEnabled:
+          type: boolean
+          default: true
+        resourceLimits:
+          type: object
+        osInfo:
+          type: string
+        hardwareInfo:
+          type: object
+        installPath:
+          type: string
+
+    UpdateEdgeNodeRequest:
+      type: object
+      properties:
+        nodeName:
+          type: string
+        location:
+          type: string
+        isEnabled:
+          type: boolean
+        resourceLimits:
+          type: object
+        # 以下字段仅 manual 类型且未连接时可更新
+        platform:
+          type: string
+        version:
+          type: string
+        ipAddress:
+          type: string
+        port:
+          type: integer
+        osInfo:
+          type: string
+        hardwareInfo:
+          type: object
+        installPath:
+          type: string
+
+    EdgeNodeRegisterRequest:
+      type: object
+      required: [nodeName, platform, version]
+      properties:
+        nodeName:
+          type: string
+        platform:
+          type: string
+        version:
+          type: string
+        ipAddress:
+          type: string
+        port:
+          type: integer
+        osInfo:
+          type: string
+        hardwareInfo:
+          type: object
+        installPath:
+          type: string
+
+    EdgeNodePagedResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdgeNodeResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+```
+
 ### 12.2 gRPC 协议（proto 示例）
 ```proto
 syntax = "proto3";
@@ -4787,21 +5126,22 @@ acquisition:
 
 ### 12.5 错误码与响应规范
 - 采用统一错误码体系，区分系统级、业务级、第三方接口错误。
-- 响应结构：
+- 响应结构（code 为字符串类型，msg 为消息字段）：
 ```json
 {
-  "code": 0,
-  "message": "成功",
+  "code": "0000",
+  "msg": "success",
   "data": {}
 }
 ```
-- 常见错误码：
-  - 0：成功
-  - 1001：参数错误
-  - 2001：认证失败
-  - 2002：权限不足
-  - 3001：资源不存在
-  - 5000：系统异常
+- 常见错误码（字符串类型）：
+  - "0000"：成功
+  - "400"：请求参数错误
+  - "404"：资源不存在
+  - "500"：系统内部错误
+  - "7777"：模态登出
+  - "8888"：通用登出
+  - "9999"：令牌过期
 
 ### 12.6 监控与指标（Prometheus Metrics 示例）
 - 采集任务执行次数：`acquisition_task_total{status="success|fail"}`

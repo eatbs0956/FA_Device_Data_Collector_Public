@@ -45,6 +45,18 @@ declare namespace Api {
       updateTime: string;
       /** record status */
       status: EnableStatus | undefined;
+      /** created by user id - audit field */
+      createdBy?: string;
+      /** updated by user id - audit field */
+      updatedBy?: string;
+      /** created at timestamp - audit field */
+      createdAt?: string;
+      /** updated at timestamp - audit field */
+      updatedAt?: string;
+      /** deleted flag - audit field */
+      deletedFlag?: boolean;
+      /** tenant id - audit field */
+      tenantId?: string;
     } & T;
   }
 }

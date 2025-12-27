@@ -18,6 +18,8 @@ declare namespace StorageType {
     mixSiderFixed: CommonType.YesOrNo;
     /** The refresh token */
     refreshToken: string;
+    /** The token expire time (ISO 8601 string) */
+    tokenExpireTime: string;
     /** The theme color */
     themeColor: string;
     /** The dark mode */

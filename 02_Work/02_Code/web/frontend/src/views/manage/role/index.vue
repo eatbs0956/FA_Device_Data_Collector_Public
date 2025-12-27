@@ -67,6 +67,18 @@ const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagi
       }
     },
     {
+      prop: 'createdAt',
+      label: '创建时间',
+      width: 180,
+      formatter: row => (row.createdAt ? new Date(row.createdAt).toLocaleString('zh-CN') : '')
+    },
+    {
+      prop: 'updatedAt',
+      label: '更新时间',
+      width: 180,
+      formatter: row => (row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '')
+    },
+    {
       prop: 'operate',
       label: $t('common.operate'),
       width: 130,

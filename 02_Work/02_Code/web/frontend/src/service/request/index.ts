@@ -11,6 +11,23 @@ const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === '
 const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
 /**
+ * 检查错误码是否应该跳过显示错误消息
+ */
+function shouldSkipErrorMessage(backendErrorCode: string): boolean {
+  const modalLogoutCodes = import.meta.env.VITE_SERVICE_MODAL_LOGOUT_CODES?.split(',') || [];
+  if (modalLogoutCodes.includes(backendErrorCode)) {
+    return true;
+  }
+
+  const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(',') || [];
+  if (expiredTokenCodes.includes(backendErrorCode)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * 创建并配置一个扁平化的请求实例，用于统一处理前端与后端的接口交互。
  *
  * - 自动注入 `Authorization` 头部信息。
@@ -45,7 +62,9 @@ export const request = createFlatRequest(
   {
     defaultState: {
       errMsgStack: [],
-      refreshTokenPromise: null
+      refreshTokenPromise: null,
+      isRefreshing: false,
+      pendingRequests: []
     } as RequestInstanceState,
     transform(response: AxiosResponse<App.Service.Response<any>>) {
       return response.data.data;
@@ -122,26 +141,31 @@ export const request = createFlatRequest(
       return null;
     },
     onError(error) {
-      // when the request is fail, you can show error message
-
-      let message = error.message;
-      let backendErrorCode = '';
-
-      // get backend error message and code
-      if (error.code === BACKEND_ERROR_CODE) {
-        message = error.response?.data?.msg || message;
-        backendErrorCode = String(error.response?.data?.code || '');
-      }
-
-      // the error message is displayed in the modal
-      const modalLogoutCodes = import.meta.env.VITE_SERVICE_MODAL_LOGOUT_CODES?.split(',') || [];
-      if (modalLogoutCodes.includes(backendErrorCode)) {
+      // Check if this is a silent request (no error message should be shown)
+      const isSilent = error.config?.headers?.['X-Silent-Error'] === 'true';
+      if (isSilent) {
         return;
       }
 
-      // when the token is expired, refresh token and retry request, so no need to show error message
-      const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(',') || [];
-      if (expiredTokenCodes.includes(backendErrorCode)) {
+      // when the request is fail, you can show error message
+      let message = error.message;
+      let backendErrorCode = '';
+
+      // Handle 403 Forbidden error with custom message
+      if (error.response?.status === 403) {
+        message = $t('request.forbidden');
+      } else if (error.code === BACKEND_ERROR_CODE) {
+        // Backend logic error (2xx response but business logic failed)
+        message = error.response?.data?.msg || message;
+        backendErrorCode = String(error.response?.data?.code || '');
+      } else if (error.response?.data?.msg) {
+        // HTTP error (4xx/5xx) but backend returned friendly message
+        message = error.response.data.msg;
+        backendErrorCode = String(error.response.data.code || '');
+      }
+
+      // Skip error message for special error codes (logout, token expired)
+      if (shouldSkipErrorMessage(backendErrorCode)) {
         return;
       }
 
@@ -156,13 +180,13 @@ export const request = createFlatRequest(
  * - `baseURL`: 设置请求的基础地址为 `otherBaseURL.demo`。
  * - `transform`: 响应转换函数，返回后端数据的 `result` 字段。
  * - `onRequest`: 请求拦截器，自动为请求头添加 `Authorization` token。
- * - `isBackendSuccess`: 判断后端响应是否成功（`status` 字段为 "200"）。
- * - `onBackendFail`: 后端响应失败时的处理逻辑（如 token 过期可在此刷新 token 并重试）。
+ * - `isBackendSuccess`: 判断后端请求是否成功，成功条件为 `status === '200'`。
+ * - `onBackendFail`: 后端请求失败的处理逻辑（例如 token 过期刷新等）。
  * - `onError`: 请求失败时的错误处理，支持显示后端错误消息。
  *
  * @example
  * ```typescript
- * const result = await demoRequest.get('/api/demo');
+ * const res = await demoRequest.get('/api/demo');
  * ```
  */
 export const demoRequest = createRequest(

@@ -92,17 +92,17 @@ async function search() {
             </ElCol>
             <ElCol :lg="12" :md="24" :sm="24">
               <ElSpace class="w-full justify-end" alignment="end">
-                <ElButton @click="reset">
-                  <template #icon>
-                    <icon-ic-round-refresh class="text-icon" />
-                  </template>
-                  {{ $t('common.reset') }}
-                </ElButton>
                 <ElButton type="primary" plain @click="search">
                   <template #icon>
                     <icon-ic-round-search class="text-icon" />
                   </template>
                   {{ $t('common.search') }}
+                </ElButton>
+                <ElButton @click="reset">
+                  <template #icon>
+                    <icon-ic-round-refresh class="text-icon" />
+                  </template>
+                  {{ $t('common.reset') }}
                 </ElButton>
               </ElSpace>
             </ElCol>

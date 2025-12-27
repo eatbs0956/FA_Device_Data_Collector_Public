@@ -19,6 +19,7 @@ const local: App.I18n.Schema = {
     columnSetting: '列设置',
     config: '配置',
     confirm: '确认',
+    createdAt: '创建时间',
     delete: '删除',
     deleteSuccess: '删除成功',
     confirmDelete: '确认删除吗？',
@@ -44,6 +45,15 @@ const local: App.I18n.Schema = {
     update: '更新',
     updateSuccess: '更新成功',
     userCenter: '个人中心',
+    status: '状态',
+    import: '导入',
+    export: '导出',
+    pleaseSelect: '请先选择',
+    pleaseSelectData: '请先选择数据',
+    enableSuccess: '启用成功',
+    disableSuccess: '禁用成功',
+    enable: '启用',
+    disable: '禁用',
     yesOrNo: {
       yes: '是',
       no: '否'
@@ -55,7 +65,8 @@ const local: App.I18n.Schema = {
     logoutWithModal: '请求失败后弹出模态框再登出用户',
     logoutWithModalMsg: '用户状态失效，请重新登录',
     refreshToken: '请求的token已过期，刷新token',
-    tokenExpired: 'token已过期'
+    tokenExpired: 'token已过期',
+    forbidden: '您没有权限访问此资源'
   },
   theme: {
     themeSchema: {
@@ -168,9 +179,9 @@ const local: App.I18n.Schema = {
     'iframe-page': '外链页面',
     home: '首页',
     device: '设备管理',
-    device_label: '设备标签',
     device_list: '设备列表',
-    device_protocol: '设备协议',
+    device_tag: '设备标签',
+    device_group: '设备分组',
     collection: '采集管理',
     collection_node: '采集节点',
     collection_task: '采集任务',
@@ -424,6 +435,356 @@ const local: App.I18n.Schema = {
           local: '本地图标'
         }
       }
+    },
+    device: {
+      title: '设备列表',
+      deviceName: '设备名称',
+      deviceId: '设备ID',
+      description: '设备描述',
+      protocol: '协议类型',
+      protocolTypeLabel: '协议类型',
+      connection: '连接状态',
+      edgeNode: '采集节点',
+      deviceGroup: '设备分组',
+      location: '设备位置',
+      enabled: '启用状态',
+      tagCount: '标签数量',
+      lastConnectedAt: '最后连接时间',
+      connectionConfig: '连接配置',
+      protocolConfig: '协议配置',
+      tagsConfig: '标签配置',
+      testConnection: '测试连接',
+      form: {
+        deviceName: '请输入设备名称',
+        deviceId: '请输入设备ID',
+        description: '请输入设备描述',
+        protocol: '请选择协议类型',
+        edgeNode: '请选择采集节点',
+        deviceGroup: '请选择设备分组',
+        location: '请输入设备位置',
+        enabled: '请选择启用状态'
+      },
+      addDevice: '新增设备',
+      editDevice: '编辑设备',
+      protocolType: {
+        modbusTcp: 'Modbus TCP',
+        modbusRtu: 'Modbus RTU',
+        opcUa: 'OPC UA',
+        opcDa: 'OPC DA',
+        s7: 'S7',
+        bacnet: 'BACnet',
+        other: '其他'
+      },
+      connectionStatus: {
+        connected: '已连接',
+        disconnected: '已断开',
+        error: '错误',
+        unknown: '未知'
+      },
+      noEdgeNodeFound: '没有查询到采集节点',
+      noDeviceGroupFound: '没有查询到设备分组',
+      pleaseSelectDevicesToDelete: '请选择要删除的设备',
+      batchDeleteSuccess: '成功删除 {count} 个设备',
+      deviceDisabled: '设备已禁用',
+      deviceEnabled: '设备已启用',
+      missingDeviceId: '缺少设备ID',
+      disable: '禁用',
+      enable: '启用',
+      connectionForm: {
+        ip: 'IP地址',
+        ipPlaceholder: '例如: 192.168.1.100',
+        port: '端口',
+        timeout: '超时(ms)',
+        retryCount: '重试次数',
+        enableEncryption: '启用加密'
+      },
+      protocolForm: {
+        // 通用字段
+        ip: 'IP地址',
+        ipPlaceholder: '例如: 192.168.1.100',
+        port: '端口',
+        // Modbus TCP/RTU
+        unitId: '从站地址(Unit ID)',
+        pollingInterval: '轮询间隔(ms)',
+        serialPort: '串口',
+        serialPortPlaceholder: '例如: COM1',
+        baudRate: '波特率',
+        dataBits: '数据位',
+        stopBits: '停止位',
+        parity: '校验位',
+        slaveId: '从站地址(Slave ID)',
+        frameInterval: '帧间隔(ms)',
+        // OPC UA
+        serverUrl: '服务器URL',
+        serverUrlPlaceholder: '例如: opc.tcp://localhost:4840',
+        securityMode: '安全模式',
+        securityModePlaceholder: '请选择安全模式',
+        securityPolicy: '安全策略',
+        securityPolicyPlaceholder: '请选择安全策略',
+        authenticationMode: '认证模式',
+        authenticationModePlaceholder: '请选择认证模式',
+        samplingInterval: '采样间隔(ms)',
+        // OPC DA
+        serverName: 'OPC服务器名称',
+        serverNamePlaceholder: '例如: Matrikon.OPC.Simulation',
+        clsid: 'CLSID',
+        clsidPlaceholder: '可选，例如: F8582CF2-88FB-11D0-B850-00C0F0104305',
+        updateRate: '更新频率(ms)',
+        // S7
+        cpuType: 'CPU类型',
+        rack: '机架号',
+        slot: '槽号'
+      }
+    },
+    deviceGroup: {
+      title: '设备分组',
+      tree: '分组树',
+      name: '分组名称',
+      description: '分组描述',
+      level: '层级',
+      sortOrder: '排序',
+      deviceCount: '设备数',
+      childCount: '子分组数',
+      parent: '父分组',
+      addChild: '添加子分组',
+      showAll: '显示全部',
+      searchPlaceholder: '输入名称搜索',
+      namePlaceholder: '请输入分组名称',
+      parentPlaceholder: '请选择父分组（留空为顶级分组）',
+      descriptionPlaceholder: '请输入分组描述',
+      nameRequired: '请输入分组名称',
+      nameLength: '名称长度为1-50个字符',
+      maxLevelReached: '已达最大层级限制（4级），无法添加子分组',
+      levelWarning: '当前已达第3级，子分组将是最后一级'
+    },
+    tag: {
+      // 页面标题和列表
+      deviceList: '设备列表',
+      tagList: '标签列表',
+      searchDevice: '搜索设备',
+      noDevice: '暂无设备',
+      tagCount: '标签: {count}',
+      selectDeviceFirst: '请先选择设备',
+      showEnabledOnly: '仅显示启用设备',
+
+      // 标签字段
+      tagId: '标签标识符',
+      tagName: '标签名称',
+      tagAddress: '标签地址',
+      dataTypeLabel: '数据类型',
+      unit: '单位',
+      description: '描述',
+      accessModeLabel: '访问模式',
+      minValue: '最小值',
+      maxValue: '最大值',
+      scalingFactor: '比例因子',
+      offset: '偏移量',
+      deadband: '死区值',
+
+      // 占位符
+      tagIdPlaceholder: '请输入标签标识符',
+      tagNamePlaceholder: '请输入标签名称',
+      tagAddressPlaceholder: '请输入标签地址',
+      dataTypePlaceholder: '请选择数据类型',
+      statusPlaceholder: '请选择状态',
+      unitPlaceholder: '例如: ℃, %',
+      descriptionPlaceholder: '请输入标签描述',
+
+      // 验证消息
+      tagIdRequired: '请输入标签标识符',
+      tagNameRequired: '请输入标签名称',
+      dataTypeRequired: '请选择数据类型',
+
+      // 操作
+      addTag: '新增标签',
+      editTag: '编辑标签',
+      batchEnable: '批量启用',
+      batchDisable: '批量禁用',
+      confirmBatchDelete: '确认删除选中的 {count} 个标签吗？',
+      exportSuccess: '导出成功',
+      importNotImplemented: '导入功能开发中...',
+
+      // 区域标题
+      basicInfo: '基本信息',
+      addressConfig: '地址配置',
+      advancedConfig: '高级配置',
+
+      // 数据类型
+      dataType: {
+        int16: 'Int16',
+        int32: 'Int32',
+        int64: 'Int64',
+        uint16: 'UInt16',
+        uint32: 'UInt32',
+        uint64: 'UInt64',
+        float: 'Float',
+        double: 'Double',
+        boolean: 'Boolean',
+        string: 'String'
+      },
+
+      // 访问模式
+      accessMode: {
+        readOnly: '只读',
+        writeOnly: '只写',
+        readWrite: '读写'
+      },
+
+      // Modbus 地址配置
+      modbus: {
+        functionCode: '功能码',
+        address: '寄存器地址',
+        slaveId: '从站地址',
+        quantity: '寄存器数量'
+      },
+
+      // OPC UA 地址配置
+      opcua: {
+        nodeId: 'NodeId',
+        nodeIdPlaceholder: '例如: ns=2;s=Channel1.Device1.Tag1',
+        namespaceIndex: '命名空间索引'
+      },
+
+      // OPC DA 地址配置
+      opcda: {
+        itemId: 'ItemId',
+        itemIdPlaceholder: '例如: Channel1.Device1.Tag1'
+      },
+
+      // S7 地址配置
+      s7: {
+        area: '区域',
+        dbNumber: 'DB号',
+        offset: '字节偏移',
+        bitOffset: '位偏移'
+      }
+    },
+    edgeNode: {
+      title: '采集节点列表',
+      nodeName: '节点名称',
+      nodeId: '节点ID',
+      platform: '平台类型',
+      version: '版本',
+      status: '状态',
+      registrationType: '注册方式',
+      ipAddress: 'IP地址',
+      port: '端口',
+      location: '位置',
+      deviceCount: '设备数量',
+      lastHeartbeat: '最后心跳',
+      osInfo: '操作系统',
+      hardwareInfo: '硬件信息',
+      installPath: '安装路径',
+      resourceLimits: '资源限制',
+      basicInfo: '基本信息',
+      systemInfo: '系统信息',
+      advancedConfig: '高级配置',
+      form: {
+        nodeName: '请输入节点名称',
+        nodeId: '请输入节点ID（需与采集程序配置一致）',
+        status: '请选择状态',
+        platform: '请选择平台类型',
+        location: '请输入部署位置',
+        resourceLimits: '请输入资源限制配置(JSON格式)',
+        version: '请输入版本号',
+        ipAddress: '请输入IP地址',
+        installPath: '请输入安装路径',
+        osInfo: '请输入操作系统信息',
+        hardwareInfo: '请输入硬件信息(JSON格式)'
+      },
+      addNode: '新增节点',
+      editNode: '编辑节点',
+      nodeStatus: {
+        online: '在线',
+        offline: '离线',
+        error: '错误'
+      },
+      platformType: {
+        net80: '.NET 8.0',
+        net45: '.NET Framework 4.5'
+      },
+      registrationTypeOptions: {
+        auto: '自动注册',
+        manual: '手动添加'
+      },
+      confirmDeleteNode: '确认删除节点 "{name}" 吗？',
+      deleteNodeWithDevicesWarning: '该节点关联了 {count} 个设备，删除后这些设备将取消关联采集节点。',
+      deleteSuccess: '删除成功',
+      confirmBatchDelete: '确认删除选中的 {count} 个节点吗？',
+      batchDeleteSuccess: '成功删除 {count} 个节点',
+      batchDeletePartialSuccess: '删除完成：成功 {success} 个，失败 {fail} 个',
+      editableFieldsNote: '仅可编辑节点名称、位置和资源限制，其他信息由采集程序自动上报。',
+      manualNodeNote: '手动添加节点后，采集程序启动时需使用相同的节点ID进行注册绑定。',
+      manualNodeEditableNote: '该节点为手动添加且未连接采集程序，所有字段均可编辑。',
+      manualNodeConnectedNote: '该节点已连接过采集程序，系统字段由程序自动上报，仅可编辑基本信息。',
+      autoNodeEditNote: '该节点为自动注册，系统字段由采集程序自动上报，仅可编辑基本信息。'
+    },
+    collectionTask: {
+      title: '采集任务列表',
+      name: '任务名称',
+      code: '任务编码',
+      description: '任务描述',
+      taskType: '任务类型',
+      defaultInterval: '采集间隔',
+      cronExpression: 'Cron表达式',
+      priority: '优先级',
+      status: '状态',
+      isEnabled: '启用状态',
+      effectiveFrom: '生效开始时间',
+      effectiveTo: '生效结束时间',
+      deviceCount: '关联设备数',
+      devices: '关联设备',
+      form: {
+        name: '请输入任务名称',
+        code: '请输入任务编码（唯一标识）',
+        description: '请输入任务描述',
+        taskType: '请选择任务类型',
+        defaultInterval: '请输入采集间隔（毫秒）',
+        cronExpression: '请输入Cron表达式',
+        priority: '请选择优先级',
+        devices: '请选择关联设备'
+      },
+      addTask: '新增任务',
+      editTask: '编辑任务',
+      taskTypeOptions: {
+        periodic: '周期采集',
+        scheduled: '定时采集',
+        eventDriven: '事件驱动',
+        hybrid: '混合模式'
+      },
+      taskStatusOptions: {
+        draft: '草稿',
+        active: '运行中',
+        paused: '已暂停',
+        stopped: '已停止'
+      },
+      taskTypeDescription: {
+        periodic: '按固定时间间隔周期性采集数据',
+        scheduled: '按Cron表达式定时执行采集任务',
+        eventDriven: '由设备主动推送数据，系统被动接收',
+        hybrid: '支持周期采集和事件推送的混合模式'
+      },
+      confirmDeleteTask: '确认删除任务 "{name}" 吗？',
+      deleteSuccess: '删除成功',
+      confirmBatchDelete: '确认删除选中的 {count} 个任务吗？',
+      batchDeleteSuccess: '成功删除 {count} 个任务',
+      batchDeletePartialSuccess: '删除完成：成功 {success} 个，失败 {fail} 个',
+      statusChangeSuccess: '状态变更成功',
+      startTask: '启动',
+      pauseTask: '暂停',
+      stopTask: '停止',
+      confirmStartTask: '确认启动任务 "{name}" 吗？',
+      confirmPauseTask: '确认暂停任务 "{name}" 吗？',
+      confirmStopTask: '确认停止任务 "{name}" 吗？停止后无法直接重新启动，需要重新激活。',
+      confirmEnableTask: '确认启用任务 "{name}" 吗？',
+      confirmDisableTask: '确认禁用任务 "{name}" 吗？',
+      enableTask: '启用',
+      disableTask: '禁用',
+      cronExpressionHelp: '格式: 秒 分 时 日 月 周，例如: 0 0/5 * * * ? (每5分钟执行)',
+      intervalMs: '毫秒',
+      noDevicesSelected: '暂无关联设备',
+      selectDevices: '选择设备',
+      selectedDevices: '已选 {count} 个设备'
     }
   },
   form: {

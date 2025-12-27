@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using Auth.Api.Models;
+using Shared.Domain.Data;
+using Shared.Domain.Entities;
+using Auth.Api.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -10,7 +12,7 @@ namespace Auth.Api.Services;
 /// <summary>
 /// JWT 令牌服务 - 负责生成、验证和管理 JWT 访问令牌及刷新令牌
 /// </summary>
-public class TokenService(AuthDbContext db)
+public class TokenService(UnifiedDbContext db) : ITokenService
 {
     // RSA 加密算法实例 - 用于 JWT 签名的 RSA 密钥对
     private static RSA? _rsa;
@@ -95,7 +97,8 @@ public class TokenService(AuthDbContext db)
             // 同时写入 NameIdentifier 以兼容不同读取方式
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.UniqueName, user.UserName),
-            new(JwtRegisteredClaimNames.Jti, jti)
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new("tenant_id", user.TenantId) // 添加租户ID到JWT Token
         };
 		// 角色代码查询 - 获取用户拥有的所有角色代码用于授权
 		var roleCodes = await db.UserRoles.Where(x => x.UserId == user.Id)
@@ -120,16 +123,39 @@ public class TokenService(AuthDbContext db)
         // 刷新令牌轮换策略：每个用户只保持一个活跃的刷新令牌
         // 随机刷新令牌 - 生成 48 字节的随机令牌并转换为 Base64 编码
         var rToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+        // RefreshToken哈希 - 计算刷新令牌的SHA256哈希值用于Session存储
+        var rTokenHash = Convert.ToBase64String(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rToken)));
+        
         // 现有令牌查询 - 获取用户当前所有未撤销的刷新令牌
         var existing = await db.RefreshTokens.Where(x => x.UserId == user.Id && !x.Revoked).ToListAsync();
         // 撤销现有令牌 - 将所有旧的刷新令牌标记为已撤销
         foreach (var item in existing) item.Revoked = true;
+        
+        // 撤销现有会话 - 将用户所有未撤销的会话标记为已撤销
+        var existingSessions = await db.Sessions.Where(x => x.UserId == user.Id && !x.Revoked).ToListAsync();
+        foreach (var session in existingSessions)
+        {
+            session.Revoked = true;
+            session.RevokedAt = now;
+        }
+        
         db.RefreshTokens.Add(new RefreshToken
         {
             UserId = user.Id,
             Token = rToken,
             ExpiresAt = now.Add(refreshTtl)
         });
+        
+        // 创建新会话记录 - 记录JWT会话信息用于Token撤销检查
+        db.Sessions.Add(new Session
+        {
+            UserId = user.Id,
+            AccessTokenJti = jti,
+            RefreshTokenHash = rTokenHash,
+            IssuedAt = now,
+            ExpiresAt = now.Add(refreshTtl)
+        });
+        
         await db.SaveChangesAsync();
 
         return new TokenPair(jwt, rToken);

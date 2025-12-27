@@ -162,14 +162,42 @@ public record MenuDto
     public bool MultiTab { get; set; } = true;
 
     /// <summary>
-    /// 固定标签页 - 标签页是否固定
+    /// 固定标签页索引 - 标签页固定位置的顺序索引（null表示不固定）
     /// </summary>
-    public bool FixedIndexInTab { get; set; } = false;
+    public int? FixedIndexInTab { get; set; }
 
     /// <summary>
     /// 查询参数 - 路由查询参数JSON
     /// </summary>
     public string? Query { get; set; }
+
+    /// <summary>
+    /// 按钮权限配置 - 菜单关联的按钮权限JSON数组
+    /// </summary>
+    /// <remarks>
+    /// 格式: [{"code":"add","desc":"新增"},{"code":"edit","desc":"编辑"}]
+    /// </remarks>
+    public string? Buttons { get; set; }
+    
+    /// <summary>
+    /// 创建人ID - 审计字段
+    /// </summary>
+    public Guid? CreatedBy { get; set; }
+    
+    /// <summary>
+    /// 更新人ID - 审计字段
+    /// </summary>
+    public Guid? UpdatedBy { get; set; }
+    
+    /// <summary>
+    /// 创建时间 - 审计字段
+    /// </summary>
+    public DateTimeOffset? CreatedAt { get; set; }
+    
+    /// <summary>
+    /// 更新时间 - 审计字段
+    /// </summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
 }
 
 /// <summary>
@@ -253,9 +281,9 @@ public record MenuResponse
     public bool MultiTab { get; set; }
 
     /// <summary>
-    /// 固定标签页 - 标签页是否固定
+    /// 固定标签页索引 - 标签页固定位置的顺序索引（null表示不固定）
     /// </summary>
-    public bool FixedIndexInTab { get; set; }
+    public int? FixedIndexInTab { get; set; }
 
     /// <summary>
     /// 查询参数 - 路由查询参数JSON
@@ -263,14 +291,32 @@ public record MenuResponse
     public string? Query { get; set; }
 
     /// <summary>
+    /// 按钮权限配置 - 菜单关联的按钮权限JSON数组
+    /// </summary>
+    /// <remarks>
+    /// 格式: [{"code":"add","desc":"新增"},{"code":"edit","desc":"编辑"}]
+    /// </remarks>
+    public string? Buttons { get; set; }
+
+    /// <summary>
+    /// 创建人ID - 审计字段
+    /// </summary>
+    public Guid? CreatedBy { get; set; }
+    
+    /// <summary>
+    /// 更新人ID - 审计字段
+    /// </summary>
+    public Guid? UpdatedBy { get; set; }
+
+    /// <summary>
     /// 创建时间 - 记录创建时间
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? CreatedAt { get; set; }
 
     /// <summary>
     /// 更新时间 - 记录更新时间
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>
     /// 子菜单列表 - 树形结构的子节点集合
@@ -492,6 +538,7 @@ public record UserUpdateRequest
     public string? Password { get; set; }
 }
 
+
 /// <summary>
 /// 保存角色菜单权限请求 - 更新角色的菜单授权
 /// </summary>
@@ -503,6 +550,17 @@ public record SaveRoleMenusRequest
     public List<int> MenuIds { get; set; } = new();
 }
 
-
-
-
+/// <summary>
+/// 保存角色按钮权限请求 - 更新角色的按钮权限授权
+/// </summary>
+public record SaveRoleButtonsRequest
+{
+    /// <summary>
+    /// 按钮权限编码列表 - 授权给角色的按钮权限数组
+    /// </summary>
+    /// <remarks>
+    /// 格式: ["menu_id:button_code"]
+    /// 示例: ["1001:add", "1001:edit", "1002:delete"]
+    /// </remarks>
+    public List<string> ButtonCodes { get; set; } = new();
+}

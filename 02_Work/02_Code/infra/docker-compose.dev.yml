@@ -114,6 +114,49 @@ services:
       - backend
     restart: unless-stopped
 
+  device-api:
+    build: ../platform/center/Device.Api
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      PG_CONN: "Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp"
+      JWKS_URL: "http://auth-api:8080/api/auth/jwks"
+    ports: ["18083:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      auth-api:
+        condition: service_started
+    networks:
+      - backend
+    restart: unless-stopped
+
+  gateway-api:
+    build: ../platform/center/Gateway.Api
+    container_name: devdcp-gateway
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Logging__LogLevel__Default: "Information"
+      Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+      Logging__LogLevel__Yarp: "Information"
+    ports: ["18020:8080"]
+    depends_on:
+      auth-api:
+        condition: service_started
+      device-api:
+        condition: service_started
+    volumes:
+      - ./logs/gateway:/app/logs
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   monitor-api:
     build: ../platform/center/Monitor.Api
     environment:

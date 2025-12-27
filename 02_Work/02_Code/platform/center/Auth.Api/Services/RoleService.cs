@@ -1,4 +1,7 @@
-using Auth.Api.Models;
+using Shared.Domain.Data;
+using Shared.Domain.Entities;
+using Auth.Api.Contracts;
+using Auth.Api.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Api.Services;
@@ -6,13 +9,15 @@ namespace Auth.Api.Services;
 /// <summary>
 /// 角色管理服务 - 提供角色的CRUD操作和业务逻辑处理
 /// </summary>
-public class RoleService
+public class RoleService : IRoleService
 {
-    private readonly AuthDbContext _db;
+    private readonly UnifiedDbContext _db;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RoleService(AuthDbContext db)
+    public RoleService(UnifiedDbContext db, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -35,8 +40,8 @@ public class RoleService
         current = current <= 0 ? 1 : current;
         size = size <= 0 ? 10 : size;
 
-        // 构建查询
-        var query = _db.Roles.AsQueryable();
+        // 构建查询 - 排除已删除的数据
+        var query = _db.Roles.Where(x => !x.DeletedFlag);
 
         // 角色名称模糊搜索
         if (!string.IsNullOrWhiteSpace(roleName))
@@ -59,20 +64,26 @@ public class RoleService
         // 获取总数
         var total = await query.CountAsync();
 
-        // 分页查询
-        var items = await query
+        // 分页查询,先加载实体再映射
+        var roles = await query
             .OrderByDescending(x => x.CreatedAt)
             .Skip((current - 1) * size)
             .Take(size)
-            .Select(x => new RoleDto
-            {
-                Id = x.Id,
-                RoleName = x.Name,
-                RoleCode = x.Code,
-                RoleDesc = x.Description,
-                Status = x.Status
-            })
             .ToListAsync();
+
+        // 在内存中映射到DTO
+        var items = roles.Select(x => new RoleDto
+        {
+            Id = x.Id,
+            RoleName = x.Name,
+            RoleCode = x.Code,
+            RoleDesc = x.Description,
+            Status = x.Status,
+            CreatedBy = x.CreatedBy,
+            UpdatedBy = x.UpdatedBy,
+            CreatedAt = x.CreatedAt,
+            UpdatedAt = x.UpdatedAt
+        }).ToList();
 
         return (items, total);
     }
@@ -122,10 +133,11 @@ public class RoleService
             Name = roleName,
             Code = roleCode,
             Description = roleDesc,
-            Status = status,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
+            Status = status
         };
+
+        // 设置审计字段
+        AuditHelper.SetCreateAudit(role, _httpContextAccessor.HttpContext);
 
         _db.Roles.Add(role);
         await _db.SaveChangesAsync();
@@ -169,7 +181,9 @@ public class RoleService
         {
             role.Status = status.Value;
         }
-        role.UpdatedAt = DateTimeOffset.UtcNow;
+        
+        // 设置审计字段
+        AuditHelper.SetUpdateAudit(role, _httpContextAccessor.HttpContext);
 
         await _db.SaveChangesAsync();
         return true;
@@ -197,8 +211,11 @@ public class RoleService
             throw new InvalidOperationException("该角色已分配给用户,无法删除");
         }
 
-        // 删除角色
-        _db.Roles.Remove(role);
+        // 逻辑删除角色（设置DeletedFlag）
+        AuditHelper.SetDeleteAudit(role, _httpContextAccessor.HttpContext);
+        
+        // 注释掉物理删除
+        // _db.Roles.Remove(role);
         await _db.SaveChangesAsync();
 
         return true;
@@ -232,16 +249,4 @@ public class RoleService
 
         return deletedCount;
     }
-}
-
-/// <summary>
-/// 角色数据传输对象 - 用于API响应
-/// </summary>
-public class RoleDto
-{
-    public Guid Id { get; set; }
-    public string RoleName { get; set; } = string.Empty;
-    public string RoleCode { get; set; } = string.Empty;
-    public string RoleDesc { get; set; } = string.Empty;
-    public int Status { get; set; }
 }

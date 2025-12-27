@@ -1,5 +1,7 @@
-using Auth.Api.Models;
+using Shared.Domain.Data;
+using Shared.Domain.Entities;
 using Auth.Api.Contracts;
+using Auth.Api.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Api.Services;
@@ -7,8 +9,17 @@ namespace Auth.Api.Services;
 /// <summary>
 /// 菜单服务类 - 提供菜单管理的CRUD操作和业务逻辑
 /// </summary>
-public class MenuService(AuthDbContext db)
+public class MenuService : IMenuService
 {
+    private readonly UnifiedDbContext db;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public MenuService(UnifiedDbContext db, IHttpContextAccessor httpContextAccessor)
+    {
+        this.db = db;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
     /// <summary>
     /// 获取菜单列表 - 分页查询菜单数据（树形结构）
     /// </summary>
@@ -17,8 +28,9 @@ public class MenuService(AuthDbContext db)
     /// <returns>菜单树形列表和总数</returns>
     public async Task<(List<Menu> Items, int Total)> GetMenuListAsync(int page = 1, int pageSize = 10)
     {
-        // 获取所有菜单数据 - 用于构建完整树形结构
+        // 获取所有未删除的菜单数据 - 用于构建完整树形结构
         var allMenus = await db.Menus
+            .Where(x => !x.DeletedFlag)
             .OrderBy(x => x.Order)
             .ToListAsync();
 
@@ -75,8 +87,9 @@ public class MenuService(AuthDbContext db)
     /// <returns>菜单树形列表</returns>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        // 获取所有菜单 - 按照父级ID和排序号排序
+        // 获取所有未删除的菜单 - 按照父级ID和排序号排序
         return await db.Menus
+            .Where(x => !x.DeletedFlag)
             .OrderBy(x => x.ParentId)
             .ThenBy(x => x.Order)
             .ToListAsync();
@@ -88,8 +101,9 @@ public class MenuService(AuthDbContext db)
     /// <returns>菜单树形列表</returns>
     public async Task<List<MenuTreeDto>> GetMenuTreeAsync()
     {
-        // 获取所有菜单
+        // 获取所有未删除的菜单
         var allMenus = await db.Menus
+            .Where(x => !x.DeletedFlag)
             .OrderBy(x => x.Order)
             .ToListAsync();
 
@@ -159,9 +173,8 @@ public class MenuService(AuthDbContext db)
             : 0;
         menu.Id = maxId + 1;
 
-        // 设置创建和更新时间
-        menu.CreatedAt = DateTimeOffset.UtcNow;
-        menu.UpdatedAt = DateTimeOffset.UtcNow;
+        // 设置审计字段
+        AuditHelper.SetCreateAudit(menu, _httpContextAccessor.HttpContext);
 
         // 添加到数据库
         db.Menus.Add(menu);
@@ -202,7 +215,10 @@ public class MenuService(AuthDbContext db)
         existing.MultiTab = menu.MultiTab;
         existing.FixedIndexInTab = menu.FixedIndexInTab;
         existing.Query = menu.Query;
-        existing.UpdatedAt = DateTimeOffset.UtcNow;
+        existing.Buttons = menu.Buttons;
+        
+        // 设置审计字段
+        AuditHelper.SetUpdateAudit(existing, _httpContextAccessor.HttpContext);
 
         // 保存更改
         await db.SaveChangesAsync();
@@ -230,8 +246,9 @@ public class MenuService(AuthDbContext db)
             throw new InvalidOperationException("Cannot delete menu with children. Please delete children first.");
         }
 
-        // 删除菜单
-        db.Menus.Remove(menu);
+        // 软删除菜单
+        AuditHelper.SetDeleteAudit(menu, _httpContextAccessor.HttpContext);
+        // 如果需要物理删除,请改用: db.Menus.Remove(menu);
         await db.SaveChangesAsync();
 
         return true;

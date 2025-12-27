@@ -1,4 +1,5 @@
-using Auth.Api.Models;
+using Shared.Domain.Data;
+using Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Api.Services;
@@ -107,9 +108,7 @@ public class RefreshTokenCleanupService : BackgroundService
 
         // 创建新的作用域获取 DbContext（避免长时间持有连接）
         using var scope = _serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-
-        var now = DateTimeOffset.UtcNow;
+            var db = scope.ServiceProvider.GetRequiredService<UnifiedDbContext>();        var now = DateTimeOffset.UtcNow;
         var cutoffDate = now.AddDays(-_retentionDays); // 计算保留期限截止日期
 
         try
@@ -161,7 +160,7 @@ public class RefreshTokenCleanupService : BackgroundService
     /// <param name="deletedCount">本次删除的记录数</param>
     /// <param name="cancellationToken">取消令牌</param>
     private async Task LogCleanupStatisticsAsync(
-        AuthDbContext db, 
+        UnifiedDbContext db, 
         int deletedCount,
         CancellationToken cancellationToken)
     {

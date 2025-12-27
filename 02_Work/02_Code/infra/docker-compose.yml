@@ -15,6 +15,14 @@ services:
     build: ../platform/center/Query.Api
   auth-api:
     build: ../platform/center/Auth.Api
+  admin-api:
+    build: ../platform/center/Admin.Api
+    ports: ["18083:8080"]
+  gateway-api:
+    build: ../platform/center/Gateway.Api
+    ports: ["18020:8080"]
+    volumes:
+      - ./logs/gateway:/app/logs
   monitor-api:
     build: ../platform/center/Monitor.Api
   processor-worker:

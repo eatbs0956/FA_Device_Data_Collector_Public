@@ -41,25 +41,49 @@ async function handleRefreshToken() {
 }
 
 /**
- * 处理请求过期的情况。如果 `state.refreshTokenFn` 不存在，则调用 `handleRefreshToken` 方法进行刷新，并将其赋值给 `state.refreshTokenFn`。
- * 等待刷新操作完成后，延迟 1 秒将 `state.refreshTokenFn` 重置为 null。
- * 返回刷新操作是否成功的结果。
+ * 处理请求过期的情况,支持请求队列防止并发刷新token
+ *
+ * 工作流程：
+ * 1. 如果没有正在刷新，启动刷新流程
+ * 2. 如果正在刷新，将请求加入队列等待
+ * 3. 刷新完成后，通知所有等待的请求
  *
  * @param state 请求实例的状态对象，包含刷新令牌的方法和相关状态。
  * @returns 一个 Promise，解析为刷新令牌操作是否成功的布尔值。
  */
-export async function handleExpiredRequest(state: RequestInstanceState) {
-  if (!state.refreshTokenFn) {
-    state.refreshTokenFn = handleRefreshToken();
+export async function handleExpiredRequest(state: RequestInstanceState): Promise<boolean> {
+  // 如果正在刷新token，将请求加入队列等待
+  if (state.isRefreshing) {
+    return new Promise<boolean>(resolve => {
+      state.pendingRequests.push((token: string) => {
+        resolve(Boolean(token));
+      });
+    });
   }
 
-  const success = await state.refreshTokenFn;
+  // 开始刷新token
+  state.isRefreshing = true;
 
-  setTimeout(() => {
-    state.refreshTokenFn = null;
-  }, 1000);
+  try {
+    const success = await handleRefreshToken();
 
-  return success;
+    if (success) {
+      const newToken = localStg.get('token') || '';
+      // 通知所有等待的请求
+      state.pendingRequests.forEach(callback => callback(newToken));
+    } else {
+      // 刷新失败，通知所有等待的请求
+      state.pendingRequests.forEach(callback => callback(''));
+    }
+
+    // 清空队列
+    state.pendingRequests = [];
+
+    return success;
+  } finally {
+    // 重置刷新状态
+    state.isRefreshing = false;
+  }
 }
 
 /**

@@ -314,6 +314,7 @@ declare namespace App {
         columnSetting: string;
         config: string;
         confirm: string;
+        createdAt: string;
         delete: string;
         deleteSuccess: string;
         confirmDelete: string;
@@ -339,6 +340,15 @@ declare namespace App {
         update: string;
         updateSuccess: string;
         userCenter: string;
+        status: string;
+        import: string;
+        export: string;
+        pleaseSelect: string;
+        pleaseSelectData: string;
+        enableSuccess: string;
+        disableSuccess: string;
+        enable: string;
+        disable: string;
         yesOrNo: {
           yes: string;
           no: string;
@@ -351,6 +361,7 @@ declare namespace App {
         logoutWithModalMsg: string;
         refreshToken: string;
         tokenExpired: string;
+        forbidden: string;
       };
       theme: {
         themeSchema: { title: string } & Record<UnionKey.ThemeScheme, string>;
@@ -651,6 +662,356 @@ declare namespace App {
               local: string;
             };
           };
+        };
+        device: {
+          title: string;
+          deviceName: string;
+          deviceId: string;
+          description: string;
+          protocol: string;
+          protocolTypeLabel: string;
+          connection: string;
+          edgeNode: string;
+          deviceGroup: string;
+          location: string;
+          enabled: string;
+          tagCount: string;
+          lastConnectedAt: string;
+          connectionConfig: string;
+          protocolConfig: string;
+          tagsConfig: string;
+          testConnection: string;
+          form: {
+            deviceName: string;
+            deviceId: string;
+            description: string;
+            protocol: string;
+            edgeNode: string;
+            deviceGroup: string;
+            location: string;
+            enabled: string;
+          };
+          addDevice: string;
+          editDevice: string;
+          protocolType: {
+            modbusTcp: string;
+            modbusRtu: string;
+            opcUa: string;
+            opcDa: string;
+            s7: string;
+            bacnet: string;
+            other: string;
+          };
+          connectionStatus: {
+            connected: string;
+            disconnected: string;
+            error: string;
+            unknown: string;
+          };
+          noEdgeNodeFound: string;
+          noDeviceGroupFound: string;
+          pleaseSelectDevicesToDelete: string;
+          batchDeleteSuccess: string;
+          deviceDisabled: string;
+          deviceEnabled: string;
+          missingDeviceId: string;
+          disable: string;
+          enable: string;
+          connectionForm: {
+            ip: string;
+            ipPlaceholder: string;
+            port: string;
+            timeout: string;
+            retryCount: string;
+            enableEncryption: string;
+          };
+          protocolForm: {
+            // 通用字段
+            ip: string;
+            ipPlaceholder: string;
+            port: string;
+            // Modbus TCP/RTU
+            unitId: string;
+            pollingInterval: string;
+            serialPort: string;
+            serialPortPlaceholder: string;
+            baudRate: string;
+            dataBits: string;
+            stopBits: string;
+            parity: string;
+            slaveId: string;
+            frameInterval: string;
+            // OPC UA
+            serverUrl: string;
+            serverUrlPlaceholder: string;
+            securityMode: string;
+            securityModePlaceholder: string;
+            securityPolicy: string;
+            securityPolicyPlaceholder: string;
+            authenticationMode: string;
+            authenticationModePlaceholder: string;
+            samplingInterval: string;
+            // OPC DA
+            serverName: string;
+            serverNamePlaceholder: string;
+            clsid: string;
+            clsidPlaceholder: string;
+            updateRate: string;
+            // S7
+            cpuType: string;
+            rack: string;
+            slot: string;
+          };
+        };
+        deviceGroup: {
+          title: string;
+          tree: string;
+          name: string;
+          description: string;
+          level: string;
+          sortOrder: string;
+          deviceCount: string;
+          childCount: string;
+          parent: string;
+          addChild: string;
+          showAll: string;
+          searchPlaceholder: string;
+          namePlaceholder: string;
+          parentPlaceholder: string;
+          descriptionPlaceholder: string;
+          nameRequired: string;
+          nameLength: string;
+          maxLevelReached: string;
+          levelWarning: string;
+        };
+        tag: {
+          // 页面标题和列表
+          deviceList: string;
+          tagList: string;
+          searchDevice: string;
+          noDevice: string;
+          tagCount: string;
+          selectDeviceFirst: string;
+          showEnabledOnly: string;
+
+          // 标签字段
+          tagId: string;
+          tagName: string;
+          tagAddress: string;
+          dataTypeLabel: string;
+          unit: string;
+          description: string;
+          accessModeLabel: string;
+          minValue: string;
+          maxValue: string;
+          scalingFactor: string;
+          offset: string;
+          deadband: string;
+
+          // 占位符
+          tagIdPlaceholder: string;
+          tagNamePlaceholder: string;
+          tagAddressPlaceholder: string;
+          dataTypePlaceholder: string;
+          statusPlaceholder: string;
+          unitPlaceholder: string;
+          descriptionPlaceholder: string;
+
+          // 验证消息
+          tagIdRequired: string;
+          tagNameRequired: string;
+          dataTypeRequired: string;
+
+          // 操作
+          addTag: string;
+          editTag: string;
+          batchEnable: string;
+          batchDisable: string;
+          confirmBatchDelete: string;
+          exportSuccess: string;
+          importNotImplemented: string;
+
+          // 区域标题
+          basicInfo: string;
+          addressConfig: string;
+          advancedConfig: string;
+
+          // 数据类型
+          dataType: {
+            int16: string;
+            int32: string;
+            int64: string;
+            uint16: string;
+            uint32: string;
+            uint64: string;
+            float: string;
+            double: string;
+            boolean: string;
+            string: string;
+          };
+
+          // 访问模式
+          accessMode: {
+            readOnly: string;
+            writeOnly: string;
+            readWrite: string;
+          };
+
+          // Modbus 地址配置
+          modbus: {
+            functionCode: string;
+            address: string;
+            slaveId: string;
+            quantity: string;
+          };
+
+          // OPC UA 地址配置
+          opcua: {
+            nodeId: string;
+            nodeIdPlaceholder: string;
+            namespaceIndex: string;
+          };
+
+          // OPC DA 地址配置
+          opcda: {
+            itemId: string;
+            itemIdPlaceholder: string;
+          };
+
+          // S7 地址配置
+          s7: {
+            area: string;
+            dbNumber: string;
+            offset: string;
+            bitOffset: string;
+          };
+        };
+        edgeNode: {
+          title: string;
+          nodeName: string;
+          nodeId: string;
+          platform: string;
+          version: string;
+          status: string;
+          registrationType: string;
+          ipAddress: string;
+          port: string;
+          location: string;
+          deviceCount: string;
+          lastHeartbeat: string;
+          osInfo: string;
+          hardwareInfo: string;
+          installPath: string;
+          resourceLimits: string;
+          basicInfo: string;
+          systemInfo: string;
+          advancedConfig: string;
+          form: {
+            nodeName: string;
+            nodeId: string;
+            status: string;
+            platform: string;
+            location: string;
+            resourceLimits: string;
+            version: string;
+            ipAddress: string;
+            installPath: string;
+            osInfo: string;
+            hardwareInfo: string;
+          };
+          addNode: string;
+          editNode: string;
+          nodeStatus: {
+            online: string;
+            offline: string;
+            error: string;
+          };
+          platformType: {
+            net80: string;
+            net45: string;
+          };
+          registrationTypeOptions: {
+            auto: string;
+            manual: string;
+          };
+          confirmDeleteNode: string;
+          deleteNodeWithDevicesWarning: string;
+          deleteSuccess: string;
+          confirmBatchDelete: string;
+          batchDeleteSuccess: string;
+          batchDeletePartialSuccess: string;
+          editableFieldsNote: string;
+          manualNodeNote: string;
+          manualNodeEditableNote: string;
+          manualNodeConnectedNote: string;
+          autoNodeEditNote: string;
+        };
+        collectionTask: {
+          title: string;
+          name: string;
+          code: string;
+          description: string;
+          taskType: string;
+          defaultInterval: string;
+          cronExpression: string;
+          priority: string;
+          status: string;
+          isEnabled: string;
+          effectiveFrom: string;
+          effectiveTo: string;
+          deviceCount: string;
+          devices: string;
+          form: {
+            name: string;
+            code: string;
+            description: string;
+            taskType: string;
+            defaultInterval: string;
+            cronExpression: string;
+            priority: string;
+            devices: string;
+          };
+          addTask: string;
+          editTask: string;
+          taskTypeOptions: {
+            periodic: string;
+            scheduled: string;
+            eventDriven: string;
+            hybrid: string;
+          };
+          taskStatusOptions: {
+            draft: string;
+            active: string;
+            paused: string;
+            stopped: string;
+          };
+          taskTypeDescription: {
+            periodic: string;
+            scheduled: string;
+            eventDriven: string;
+            hybrid: string;
+          };
+          confirmDeleteTask: string;
+          deleteSuccess: string;
+          confirmBatchDelete: string;
+          batchDeleteSuccess: string;
+          batchDeletePartialSuccess: string;
+          statusChangeSuccess: string;
+          startTask: string;
+          pauseTask: string;
+          stopTask: string;
+          confirmStartTask: string;
+          confirmPauseTask: string;
+          confirmStopTask: string;
+          confirmEnableTask: string;
+          confirmDisableTask: string;
+          enableTask: string;
+          disableTask: string;
+          cronExpressionHelp: string;
+          intervalMs: string;
+          noDevicesSelected: string;
+          selectDevices: string;
+          selectedDevices: string;
         };
       };
       form: {

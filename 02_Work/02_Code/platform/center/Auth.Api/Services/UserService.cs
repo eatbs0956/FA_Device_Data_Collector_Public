@@ -1,4 +1,7 @@
-using Auth.Api.Models;
+using Shared.Domain.Data;
+using Shared.Domain.Entities;
+using Auth.Api.Contracts;
+using Auth.Api.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Api.Services;
@@ -6,15 +9,17 @@ namespace Auth.Api.Services;
 /// <summary>
 /// 用户管理服务 - 提供用户的CRUD操作和业务逻辑处理
 /// </summary>
-public class UserService
+public class UserService : IUserService
 {
-    private readonly AuthDbContext _db;
+    private readonly UnifiedDbContext _db;
     private readonly PasswordService _passwordService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserService(AuthDbContext db, PasswordService passwordService)
+    public UserService(UnifiedDbContext db, PasswordService passwordService, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _passwordService = passwordService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -43,8 +48,8 @@ public class UserService
         current = current <= 0 ? 1 : current;
         size = size <= 0 ? 10 : size;
 
-        // 构建查询
-        var query = _db.Users.AsQueryable();
+        // 构建查询 - 排除已删除的数据
+        var query = _db.Users.Where(x => !x.DeletedFlag);
 
         // 用户名模糊搜索
         if (!string.IsNullOrWhiteSpace(userName))
@@ -117,7 +122,11 @@ public class UserService
             UserPhone = x.Phone,
             UserEmail = x.Email,
             Status = x.Status,
-            UserRoles = userRoleCodesDict.GetValueOrDefault(x.Id, Array.Empty<string>())
+            UserRoles = userRoleCodesDict.GetValueOrDefault(x.Id, Array.Empty<string>()),
+            CreatedBy = x.CreatedBy,
+            UpdatedBy = x.UpdatedBy,
+            CreatedAt = x.CreatedAt,
+            UpdatedAt = x.UpdatedAt
         }).ToList();
 
         return (items, total);
@@ -182,10 +191,11 @@ public class UserService
             Enabled = status == 1,
             PasswordHash = string.IsNullOrWhiteSpace(password) 
                 ? _passwordService.Hash("Admin@123") 
-                : _passwordService.Hash(password),
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
+                : _passwordService.Hash(password)
         };
+
+        // 设置审计字段
+        AuditHelper.SetCreateAudit(user, _httpContextAccessor.HttpContext);
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -257,7 +267,9 @@ public class UserService
             user.PasswordHash = _passwordService.Hash(password);
             user.PasswordUpdatedAt = DateTimeOffset.UtcNow;
         }
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        
+        // 设置审计字段
+        AuditHelper.SetUpdateAudit(user, _httpContextAccessor.HttpContext);
 
         await _db.SaveChangesAsync();
 
@@ -291,8 +303,11 @@ public class UserService
         var refreshTokens = await _db.RefreshTokens.Where(x => x.UserId == id).ToListAsync();
         _db.RefreshTokens.RemoveRange(refreshTokens);
 
-        // 删除用户
-        _db.Users.Remove(user);
+        // 逻辑删除用户（设置DeletedFlag）
+        AuditHelper.SetDeleteAudit(user, _httpContextAccessor.HttpContext);
+        
+        // 注释掉物理删除
+        // _db.Users.Remove(user);
         await _db.SaveChangesAsync();
 
         return true;
@@ -325,14 +340,14 @@ public class UserService
     /// <param name="userId">用户ID</param>
     /// <param name="roleCodes">角色编码数组</param>
     /// <returns>是否分配成功</returns>
-    private async Task<bool> AssignRolesToUserAsync(Guid userId, string[] roleCodes)
+    public async Task AssignRolesToUserAsync(Guid userId, string[] roleCodes)
     {
         // 验证用户是否存在
         var userIdLocal = userId; // 创建局部变量避免闭包捕获方法参数
         var exists = await _db.Users.AnyAsync(x => x.Id == userIdLocal);
         if (!exists)
         {
-            return false;
+            return;
         }
 
         // 删除现有的用户角色关联
@@ -345,7 +360,7 @@ public class UserService
         if (roleCodes == null || roleCodes.Length == 0)
         {
             await _db.SaveChangesAsync();
-            return true;
+            return;
         }
 
         // 创建局部变量避免闭包捕获方法参数导致的EF Core表达式树转换问题
@@ -368,7 +383,6 @@ public class UserService
         }
 
         await _db.SaveChangesAsync();
-        return true;
     }
 
     /// <summary>
@@ -383,19 +397,4 @@ public class UserService
             .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Code)
             .ToArrayAsync();
     }
-}
-
-/// <summary>
-/// 用户数据传输对象 - 用于API响应
-/// </summary>
-public class UserDto
-{
-    public Guid Id { get; set; }
-    public string UserName { get; set; } = string.Empty;
-    public string NickName { get; set; } = string.Empty;
-    public string? UserGender { get; set; }
-    public string UserPhone { get; set; } = string.Empty;
-    public string UserEmail { get; set; } = string.Empty;
-    public int Status { get; set; }
-    public string[] UserRoles { get; set; } = Array.Empty<string>();
 }
