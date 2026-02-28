@@ -28,4 +28,7 @@ Thumbs.db
 
 # Env
 .env
+
+# User runtime config (generated at runtime, not source-controlled)
+**/usersettings.json
 **/.env.local

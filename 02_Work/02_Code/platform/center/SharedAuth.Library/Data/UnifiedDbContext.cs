@@ -181,6 +181,14 @@ public class UnifiedDbContext : DbContext
             .HasForeignKey(d => d.EdgeNodeId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // === User(ServiceAccount) - EdgeNode 一对多关系 ===
+        // 一个服务账号可以管理多个边缘节点
+        modelBuilder.Entity<EdgeNode>()
+            .HasOne(e => e.ServiceUser)
+            .WithMany()
+            .HasForeignKey(e => e.ServiceUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // === Device - TagDefinition 一对多关系 ===
         modelBuilder.Entity<Device>()
             .HasMany(d => d.TagDefinitions)

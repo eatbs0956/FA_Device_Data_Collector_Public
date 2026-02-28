@@ -98,7 +98,8 @@ public class TokenService(UnifiedDbContext db) : ITokenService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.UniqueName, user.UserName),
             new(JwtRegisteredClaimNames.Jti, jti),
-            new("tenant_id", user.TenantId) // 添加租户ID到JWT Token
+            new("tenant_id", user.TenantId), // 添加租户ID到JWT Token
+            new("user_type", user.UserType ?? "user") // 添加用户类型：user=交互账号, service=服务账号
         };
 		// 角色代码查询 - 获取用户拥有的所有角色代码用于授权
 		var roleCodes = await db.UserRoles.Where(x => x.UserId == user.Id)

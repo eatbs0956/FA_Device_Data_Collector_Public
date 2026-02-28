@@ -1,0 +1,111 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    /// <summary>
+    /// 关于对话框
+    /// </summary>
+    public class AboutForm : Form
+    {
+        private Label _appNameLabel;
+        private LinkLabel _versionLabel;
+        private Label _platformLabel;
+        private Label _copyrightLabel;
+        private Label _descriptionLabel;
+        private Button _okButton;
+
+        public AboutForm()
+        {
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = L.T("AboutForm_Title");
+            this.Size = new Size(350, 250);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+
+            // 应用程序名称
+            _appNameLabel = new Label
+            {
+                Text = L.T("AboutForm_AppName"),
+                Location = new Point(20, 20),
+                Size = new Size(300, 25),
+                Font = new Font("Microsoft YaHei UI", 14F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_appNameLabel);
+
+            // 版本号（可点击查看履历）
+            _versionLabel = new LinkLabel
+            {
+                Text = L.T("AboutForm_Version", "1.0.0"),
+                Location = new Point(20, 55),
+                Size = new Size(300, 20),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            _versionLabel.LinkClicked += VersionLabel_LinkClicked;
+            this.Controls.Add(_versionLabel);
+
+            // 平台
+            _platformLabel = new Label
+            {
+                Text = ".NET Framework 4.7.2",
+                Location = new Point(20, 80),
+                Size = new Size(300, 20),
+                ForeColor = Color.Gray,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_platformLabel);
+
+            // 描述
+            _descriptionLabel = new Label
+            {
+                Text = "工业设备数据采集边缘端程序",
+                Location = new Point(20, 110),
+                Size = new Size(300, 40),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_descriptionLabel);
+
+            // 版权
+            _copyrightLabel = new Label
+            {
+                Text = L.T("AboutForm_Copyright"),
+                Location = new Point(20, 150),
+                Size = new Size(300, 20),
+                ForeColor = Color.Gray,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_copyrightLabel);
+
+            // 确定按钮
+            _okButton = new Button
+            {
+                Text = L.T("AboutForm_Button_OK"),
+                Location = new Point(130, 180),
+                Size = new Size(80, 28),
+                DialogResult = DialogResult.OK
+            };
+            _okButton.Click += (s, e) => this.Close();
+            this.Controls.Add(_okButton);
+
+            this.AcceptButton = _okButton;
+        }
+
+        private void VersionLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            using (var historyForm = new VersionHistoryForm())
+            {
+                historyForm.ShowDialog(this);
+            }
+        }
+    }
+}

@@ -578,6 +578,7 @@ declare namespace App {
             userEmail: string;
             userStatus: string;
             userRole: string;
+            userTypeLabel: string;
             form: {
               userName: string;
               userGender: string;
@@ -586,12 +587,21 @@ declare namespace App {
               userEmail: string;
               userStatus: string;
               userRole: string;
+              userType: string;
             };
             addUser: string;
             editUser: string;
             gender: {
               male: string;
               female: string;
+            };
+            userType: {
+              user: string;
+              service: string;
+            };
+            userTypeChangeConfirm: {
+              toService: string;
+              toUser: string;
             };
           };
           menu: {
@@ -751,6 +761,16 @@ declare namespace App {
             authenticationMode: string;
             authenticationModePlaceholder: string;
             samplingInterval: string;
+            // OPC UA 认证字段
+            username: string;
+            usernamePlaceholder: string;
+            password: string;
+            passwordPlaceholder: string;
+            clientCertificatePath: string;
+            clientCertificatePathPlaceholder: string;
+            clientPrivateKeyPath: string;
+            clientPrivateKeyPathPlaceholder: string;
+            certificatePathWarning: string;
             // OPC DA
             serverName: string;
             serverNamePlaceholder: string;
@@ -807,6 +827,8 @@ declare namespace App {
           scalingFactor: string;
           offset: string;
           deadband: string;
+          enableRealtime: string;
+          enableRealtimeTip: string;
 
           // 占位符
           tagIdPlaceholder: string;
@@ -1012,6 +1034,96 @@ declare namespace App {
           noDevicesSelected: string;
           selectDevices: string;
           selectedDevices: string;
+        };
+        monitor: {
+          realtime: {
+            title: string;
+            filterStatus: string;
+            statusAll: string;
+            statusOnline: string;
+            statusOffline: string;
+            pause: string;
+            resume: string;
+            refresh: string;
+            autoRefresh: string;
+            autoRefreshOff: string;
+            deviceCount: string;
+            noDevicesFound: string;
+          };
+          deviceCard: {
+            statusOnline: string;
+            statusOffline: string;
+            statusError: string;
+            statusUnknown: string;
+            deviceId: string;
+            belongTo: string;
+            updateTime: string;
+            keyIndicators: string;
+            noData: string;
+          };
+          deviceDetail: {
+            title: string;
+            deviceName: string;
+            deviceId: string;
+            status: string;
+            deviceType: string;
+            protocol: string;
+            location: string;
+            lastConnect: string;
+            tagValues: string;
+            tagName: string;
+            value: string;
+            quality: string;
+            time: string;
+            noData: string;
+          };
+          historical: {
+            title: string;
+            timeRange: string;
+            aggregation: string;
+            refresh: string;
+            last15min: string;
+            last1hour: string;
+            last6hours: string;
+            last1day: string;
+            last7days: string;
+            last30days: string;
+            rawData: string;
+            avg1min: string;
+            avg5min: string;
+            avg1hour: string;
+            selectedTags: string;
+            moreTags: string;
+            selectDeviceHint: string;
+            searchPlaceholder: string;
+            refreshTree: string;
+          };
+          statistics: {
+            title: string;
+            byDevice: string;
+            byGroup: string;
+            byNode: string;
+            chart: string;
+            table: string;
+            chartView: string;
+            tableView: string;
+            refresh: string;
+            export: string;
+            noDataToExport: string;
+            dimension: string;
+            name: string;
+            totalPoints: string;
+            avgDevices: string;
+            onlineDevices: string;
+            pointCount: string;
+            to: string;
+            startTime: string;
+            endTime: string;
+            last1Hour: string;
+            last6Hours: string;
+            last24Hours: string;
+            last7Days: string;
+          };
         };
       };
       form: {

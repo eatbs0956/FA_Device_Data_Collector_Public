@@ -1,0 +1,144 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Collector.Agent.ViewModels"
+        xmlns:views="using:Collector.Agent.Views"
+        xmlns:l="using:Collector.Agent.Localization"
+        x:Class="Collector.Agent.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{l:Localize App.Title}"
+        Width="1600" Height="900"
+        MinWidth="1024" MinHeight="700"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <!-- 登录状态显示 -->
+        <Grid x:CompileBindings="False" IsVisible="{Binding !IsLoggedIn}">
+            <ContentControl Content="{Binding CurrentView}"/>
+        </Grid>
+
+        <!-- 主界面 -->
+        <Grid IsVisible="{Binding IsLoggedIn}" ColumnDefinitions="220,*">
+            <!-- 左侧菜单 -->
+            <Border Grid.Column="0" Background="#1e293b">
+                <DockPanel>
+                    <!-- Logo 和标题 -->
+                    <StackPanel DockPanel.Dock="Top" Margin="16,20">
+                        <TextBlock Text="📡 DevDCP" 
+                                   FontSize="24" FontWeight="Bold" 
+                                   Foreground="White"/>
+                        <TextBlock Text="{l:Localize App.SubTitle}" 
+                                   FontSize="12" Foreground="#94a3b8" 
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- 用户信息 -->
+                    <Border DockPanel.Dock="Top" 
+                            Background="#334155" 
+                            CornerRadius="8" 
+                            Margin="12,0,12,16" 
+                            Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="{Binding UserName}" 
+                                       Foreground="White" 
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding EngineStatus, StringFormat={}{0}}" 
+                                       Foreground="#94a3b8" 
+                                       FontSize="11" 
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 菜单列表 -->
+                    <ListBox x:Name="MenuListBox"
+                             ItemsSource="{Binding MenuItems}"
+                             SelectedIndex="{Binding SelectedMenuIndex, Mode=TwoWay}"
+                             Background="Transparent"
+                             Margin="8,0">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                            </Style>
+                            <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#334155"/>
+                            </Style>
+                            <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#2563eb"/>
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MenuItemViewModel">
+                                <Border Background="Transparent"
+                                        Padding="12,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Icon}" 
+                                                   FontSize="16" 
+                                                   Width="28"/>
+                                        <TextBlock Text="{Binding Title}" 
+                                                   Foreground="White" 
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- 底部登出按钮 -->
+                    <Button DockPanel.Dock="Bottom" 
+                            Content="{Binding LogoutText, StringFormat='🚪 {0}'}" 
+                            Command="{Binding LogoutCommand}"
+                            Background="Transparent"
+                            Foreground="#94a3b8"
+                            HorizontalAlignment="Stretch"
+                            Margin="12,0,12,16"
+                            Padding="12,10"/>
+                </DockPanel>
+            </Border>
+
+            <!-- 右侧内容区 -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                <!-- 顶部通知栏 -->
+                <Border Grid.Row="0" 
+                        Background="#fef3c7" 
+                        Padding="16,10"
+                        IsVisible="{Binding HasConfigChangeNotification}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" 
+                                Content="✕" 
+                                Command="{Binding DismissNotificationCommand}"
+                                Background="Transparent"
+                                Padding="8,4"/>
+                        <Button DockPanel.Dock="Right" 
+                                Content="{Binding PullConfigText}" 
+                                Command="{Binding PullConfigCommand}"
+                                Background="#f59e0b"
+                                Foreground="White"
+                                Padding="16,6"
+                                Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding ConfigChangeMessage}" 
+                                   VerticalAlignment="Center"
+                                   Foreground="#92400e"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- 内容区 -->
+                <Border Grid.Row="1" Background="#f1f5f9" Padding="20">
+                    <ContentControl Content="{Binding CurrentView}"/>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- 加载遮罩 -->
+        <Border Background="#80000000" 
+                IsVisible="{Binding IsBusy}"
+                ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="200"/>
+                <TextBlock Text="{Binding BusyMessage}" 
+                           Foreground="White" 
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

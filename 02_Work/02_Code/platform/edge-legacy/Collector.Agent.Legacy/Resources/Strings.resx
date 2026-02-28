@@ -1,0 +1,712 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>数据采集代理</value>
+  </data>
+  <data name="MainForm_Title" xml:space="preserve">
+    <value>数据采集代理 - 主界面</value>
+  </data>
+  <data name="MainForm_Menu_Task" xml:space="preserve">
+    <value>任务(&amp;T)</value>
+  </data>
+  <data name="MainForm_Menu_RefreshConfig" xml:space="preserve">
+    <value>刷新配置(&amp;R)</value>
+  </data>
+  <data name="MainForm_Menu_Settings" xml:space="preserve">
+    <value>设置(&amp;S)</value>
+  </data>
+  <data name="MainForm_Menu_Exit" xml:space="preserve">
+    <value>退出(&amp;X)</value>
+  </data>
+  <data name="MainForm_Menu_Help" xml:space="preserve">
+    <value>帮助(&amp;H)</value>
+  </data>
+  <data name="MainForm_Menu_About" xml:space="preserve">
+    <value>关于(&amp;A)</value>
+  </data>
+  <data name="MainForm_Group_NodeInfo" xml:space="preserve">
+    <value>节点信息</value>
+  </data>
+  <data name="MainForm_Label_NodeId" xml:space="preserve">
+    <value>节点ID:</value>
+  </data>
+  <data name="MainForm_Label_NodeName" xml:space="preserve">
+    <value>节点名称:</value>
+  </data>
+  <data name="MainForm_Label_Platform" xml:space="preserve">
+    <value>平台:</value>
+  </data>
+  <data name="MainForm_Label_ConnectionStatus" xml:space="preserve">
+    <value>连接状态:</value>
+  </data>
+  <data name="MainForm_Group_CollectionControl" xml:space="preserve">
+    <value>采集控制</value>
+  </data>
+  <data name="MainForm_Group_Devices" xml:space="preserve">
+    <value>设备列表</value>
+  </data>
+  <data name="MainForm_Group_Tasks" xml:space="preserve">
+    <value>任务列表</value>
+  </data>
+  <data name="MainForm_Button_Start" xml:space="preserve">
+    <value>启动采集</value>
+  </data>
+  <data name="MainForm_Button_Stop" xml:space="preserve">
+    <value>停止采集</value>
+  </data>
+  <data name="MainForm_Button_Refresh" xml:space="preserve">
+    <value>刷新配置</value>
+  </data>
+  <data name="MainForm_Group_Statistics" xml:space="preserve">
+    <value>采集统计</value>
+  </data>
+  <data name="MainForm_Label_Devices" xml:space="preserve">
+    <value>设备数:</value>
+  </data>
+  <data name="MainForm_Label_Tasks" xml:space="preserve">
+    <value>任务数:</value>
+  </data>
+  <data name="MainForm_Label_DataPoints" xml:space="preserve">
+    <value>数据点:</value>
+  </data>
+  <data name="MainForm_Label_LastCollection" xml:space="preserve">
+    <value>最后采集:</value>
+  </data>
+  <data name="MainForm_Label_Status" xml:space="preserve">
+    <value>状态:</value>
+  </data>
+  <!-- MainForm 菜单和列 -->
+  <data name="MainForm_Menu_File" xml:space="preserve">
+    <value>文件(&amp;F)</value>
+  </data>
+  <data name="MainForm_Menu_StartCollection" xml:space="preserve">
+    <value>启动采集(&amp;S)</value>
+  </data>
+  <data name="MainForm_Menu_StopCollection" xml:space="preserve">
+    <value>停止采集(&amp;P)</value>
+  </data>
+  <data name="MainForm_Col_DeviceName" xml:space="preserve">
+    <value>设备名称</value>
+  </data>
+  <data name="MainForm_Col_Protocol" xml:space="preserve">
+    <value>协议</value>
+  </data>
+  <data name="MainForm_Col_IpAddress" xml:space="preserve">
+    <value>IP地址</value>
+  </data>
+  <data name="MainForm_Col_Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="MainForm_Col_TaskName" xml:space="preserve">
+    <value>任务名称</value>
+  </data>
+  <data name="MainForm_Col_TaskCode" xml:space="preserve">
+    <value>任务编号</value>
+  </data>
+  <data name="MainForm_Col_CollectInterval" xml:space="preserve">
+    <value>采集间隔</value>
+  </data>
+  <data name="MainForm_Status_Online" xml:space="preserve">
+    <value>在线</value>
+  </data>
+  <data name="MainForm_Status_Collecting" xml:space="preserve">
+    <value>采集中</value>
+  </data>
+  <data name="MainForm_Status_Stopped" xml:space="preserve">
+    <value>已停止</value>
+  </data>
+  <data name="MainForm_Msg_ConfirmExit" xml:space="preserve">
+    <value>采集任务正在运行，确定要退出吗？</value>
+  </data>
+  <data name="MainForm_Msg_ConfirmExitTitle" xml:space="preserve">
+    <value>确认退出</value>
+  </data>
+  <data name="MainForm_Log_StartingEngine" xml:space="preserve">
+    <value>正在启动采集引擎...</value>
+  </data>
+  <data name="MainForm_Log_EngineStarted" xml:space="preserve">
+    <value>采集引擎启动成功</value>
+  </data>
+  <data name="MainForm_Log_EngineStartFailed" xml:space="preserve">
+    <value>启动采集失败: {0}</value>
+  </data>
+  <data name="MainForm_Log_StoppingEngine" xml:space="preserve">
+    <value>正在停止采集引擎...</value>
+  </data>
+  <data name="MainForm_Log_EngineStopped" xml:space="preserve">
+    <value>采集引擎已停止</value>
+  </data>
+  <data name="MainForm_Log_EngineStopFailed" xml:space="preserve">
+    <value>停止采集失败: {0}</value>
+  </data>
+  <data name="MainForm_TaskStatus" xml:space="preserve">
+    <value>任务: {0}/{1}</value>
+  </data>
+  <data name="MainForm_Group_Log" xml:space="preserve">
+    <value>运行日志</value>
+  </data>
+  <data name="MainForm_Status_Polling" xml:space="preserve">
+    <value>连接状态: 轮询模式</value>
+  </data>
+  <data name="MainForm_Status_Connected" xml:space="preserve">
+    <value>连接状态: 已连接</value>
+  </data>
+  <data name="MainForm_Status_Disconnected" xml:space="preserve">
+    <value>连接状态: 未连接</value>
+  </data>
+  <data name="Log_MainFormLoaded" xml:space="preserve">
+    <value>主窗口加载完成</value>
+  </data>
+  <data name="Log_SignalRDisabled" xml:space="preserve">
+    <value>SignalR 已禁用（使用 HTTP 轮询）</value>
+  </data>
+  <data name="Log_RefreshingConfig" xml:space="preserve">
+    <value>正在刷新配置...</value>
+  </data>
+  <data name="Log_ConfigRefreshSuccess" xml:space="preserve">
+    <value>配置刷新成功</value>
+  </data>
+  <data name="Log_ConfigRefreshFailed" xml:space="preserve">
+    <value>刷新配置失败: {0}</value>
+  </data>
+  <data name="Log_CollectionStarted" xml:space="preserve">
+    <value>采集已启动</value>
+  </data>
+  <data name="Log_CollectionStopped" xml:space="preserve">
+    <value>采集已停止</value>
+  </data>
+  <data name="Log_HeartbeatSent" xml:space="preserve">
+    <value>心跳发送成功</value>
+  </data>
+  <data name="Log_HeartbeatFailed" xml:space="preserve">
+    <value>心跳发送失败: {0}</value>
+  </data>
+  <data name="Msg_ConfirmExit" xml:space="preserve">
+    <value>采集任务正在运行，确定要退出吗？</value>
+  </data>
+  <data name="Msg_ConfirmExitTitle" xml:space="preserve">
+    <value>确认退出</value>
+  </data>
+  <data name="Msg_NoDevices" xml:space="preserve">
+    <value>没有可采集的设备</value>
+  </data>
+  <data name="Msg_Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Msg_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Msg_Info" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="LoginForm_Title" xml:space="preserve">
+    <value>数据采集代理 - 登录</value>
+  </data>
+  <data name="LoginForm_Label_Server" xml:space="preserve">
+    <value>服务器地址:</value>
+  </data>
+  <data name="LoginForm_Label_Username" xml:space="preserve">
+    <value>用户名:</value>
+  </data>
+  <data name="LoginForm_Label_Password" xml:space="preserve">
+    <value>密码:</value>
+  </data>
+  <data name="LoginForm_Label_NodeId" xml:space="preserve">
+    <value>节点ID:</value>
+  </data>
+  <data name="LoginForm_Label_NodeName" xml:space="preserve">
+    <value>节点名称:</value>
+  </data>
+  <data name="LoginForm_Button_Login" xml:space="preserve">
+    <value>登录并启动</value>
+  </data>
+  <data name="LoginForm_Button_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="LoginForm_Button_Settings" xml:space="preserve">
+    <value>高级设置</value>
+  </data>
+  <data name="LoginForm_Checkbox_ShowPassword" xml:space="preserve">
+    <value>显示密码</value>
+  </data>
+  <data name="LoginForm_Checkbox_RememberPassword" xml:space="preserve">
+    <value>记住密码</value>
+  </data>
+  <data name="LoginForm_Label_Status" xml:space="preserve">
+    <value>状态: 就绪</value>
+  </data>
+  <data name="LoginForm_Status_Logging" xml:space="preserve">
+    <value>状态: 正在登录...</value>
+  </data>
+  <data name="LoginForm_Status_Registering" xml:space="preserve">
+    <value>状态: 正在注册节点...</value>
+  </data>
+  <data name="LoginForm_Status_Success" xml:space="preserve">
+    <value>状态: 登录成功</value>
+  </data>
+  <data name="LoginForm_Error_EmptyFields" xml:space="preserve">
+    <value>请填写所有必填字段</value>
+  </data>
+  <data name="LoginForm_Error_LoginFailed" xml:space="preserve">
+    <value>登录失败: {0}</value>
+  </data>
+  <data name="LoginForm_Error_RegisterFailed" xml:space="preserve">
+    <value>节点注册失败: {0}</value>
+  </data>
+  <data name="LoginForm_Error_GatewayEmpty" xml:space="preserve">
+    <value>请输入网关地址</value>
+  </data>
+  <data name="LoginForm_Error_NodeIdEmpty" xml:space="preserve">
+    <value>请输入节点ID</value>
+  </data>
+  <data name="LoginForm_Error_CredentialsEmpty" xml:space="preserve">
+    <value>请输入用户名和密码</value>
+  </data>
+  <data name="LoginForm_Error_Exception" xml:space="preserve">
+    <value>登录出错: {0}</value>
+  </data>
+  <data name="LoginForm_Label_UserAuth" xml:space="preserve">
+    <value>─── 用户认证 ───</value>
+  </data>
+  <data name="LoginForm_DefaultNodeName" xml:space="preserve">
+    <value>采集节点-{0}</value>
+  </data>
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="SettingsForm_Group_Collection" xml:space="preserve">
+    <value>采集设置</value>
+  </data>
+  <data name="SettingsForm_Label_Interval" xml:space="preserve">
+    <value>采集间隔(秒):</value>
+  </data>
+  <data name="SettingsForm_Label_ConfigRefresh" xml:space="preserve">
+    <value>配置刷新(秒):</value>
+  </data>
+  <data name="SettingsForm_Group_Log" xml:space="preserve">
+    <value>日志设置</value>
+  </data>
+  <data name="SettingsForm_Label_LogLevel" xml:space="preserve">
+    <value>日志级别:</value>
+  </data>
+  <data name="SettingsForm_Group_Language" xml:space="preserve">
+    <value>语言设置</value>
+  </data>
+  <data name="SettingsForm_Label_Language" xml:space="preserve">
+    <value>界面语言:</value>
+  </data>
+  <data name="SettingsForm_Language_System" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="SettingsForm_Language_Chinese" xml:space="preserve">
+    <value>中文</value>
+  </data>
+  <data name="SettingsForm_Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="SettingsForm_Button_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="SettingsForm_Button_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsForm_Msg_RestartRequired" xml:space="preserve">
+    <value>语言设置将在重启应用后生效</value>
+  </data>
+  <!-- SettingsForm Tab 和标签 -->
+  <data name="SettingsForm_Tab_General" xml:space="preserve">
+    <value>通用设置</value>
+  </data>
+  <data name="SettingsForm_Tab_Communication" xml:space="preserve">
+    <value>通信设置</value>
+  </data>
+  <data name="SettingsForm_Tab_Logging" xml:space="preserve">
+    <value>日志设置</value>
+  </data>
+  <data name="SettingsForm_Label_HeartbeatInterval" xml:space="preserve">
+    <value>心跳间隔(秒):</value>
+  </data>
+  <data name="SettingsForm_Label_ConfigRefreshInterval" xml:space="preserve">
+    <value>配置刷新间隔(秒):</value>
+  </data>
+  <data name="SettingsForm_Label_ConnectionTimeout" xml:space="preserve">
+    <value>连接超时(秒):</value>
+  </data>
+  <data name="SettingsForm_Label_RetryCount" xml:space="preserve">
+    <value>重试次数:</value>
+  </data>
+  <data name="SettingsForm_Label_RetryInterval" xml:space="preserve">
+    <value>重试间隔(秒):</value>
+  </data>
+  <data name="SettingsForm_Label_LogRetention" xml:space="preserve">
+    <value>日志保留天数:</value>
+  </data>
+  <data name="SettingsForm_Checkbox_AutoStart" xml:space="preserve">
+    <value>开机自动启动</value>
+  </data>
+  <data name="SettingsForm_Checkbox_MinimizeToTray" xml:space="preserve">
+    <value>最小化到系统托盘</value>
+  </data>
+  <data name="SettingsForm_Checkbox_LogToFile" xml:space="preserve">
+    <value>记录到文件</value>
+  </data>
+  <data name="AboutForm_Title" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="AboutForm_AppName" xml:space="preserve">
+    <value>数据采集代理</value>
+  </data>
+  <data name="AboutForm_Version" xml:space="preserve">
+    <value>版本: {0}</value>
+  </data>
+  <data name="AboutForm_Copyright" xml:space="preserve">
+    <value>版权所有 © 2025 JeaaonQC</value>
+  </data>
+  <data name="AboutForm_Button_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="AboutForm_Button_ViewHistory" xml:space="preserve">
+    <value>查看版本履历</value>
+  </data>
+  <data name="VersionHistoryForm_Title" xml:space="preserve">
+    <value>版本履历</value>
+  </data>
+  <data name="VersionHistory_1_0_0" xml:space="preserve">
+    <value>v1.0.0 - 初版实现
+• 基础登录和节点注册功能
+• 设备配置同步
+• 采集任务管理
+• 心跳保活机制
+• HTTP 轮询模式（SignalR 推送暂不实现，当前 .NET Framework 包不支持）</value>
+  </data>
+  <data name="DeviceDetailForm_Title" xml:space="preserve">
+    <value>设备详情</value>
+  </data>
+  <data name="DeviceDetailForm_Tab_Basic" xml:space="preserve">
+    <value>基本信息</value>
+  </data>
+  <data name="DeviceDetailForm_Tab_Tags" xml:space="preserve">
+    <value>标签点</value>
+  </data>
+  <data name="DeviceDetailForm_Label_DeviceName" xml:space="preserve">
+    <value>设备名称:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Protocol" xml:space="preserve">
+    <value>协议类型:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_IP" xml:space="preserve">
+    <value>IP地址:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Port" xml:space="preserve">
+    <value>端口:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Status" xml:space="preserve">
+    <value>连接状态:</value>
+  </data>
+  <data name="DeviceDetailForm_Status_Connected" xml:space="preserve">
+    <value>已连接</value>
+  </data>
+  <data name="DeviceDetailForm_Status_Disconnected" xml:space="preserve">
+    <value>未连接</value>
+  </data>
+  <data name="DeviceDetailForm_Button_TestConnection" xml:space="preserve">
+    <value>连接测试</value>
+  </data>
+  <data name="DeviceDetailForm_Button_TestCollection" xml:space="preserve">
+    <value>单次采集</value>
+  </data>
+  <data name="DeviceDetailForm_Button_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="DeviceDetailForm_Col_TagName" xml:space="preserve">
+    <value>标签名称</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Address" xml:space="preserve">
+    <value>地址</value>
+  </data>
+  <data name="DeviceDetailForm_Col_DataType" xml:space="preserve">
+    <value>数据类型</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Value" xml:space="preserve">
+    <value>当前值</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_TestingConnection" xml:space="preserve">
+    <value>正在测试连接...</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_ConnectionSuccess" xml:space="preserve">
+    <value>连接测试成功</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_ConnectionFailed" xml:space="preserve">
+    <value>连接测试失败: {0}</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_Collecting" xml:space="preserve">
+    <value>正在采集...</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionSuccess" xml:space="preserve">
+    <value>采集完成，共 {0} 个点</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionComplete" xml:space="preserve">
+    <value>采集完成: 成功 {0}/{1} 个标签，耗时 {2}ms</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionFailed" xml:space="preserve">
+    <value>采集失败: {0}</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="TaskDetailForm_Title" xml:space="preserve">
+    <value>任务详情</value>
+  </data>
+  <data name="TaskDetailForm_Tab_Config" xml:space="preserve">
+    <value>任务配置</value>
+  </data>
+  <data name="TaskDetailForm_Tab_Devices" xml:space="preserve">
+    <value>关联设备</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskName" xml:space="preserve">
+    <value>任务名称:</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskCode" xml:space="preserve">
+    <value>任务编码:</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskType" xml:space="preserve">
+    <value>任务类型:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Interval" xml:space="preserve">
+    <value>采集间隔:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Priority" xml:space="preserve">
+    <value>优先级:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Status" xml:space="preserve">
+    <value>状态:</value>
+  </data>
+  <data name="TaskDetailForm_Button_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="TaskDetailForm_Col_DeviceName" xml:space="preserve">
+    <value>设备名称</value>
+  </data>
+  <data name="TaskDetailForm_Col_Protocol" xml:space="preserve">
+    <value>协议</value>
+  </data>
+  <data name="TaskDetailForm_Col_Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Common_Enabled" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="Common_Disabled" xml:space="preserve">
+    <value>禁用</value>
+  </data>
+  <!-- 任务类型 -->
+  <data name="TaskType_Periodic" xml:space="preserve">
+    <value>周期采集</value>
+  </data>
+  <data name="TaskType_Scheduled" xml:space="preserve">
+    <value>定时采集</value>
+  </data>
+  <data name="TaskType_Cron" xml:space="preserve">
+    <value>定时采集</value>
+  </data>
+  <data name="TaskType_Event" xml:space="preserve">
+    <value>事件驱动</value>
+  </data>
+  <data name="TaskType_Hybrid" xml:space="preserve">
+    <value>混合模式</value>
+  </data>
+  <data name="TaskType_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <!-- 采集日志消息 -->
+  <data name="MainForm_Log_NoDevicesToCollect" xml:space="preserve">
+    <value>没有启用的设备可采集</value>
+  </data>
+  <data name="MainForm_Log_TagValueCollected" xml:space="preserve">
+    <value>[{0}] {1} = {2}</value>
+  </data>
+  <data name="MainForm_Log_CollectionError" xml:space="preserve">
+    <value>[{0}] 采集错误: {1}</value>
+  </data>
+  <data name="MainForm_Log_DeviceConnected" xml:space="preserve">
+    <value>设备已连接: {0}</value>
+  </data>
+  <data name="MainForm_Log_DeviceDisconnected" xml:space="preserve">
+    <value>设备断开连接: {0}</value>
+  </data>
+  <data name="MainForm_Msg_CannotRefreshWhileCollecting" xml:space="preserve">
+    <value>采集进行中，无法刷新配置。请先停止采集。</value>
+  </data>
+  <data name="Log_CannotRefreshConfigDuringCollection" xml:space="preserve">
+    <value>采集进行中，无法刷新配置</value>
+  </data>
+  <data name="Log_ConfigRefreshTimeout" xml:space="preserve">
+    <value>配置刷新超时，无法获得锁</value>
+  </data>
+  <data name="Log_CannotAcquireConfigLock" xml:space="preserve">
+    <value>无法获取配置锁，采集启动失败</value>
+  </data>
+  <!-- RabbitMQ 设置 -->
+  <data name="SettingsForm_Label_RabbitMqHost" xml:space="preserve">
+    <value>RabbitMQ 主机:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqPort" xml:space="preserve">
+    <value>RabbitMQ 端口:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqUser" xml:space="preserve">
+    <value>RabbitMQ 用户名:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqPassword" xml:space="preserve">
+    <value>RabbitMQ 密码:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqExchange" xml:space="preserve">
+    <value>RabbitMQ Exchange:</value>
+  </data>
+</root>

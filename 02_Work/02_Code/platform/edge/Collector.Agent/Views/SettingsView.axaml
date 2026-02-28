@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             xmlns:l="using:Collector.Agent.Localization"
+             x:Class="Collector.Agent.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel MaxWidth="600">
+            <TextBlock Text="{l:Localize Settings.Title}" Classes="pageTitle" Margin="0,0,0,20"/>
+
+            <!-- 节点配置 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Settings.Node}" Classes="cardTitle" Margin="0,0,0,16"/>
+                    
+                    <TextBlock Text="{l:Localize Settings.NodeId}" Foreground="#475569" Margin="0,0,0,4"/>
+                    <DockPanel Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" 
+                                Classes="secondary"
+                                Content="{l:Localize Settings.GenerateNodeId}" 
+                                Command="{Binding GenerateNodeIdCommand}"
+                                Margin="8,0,0,0"/>
+                        <TextBox Text="{Binding NodeId}" Watermark="{l:Localize Settings.NodeIdPlaceholder}"/>
+                    </DockPanel>
+
+                    <TextBlock Text="{l:Localize Settings.NodeName}" Foreground="#475569" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding NodeName}" 
+                             Watermark="{l:Localize Settings.NodeNamePlaceholder}"
+                             Margin="0,0,0,12"/>
+                </StackPanel>
+            </Border>
+
+            <!-- API 配置 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Settings.Api}" Classes="cardTitle" Margin="0,0,0,16"/>
+                    
+                    <TextBlock Text="{l:Localize Settings.GatewayUrl}" Foreground="#475569" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding ApiGatewayUrl}" 
+                             Watermark="{l:Localize Settings.GatewayUrlPlaceholder}"
+                             Margin="0,0,0,12"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 语言设置 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Settings.Language}" Classes="cardTitle" Margin="0,0,0,16"/>
+                    
+                    <TextBlock Text="{l:Localize Settings.DisplayLanguage}" Foreground="#475569" Margin="0,0,0,4"/>
+                    <ComboBox ItemsSource="{Binding SupportedLanguages}"
+                              SelectedValue="{Binding SelectedLanguage}"
+                              SelectedValueBinding="{Binding Code}"
+                              Width="200"
+                              HorizontalAlignment="Left">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+
+            <!-- RabbitMQ 配置 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Settings.RabbitMq}" Classes="cardTitle" Margin="0,0,0,16"/>
+                    
+                    <Grid ColumnDefinitions="*,120" Margin="0,0,0,12">
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="{l:Localize Settings.RabbitMqHost}" Foreground="#475569" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding RabbitMqHost}" Watermark="localhost"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{l:Localize Settings.RabbitMqPort}" Foreground="#475569" Margin="0,0,0,4"/>
+                            <NumericUpDown Value="{Binding RabbitMqPort}" Minimum="1" Maximum="65535"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" Margin="0,0,0,12">
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="{l:Localize Settings.RabbitMqUser}" Foreground="#475569" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding RabbitMqUser}" Watermark="devdcp"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{l:Localize Settings.RabbitMqPassword}" Foreground="#475569" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding RabbitMqPassword}" PasswordChar="●" Watermark="{l:Localize Settings.PasswordPlaceholder}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 其他配置 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Settings.Other}" Classes="cardTitle" Margin="0,0,0,16"/>
+                    
+                    <TextBlock Text="{l:Localize Settings.Heartbeat}" Foreground="#475569" Margin="0,0,0,4"/>
+                    <NumericUpDown Value="{Binding HeartbeatIntervalSeconds}" 
+                                   Minimum="10" Maximum="300"
+                                   Width="150"
+                                   HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 保存提示 -->
+            <TextBlock Text="{Binding SaveMessage}" 
+                       Foreground="#16a34a"
+                       Margin="0,0,0,12"
+                       IsVisible="{Binding SaveMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+            <!-- 按钮 -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,0,0,20">
+                <Button Content="{l:Localize Settings.Reset}" 
+                        Classes="secondary"
+                        Command="{Binding ResetSettingsCommand}"/>
+                <Button Content="{l:Localize Settings.SaveConfig, Prefix='💾 '}" 
+                        Classes="primary"
+                        Command="{Binding SaveSettingsCommand}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

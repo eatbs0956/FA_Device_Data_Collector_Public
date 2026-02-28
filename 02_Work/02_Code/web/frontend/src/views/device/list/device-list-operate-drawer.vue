@@ -70,6 +70,12 @@ interface OpcUaConfig {
   securityPolicy: string; // None/Basic256/Basic256Sha256
   authenticationMode: string; // Anonymous/UserName/Certificate
   samplingInterval: number; // 采样间隔(ms)
+  // 用户名/密码认证字段
+  username: string;
+  password: string;
+  // 证书认证字段
+  clientCertificatePath: string;
+  clientPrivateKeyPath: string;
 }
 
 /** OPC DA 协议配置 */
@@ -155,7 +161,11 @@ function createDefaultModel(): Model {
       securityMode: 'None',
       securityPolicy: 'None',
       authenticationMode: 'Anonymous',
-      samplingInterval: 1000
+      samplingInterval: 1000,
+      username: '',
+      password: '',
+      clientCertificatePath: '',
+      clientPrivateKeyPath: ''
     },
 
     // OPC DA 默认值
@@ -182,6 +192,31 @@ const isModbusRtu = computed(() => model.value.protocolType === '2');
 const isOpcUa = computed(() => model.value.protocolType === '3');
 const isOpcDa = computed(() => model.value.protocolType === '4');
 const isS7 = computed(() => model.value.protocolType === '5');
+
+// ============ OPC UA 认证模式判断 ============
+
+/** 是否为用户名认证模式 */
+const isOpcUaUserNameAuth = computed(() => model.value.opcUa.authenticationMode === 'UserName');
+/** 是否为证书认证模式 */
+const isOpcUaCertificateAuth = computed(() => model.value.opcUa.authenticationMode === 'Certificate');
+/** 安全策略是否禁用（当安全模式为 None 时禁用） */
+const isSecurityPolicyDisabled = computed(() => model.value.opcUa.securityMode === 'None');
+
+// ============ OPC UA 安全模式/策略联动 ============
+
+/** 监听安全模式变化，自动联动安全策略 */
+watch(
+  () => model.value.opcUa.securityMode,
+  newMode => {
+    if (newMode === 'None') {
+      // 安全模式为 None 时，策略也必须为 None
+      model.value.opcUa.securityPolicy = 'None';
+    } else if (model.value.opcUa.securityPolicy === 'None') {
+      // 安全模式非 None 时，如果策略还是 None，则设为默认值
+      model.value.opcUa.securityPolicy = 'Basic256Sha256';
+    }
+  }
+);
 
 // ============ 表单验证规则 ============
 
@@ -338,7 +373,11 @@ function parseOpcUaConfig(config: Record<string, unknown>): void {
     securityMode: (config.securityMode as string) || 'None',
     securityPolicy: (config.securityPolicy as string) || 'None',
     authenticationMode: (config.authenticationMode as string) || 'Anonymous',
-    samplingInterval: (config.samplingInterval as number) || 1000
+    samplingInterval: (config.samplingInterval as number) || 1000,
+    username: (config.username as string) || '',
+    password: (config.password as string) || '',
+    clientCertificatePath: (config.clientCertificatePath as string) || '',
+    clientPrivateKeyPath: (config.clientPrivateKeyPath as string) || ''
   };
 }
 
@@ -398,11 +437,11 @@ function handleInitModel() {
   if (props.operateType === 'edit' && props.rowData) {
     // 调试：输出原始数据
     // eslint-disable-next-line no-console
-    console.log('Edit rowData:', props.rowData);
+    // console.log('Edit rowData:', props.rowData);
     // eslint-disable-next-line no-console
-    console.log('connectionConfig type:', typeof props.rowData.connectionConfig, props.rowData.connectionConfig);
+    // console.log('connectionConfig type:', typeof props.rowData.connectionConfig, props.rowData.connectionConfig);
     // eslint-disable-next-line no-console
-    console.log('protocolConfig type:', typeof props.rowData.protocolConfig, props.rowData.protocolConfig);
+    // console.log('protocolConfig type:', typeof props.rowData.protocolConfig, props.rowData.protocolConfig);
 
     // 解析配置（如果是字符串则需要 JSON.parse）
     let connectionConfig = props.rowData.connectionConfig || {};
@@ -453,11 +492,11 @@ function handleInitModel() {
 
     // 调试：输出解析后的配置
     // eslint-disable-next-line no-console
-    console.log('Parsed connectionConfig:', connectionConfig);
+    // console.log('Parsed connectionConfig:', connectionConfig);
     // eslint-disable-next-line no-console
-    console.log('Parsed protocolConfig:', protocolConfig);
+    // console.log('Parsed protocolConfig:', protocolConfig);
     // eslint-disable-next-line no-console
-    console.log('Protocol Type Code:', model.value.protocolType);
+    // console.log('Protocol Type Code:', model.value.protocolType);
 
     // 解析协议配置
     parseProtocolConfig(model.value.protocolType, protocolConfig);
@@ -500,8 +539,8 @@ async function handleSubmit() {
     connectionConfig: JSON.stringify(connectionConfig), // 序列化为JSON字符串
     protocolConfig: JSON.stringify(protocolConfig), // 序列化为JSON字符串
     tagsConfig: '[]', // 空数组的JSON字符串
-    edgeNodeId: model.value.edgeNodeId || undefined,
-    groupId: model.value.groupId || undefined,
+    edgeNodeId: model.value.edgeNodeId || '00000000-0000-0000-0000-000000000000',
+    groupId: model.value.groupId || '00000000-0000-0000-0000-000000000000',
     location: model.value.location || undefined,
     enabled: model.value.enabled
   };
@@ -716,7 +755,7 @@ watch(visible, () => {
           </ElCol>
           <ElCol :span="12">
             <ElFormItem :label="$t('page.device.protocolForm.securityPolicy')" prop="opcUa.securityPolicy">
-              <ElSelect v-model="model.opcUa.securityPolicy" class="w-full">
+              <ElSelect v-model="model.opcUa.securityPolicy" class="w-full" :disabled="isSecurityPolicyDisabled">
                 <ElOption v-for="opt in securityPolicyOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
               </ElSelect>
             </ElFormItem>
@@ -736,6 +775,53 @@ watch(visible, () => {
             </ElFormItem>
           </ElCol>
         </ElRow>
+
+        <!-- 用户名/密码认证字段 -->
+        <template v-if="isOpcUaUserNameAuth">
+          <ElRow :gutter="16">
+            <ElCol :span="12">
+              <ElFormItem :label="$t('page.device.protocolForm.username')" prop="opcUa.username">
+                <ElInput v-model="model.opcUa.username" :placeholder="$t('page.device.protocolForm.usernamePlaceholder')" />
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="12">
+              <ElFormItem :label="$t('page.device.protocolForm.password')" prop="opcUa.password">
+                <ElInput
+                  v-model="model.opcUa.password"
+                  type="password"
+                  show-password
+                  :placeholder="$t('page.device.protocolForm.passwordPlaceholder')"
+                />
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
+        </template>
+
+        <!-- 证书认证字段 -->
+        <template v-if="isOpcUaCertificateAuth">
+          <ElAlert
+            type="warning"
+            show-icon
+            :closable="false"
+            class="mb-4"
+          >
+            <template #title>
+              {{ $t('page.device.protocolForm.certificatePathWarning') }}
+            </template>
+          </ElAlert>
+          <ElFormItem :label="$t('page.device.protocolForm.clientCertificatePath')" prop="opcUa.clientCertificatePath">
+            <ElInput
+              v-model="model.opcUa.clientCertificatePath"
+              :placeholder="$t('page.device.protocolForm.clientCertificatePathPlaceholder')"
+            />
+          </ElFormItem>
+          <ElFormItem :label="$t('page.device.protocolForm.clientPrivateKeyPath')" prop="opcUa.clientPrivateKeyPath">
+            <ElInput
+              v-model="model.opcUa.clientPrivateKeyPath"
+              :placeholder="$t('page.device.protocolForm.clientPrivateKeyPathPlaceholder')"
+            />
+          </ElFormItem>
+        </template>
       </template>
 
       <!-- OPC DA 配置 -->

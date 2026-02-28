@@ -508,6 +508,11 @@ public record UserUpdateRequest
     public string? NickName { get; set; }
 
     /// <summary>
+    /// 用户类型 - user:交互账号, service:服务账号
+    /// </summary>
+    public string? UserType { get; set; }
+
+    /// <summary>
     /// 用户性别 - 1:男 2:女
     /// </summary>
     public int? UserGender { get; set; }

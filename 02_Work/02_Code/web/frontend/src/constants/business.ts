@@ -14,6 +14,13 @@ export const userGenderRecord: Record<Api.SystemManage.UserGender, App.I18n.I18n
 
 export const userGenderOptions = transformRecordToOption(userGenderRecord);
 
+export const userTypeRecord: Record<Api.SystemManage.UserType, App.I18n.I18nKey> = {
+  user: 'page.manage.user.userType.user',
+  service: 'page.manage.user.userType.service'
+};
+
+export const userTypeOptions = transformRecordToOption(userTypeRecord);
+
 export const menuTypeRecord: Record<Api.SystemManage.MenuType, App.I18n.I18nKey> = {
   '1': 'page.manage.menu.type.directory',
   '2': 'page.manage.menu.type.menu'

@@ -1,0 +1,264 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Models;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    /// <summary>
+    /// 设备详情对话框
+    /// </summary>
+    public partial class DeviceDetailForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        
+        private readonly DeviceConfig _device;
+        private readonly AppService _appService;
+        
+        private Label _deviceNameValueLabel;
+        private Label _protocolValueLabel;
+        private Label _ipValueLabel;
+        private Label _portValueLabel;
+        private Label _statusValueLabel;
+
+        public DeviceDetailForm(DeviceConfig device, AppService appService)
+        {
+            _device = device ?? throw new ArgumentNullException(nameof(device));
+            _appService = appService ?? throw new ArgumentNullException(nameof(appService));
+            
+            InitializeComponent();
+            InitializeText();
+            InitializeBasicInfoTab();
+            InitializeTagsTab();
+            InitializeEvents();
+            LoadDeviceInfo();
+            LoadTags();
+        }
+
+        private void InitializeText()
+        {
+            this.Text = L.T("DeviceDetailForm_Title");
+            _basicInfoTab.Text = L.T("DeviceDetailForm_Tab_Basic");
+            _tagsTab.Text = L.T("DeviceDetailForm_Tab_Tags");
+            _testConnectionButton.Text = L.T("DeviceDetailForm_Button_TestConnection");
+            _testCollectionButton.Text = L.T("DeviceDetailForm_Button_TestCollection");
+            _closeButton.Text = L.T("DeviceDetailForm_Button_Close");
+        }
+
+        private void InitializeEvents()
+        {
+            _testConnectionButton.Click += async (s, e) => await TestConnection();
+            _testCollectionButton.Click += async (s, e) => await TestCollection();
+        }
+
+        private void InitializeBasicInfoTab()
+        {
+            int y = 20;
+            int labelWidth = 100;
+            int valueWidth = 300;
+
+            AddLabelPair(_basicInfoTab, L.T("DeviceDetailForm_Label_DeviceName"), ref _deviceNameValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+            AddLabelPair(_basicInfoTab, L.T("DeviceDetailForm_Label_Protocol"), ref _protocolValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+            AddLabelPair(_basicInfoTab, L.T("DeviceDetailForm_Label_IP"), ref _ipValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+            AddLabelPair(_basicInfoTab, L.T("DeviceDetailForm_Label_Port"), ref _portValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+            AddLabelPair(_basicInfoTab, L.T("DeviceDetailForm_Label_Status"), ref _statusValueLabel, 20, y, labelWidth, valueWidth);
+        }
+
+        private void InitializeTagsTab()
+        {
+            _tagsListView.Columns.Add(L.T("DeviceDetailForm_Col_TagName"), 150);
+            _tagsListView.Columns.Add(L.T("DeviceDetailForm_Col_Address"), 150);
+            _tagsListView.Columns.Add(L.T("DeviceDetailForm_Col_DataType"), 100);
+            _tagsListView.Columns.Add(L.T("DeviceDetailForm_Col_Value"), 100);
+        }
+
+        private void AddLabelPair(Control parent, string labelText, ref Label valueLabel, int x, int y, int labelWidth, int valueWidth)
+        {
+            var label = new Label
+            {
+                Text = labelText,
+                Location = new Point(x, y),
+                Size = new Size(labelWidth, 20)
+            };
+            parent.Controls.Add(label);
+
+            valueLabel = new Label
+            {
+                Text = "-",
+                Location = new Point(x + labelWidth, y),
+                Size = new Size(valueWidth, 20),
+                ForeColor = Color.Blue
+            };
+            parent.Controls.Add(valueLabel);
+        }
+
+        private void LoadDeviceInfo()
+        {
+            _deviceNameValueLabel.Text = _device.DeviceName ?? "-";
+            _protocolValueLabel.Text = _device.Protocol ?? "-";
+            
+            // 从协议配置中提取 IP 和端口
+            var ip = "-";
+            var port = "-";
+            if (_device.ProtocolConfig != null)
+            {
+                if (_device.ProtocolConfig.TryGetValue("ip", out var ipValue))
+                    ip = ipValue?.ToString() ?? "-";
+                else if (_device.ProtocolConfig.TryGetValue("serverUrl", out var serverUrl))
+                    ip = serverUrl?.ToString() ?? "-";
+                    
+                if (_device.ProtocolConfig.TryGetValue("port", out var portValue))
+                    port = portValue?.ToString() ?? "-";
+            }
+            
+            _ipValueLabel.Text = ip;
+            _portValueLabel.Text = port;
+            _statusValueLabel.Text = L.T("DeviceDetailForm_Status_Disconnected");
+            _statusValueLabel.ForeColor = Color.Red;
+        }
+
+        private void LoadTags()
+        {
+            _tagsListView.Items.Clear();
+
+            if (_device.Tags == null || _device.Tags.Count == 0)
+                return;
+
+            foreach (var tag in _device.Tags)
+            {
+                var item = new ListViewItem(tag.TagName ?? "-");
+                item.SubItems.Add(tag.Address ?? "-");
+                item.SubItems.Add(tag.DataType ?? "-");
+                item.SubItems.Add("-"); // 当前值默认为空
+                item.Tag = tag;
+                _tagsListView.Items.Add(item);
+            }
+        }
+
+        private async Task TestConnection()
+        {
+            _testConnectionButton.Enabled = false;
+            _statusLabel.Text = L.T("DeviceDetailForm_Msg_TestingConnection");
+            
+            try
+            {
+                // TODO: 实现实际的连接测试逻辑
+                // 这里需要根据协议类型调用不同的连接测试方法
+                await Task.Delay(1000); // 模拟测试
+                
+                // 模拟成功
+                _statusValueLabel.Text = L.T("DeviceDetailForm_Status_Connected");
+                _statusValueLabel.ForeColor = Color.Green;
+                _statusLabel.Text = L.T("DeviceDetailForm_Msg_ConnectionSuccess");
+                
+                MessageBox.Show(
+                    L.T("DeviceDetailForm_Msg_ConnectionSuccess"),
+                    L.T("Msg_Info"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "连接测试失败");
+                _statusValueLabel.Text = L.T("DeviceDetailForm_Status_Disconnected");
+                _statusValueLabel.ForeColor = Color.Red;
+                _statusLabel.Text = L.T("DeviceDetailForm_Msg_ConnectionFailed", ex.Message);
+                
+                MessageBox.Show(
+                    L.T("DeviceDetailForm_Msg_ConnectionFailed", ex.Message),
+                    L.T("Msg_Error"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _testConnectionButton.Enabled = true;
+            }
+        }
+
+        private async Task TestCollection()
+        {
+            _testCollectionButton.Enabled = false;
+            _statusLabel.Text = L.T("DeviceDetailForm_Msg_Collecting");
+            
+            try
+            {
+                // TODO: 实现实际的单次采集逻辑
+                // 这里需要调用采集服务进行单次采集
+                await Task.Delay(1500); // 模拟采集
+                
+                // 模拟采集结果 - 更新标签点的当前值
+                var random = new Random();
+                var collectedCount = 0;
+                
+                foreach (ListViewItem item in _tagsListView.Items)
+                {
+                    var tag = item.Tag as TagConfig;
+                    if (tag != null)
+                    {
+                        // 模拟采集值
+                        var value = GenerateMockValue(tag.DataType);
+                        item.SubItems[3].Text = value;
+                        collectedCount++;
+                    }
+                }
+                
+                _statusLabel.Text = L.T("DeviceDetailForm_Msg_CollectionSuccess", collectedCount);
+                
+                MessageBox.Show(
+                    L.T("DeviceDetailForm_Msg_CollectionSuccess", collectedCount),
+                    L.T("Msg_Info"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "单次采集失败");
+                _statusLabel.Text = L.T("DeviceDetailForm_Msg_CollectionFailed", ex.Message);
+                
+                MessageBox.Show(
+                    L.T("DeviceDetailForm_Msg_CollectionFailed", ex.Message),
+                    L.T("Msg_Error"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _testCollectionButton.Enabled = true;
+            }
+        }
+
+        private string GenerateMockValue(string dataType)
+        {
+            var random = new Random();
+            switch (dataType?.ToLower())
+            {
+                case "boolean":
+                case "bool":
+                    return random.Next(2) == 0 ? "false" : "true";
+                case "int16":
+                case "int32":
+                case "int64":
+                case "uint16":
+                case "uint32":
+                case "uint64":
+                    return random.Next(0, 1000).ToString();
+                case "float":
+                case "double":
+                    return (random.NextDouble() * 100).ToString("F2");
+                case "string":
+                    return $"Value_{random.Next(100)}";
+                default:
+                    return random.Next(0, 100).ToString();
+            }
+        }
+    }
+}

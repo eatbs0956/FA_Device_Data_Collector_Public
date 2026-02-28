@@ -1,0 +1,333 @@
+﻿using System;
+using System.Drawing;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    public partial class MainForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly AppService _appService;
+        private readonly SignalRService _signalRService;
+        private bool _isCollecting;
+        private Timer _statusTimer;
+        private long _dataPointsProcessed;
+        private DateTime? _lastCollectionTime;
+
+        private Label _nodeIdValueLabel;
+        private Label _nodeNameValueLabel;
+        private Label _platformValueLabel;
+        private Label _statusValueLabel;
+
+        private Label _deviceCountValueLabel;
+        private Label _taskCountValueLabel;
+        private Label _dataPointsValueLabel;
+        private Label _lastCollectionValueLabel;
+
+        public MainForm()
+        {
+            _appService = AppService.Instance;
+            _signalRService = new SignalRService();
+            InitializeComponent();
+            InitializeMenus();
+            InitializeLabels();
+            InitializeEvents();
+        }
+
+        private void InitializeMenus()
+        {
+            var fileMenu = new ToolStripMenuItem("文件(&F)");
+            fileMenu.DropDownItems.Add("设置(&S)", null, (s, e) => ShowSettings());
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add("退出(&X)", null, (s, e) => this.Close());
+            _menuStrip.Items.Add(fileMenu);
+
+            var taskMenu = new ToolStripMenuItem("任务(&T)");
+            taskMenu.DropDownItems.Add("刷新配置(&R)", null, async (s, e) => await RefreshConfig());
+            taskMenu.DropDownItems.Add("启动采集(&S)", null, async (s, e) => await StartCollection());
+            taskMenu.DropDownItems.Add("停止采集(&P)", null, async (s, e) => await StopCollection());
+            _menuStrip.Items.Add(taskMenu);
+
+            var helpMenu = new ToolStripMenuItem("帮助(&H)");
+            helpMenu.DropDownItems.Add("关于(&A)", null, (s, e) => ShowAbout());
+            _menuStrip.Items.Add(helpMenu);
+        }
+
+        private void InitializeLabels()
+        {
+            int y = 25;
+            int labelWidth = 80;
+            int valueWidth = 150;
+
+            AddLabelPair(_nodeInfoGroup, "节点ID:", ref _nodeIdValueLabel, 15, y, labelWidth, valueWidth);
+            AddLabelPair(_nodeInfoGroup, "平台:", ref _platformValueLabel, 220, y, labelWidth, valueWidth);
+            y += 30;
+            AddLabelPair(_nodeInfoGroup, "节点名称:", ref _nodeNameValueLabel, 15, y, labelWidth, valueWidth);
+            AddLabelPair(_nodeInfoGroup, "状态:", ref _statusValueLabel, 220, y, labelWidth, valueWidth);
+
+            y = 25;
+            AddLabelPair(_statisticsGroup, "设备数:", ref _deviceCountValueLabel, 15, y, labelWidth, 100);
+            AddLabelPair(_statisticsGroup, "任务数:", ref _taskCountValueLabel, 220, y, labelWidth, 100);
+            y += 30;
+            AddLabelPair(_statisticsGroup, "数据点:", ref _dataPointsValueLabel, 15, y, labelWidth, 100);
+            AddLabelPair(_statisticsGroup, "最后采集:", ref _lastCollectionValueLabel, 220, y, labelWidth, 180);
+        }
+
+        private void InitializeEvents()
+        {
+            _startButton.Click += async (s, e) => await StartCollection();
+            _stopButton.Click += async (s, e) => await StopCollection();
+            _refreshButton.Click += async (s, e) => await RefreshConfig();
+
+            _statusTimer = new Timer { Interval = 5000 };
+            _statusTimer.Tick += StatusTimer_Tick;
+
+            this.FormClosing += MainForm_FormClosing;
+            this.Load += MainForm_Load;
+        }
+
+        private void AddLabelPair(Control parent, string labelText, ref Label valueLabel, int x, int y, int labelWidth, int valueWidth)
+        {
+            var label = new Label
+            {
+                Text = labelText,
+                Location = new Point(x, y),
+                Size = new Size(labelWidth, 20)
+            };
+            parent.Controls.Add(label);
+
+            valueLabel = new Label
+            {
+                Text = "-",
+                Location = new Point(x + labelWidth, y),
+                Size = new Size(valueWidth, 20),
+                ForeColor = Color.Blue
+            };
+            parent.Controls.Add(valueLabel);
+        }
+
+        private async void MainForm_Load(object sender, EventArgs e)
+        {
+            AppendLog("主窗口加载完成", LogLevel.Info);
+            UpdateNodeInfo();
+            
+            _connectionStatusLabel.Text = "连接状态: 轮询模式";
+            _connectionStatusLabel.ForeColor = Color.Orange;
+            AppendLog("SignalR 已禁用（使用 HTTP 轮询）", LogLevel.Warn);
+            
+            await RefreshConfig();
+            _statusTimer.Start();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_isCollecting)
+            {
+                var result = MessageBox.Show(
+                    "采集任务正在运行，确定要退出吗？",
+                    "确认退出",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                _isCollecting = false;
+            }
+
+            _statusTimer?.Stop();
+            _statusTimer?.Dispose();
+        }
+
+        private int _configPollCounter = 0;
+        
+        private async void StatusTimer_Tick(object sender, EventArgs e)
+        {
+            await SendHeartbeat();
+            UpdateStatistics();
+            
+            _configPollCounter++;
+            if (_configPollCounter >= 6)
+            {
+                _configPollCounter = 0;
+                await CheckConfigUpdate();
+            }
+        }
+        
+        private async Task CheckConfigUpdate()
+        {
+            try
+            {
+                await RefreshConfig();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "配置检查失败");
+            }
+        }
+
+        private void UpdateNodeInfo()
+        {
+            _nodeIdValueLabel.Text = _appService.CurrentNodeId ?? "-";
+            _nodeNameValueLabel.Text = _appService.CurrentNodeName ?? "-";
+            _platformValueLabel.Text = "NET45";
+            _statusValueLabel.Text = "在线";
+            _statusValueLabel.ForeColor = Color.Green;
+        }
+
+        private void UpdateStatistics()
+        {
+            _dataPointsValueLabel.Text = _dataPointsProcessed.ToString("N0");
+            _lastCollectionValueLabel.Text = _lastCollectionTime?.ToString("HH:mm:ss") ?? "-";
+            
+            var runningCount = _isCollecting ? 1 : 0;
+            _taskStatusLabel.Text = string.Format("任务: {0}/{1}", runningCount, _appService.TaskCount ?? 0);
+        }
+
+        private async Task RefreshConfig()
+        {
+            try
+            {
+                AppendLog("正在刷新配置...", LogLevel.Info);
+                var config = await _appService.GetNodeConfigAsync();
+                if (config != null)
+                {
+                    _deviceCountValueLabel.Text = config.Devices?.Count.ToString() ?? "0";
+                    _taskCountValueLabel.Text = config.Tasks?.Count.ToString() ?? "0";
+                    AppendLog($"配置刷新成功: {config.Devices?.Count ?? 0} 个设备, {config.Tasks?.Count ?? 0} 个任务", LogLevel.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "刷新配置失败");
+                AppendLog($"刷新配置失败: {ex.Message}", LogLevel.Error);
+            }
+        }
+
+        private async Task StartCollection()
+        {
+            try
+            {
+                _startButton.Enabled = false;
+                AppendLog("正在启动采集引擎...", LogLevel.Info);
+
+                _isCollecting = true;
+                _lastCollectionTime = DateTime.Now;
+
+                _stopButton.Enabled = true;
+                _statusValueLabel.Text = "采集中";
+                _statusValueLabel.ForeColor = Color.Green;
+                AppendLog("采集引擎启动成功", LogLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "启动采集失败");
+                AppendLog(string.Format("启动采集失败: {0}", ex.Message), LogLevel.Error);
+                _startButton.Enabled = true;
+            }
+        }
+
+        private async Task StopCollection()
+        {
+            try
+            {
+                _stopButton.Enabled = false;
+                AppendLog("正在停止采集引擎...", LogLevel.Info);
+
+                _isCollecting = false;
+
+                _startButton.Enabled = true;
+                _statusValueLabel.Text = "已停止";
+                _statusValueLabel.ForeColor = Color.Gray;
+                AppendLog("采集引擎已停止", LogLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "停止采集失败");
+                AppendLog(string.Format("停止采集失败: {0}", ex.Message), LogLevel.Error);
+                _stopButton.Enabled = true;
+            }
+        }
+
+        private async Task SendHeartbeat()
+        {
+            try
+            {
+                await _appService.SendHeartbeatAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "心跳发送失败");
+            }
+        }
+
+        private void ShowSettings()
+        {
+            using (var settingsForm = new SettingsForm())
+            {
+                settingsForm.ShowDialog(this);
+            }
+        }
+
+        private void ShowAbout()
+        {
+            MessageBox.Show(
+                "工业数据采集器 (Legacy)\n" +
+                "版本: 1.0.0\n" +
+                "平台: .NET Framework 4.6.1\n\n" +
+                "用于工业设备数据采集的边缘端程序",
+                "关于",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void AppendLog(string message, LogLevel level)
+        {
+            if (_logTextBox.InvokeRequired)
+            {
+                _logTextBox.BeginInvoke(new Action(() => AppendLog(message, level)));
+                return;
+            }
+
+            var time = DateTime.Now.ToString("HH:mm:ss");
+            var levelStr = level.ToString().ToUpper().PadRight(5);
+            var color = GetLogColor(level);
+
+            _logTextBox.SelectionStart = _logTextBox.TextLength;
+            _logTextBox.SelectionColor = color;
+            _logTextBox.AppendText($"[{time}] [{levelStr}] {message}\n");
+            _logTextBox.ScrollToCaret();
+
+            if (_logTextBox.Lines.Length > 500)
+            {
+                var lines = _logTextBox.Lines;
+                var newLines = new string[lines.Length - 100];
+                Array.Copy(lines, 100, newLines, 0, newLines.Length);
+                _logTextBox.Lines = newLines;
+            }
+        }
+
+        private Color GetLogColor(LogLevel level)
+        {
+            switch (level.Name)
+            {
+                case "Error":
+                case "Fatal":
+                    return Color.Red;
+                case "Warn":
+                    return Color.Yellow;
+                case "Info":
+                    return Color.LightGreen;
+                default:
+                    return Color.White;
+            }
+        }
+    }
+}

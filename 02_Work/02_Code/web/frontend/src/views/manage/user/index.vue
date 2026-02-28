@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { reactive } from 'vue';
 import { ElButton, ElPopconfirm, ElTag } from 'element-plus';
-import { enableStatusRecord, userGenderRecord } from '@/constants/business';
+import { enableStatusRecord, userGenderRecord, userTypeRecord } from '@/constants/business';
 import { fetchDeleteUser, fetchGetUserList } from '@/service/api';
 import { defaultTransform, useTableOperate, useUIPaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -22,7 +22,8 @@ function getInitSearchParams(): Api.SystemManage.UserSearchParams {
     userGender: undefined,
     nickName: undefined,
     userPhone: undefined,
-    userEmail: undefined
+    userEmail: undefined,
+    userType: undefined
   };
 }
 
@@ -41,6 +42,25 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
     { type: 'selection', width: 48 },
     { type: 'index', label: $t('common.index'), width: 64 },
     { prop: 'userName', label: $t('page.manage.user.userName'), minWidth: 100 },
+    {
+      prop: 'userType',
+      label: $t('page.manage.user.userTypeLabel'),
+      width: 100,
+      formatter: row => {
+        if (!row.userType) {
+          return <ElTag type="primary">{$t('page.manage.user.userType.user')}</ElTag>;
+        }
+
+        const tagMap: Record<Api.SystemManage.UserType, UI.ThemeColor> = {
+          user: 'primary',
+          service: 'warning'
+        };
+
+        const label = $t(userTypeRecord[row.userType]);
+
+        return <ElTag type={tagMap[row.userType]}>{label}</ElTag>;
+      }
+    },
     {
       prop: 'userGender',
       label: $t('page.manage.user.userGender'),

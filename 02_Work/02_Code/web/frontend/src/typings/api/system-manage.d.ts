@@ -64,6 +64,14 @@ declare namespace Api {
      */
     type UserGender = '1' | '2';
 
+    /**
+     * user type
+     *
+     * - "user": normal user account (人员账号)
+     * - "service": service account (服务账号)
+     */
+    type UserType = 'user' | 'service';
+
     /** user */
     type User = {
       /** user id */
@@ -80,6 +88,8 @@ declare namespace Api {
       userEmail: string;
       /** user status */
       status: Common.EnableStatus | undefined;
+      /** user type - user or service */
+      userType?: UserType;
       /** user role code collection */
       userRoles: string[];
       /** created by user id - audit field */
@@ -110,6 +120,8 @@ declare namespace Api {
       userEmail?: string;
       /** user status - number for API */
       status?: number;
+      /** user type - user or service */
+      userType?: UserType;
       /** user role code collection */
       userRoles?: string[];
       /** user password - optional, only for add/edit */
@@ -118,7 +130,10 @@ declare namespace Api {
 
     /** user search params */
     type UserSearchParams = CommonType.RecordNullable<
-      Pick<Api.SystemManage.User, 'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'status'> &
+      Pick<
+        Api.SystemManage.User,
+        'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'status' | 'userType'
+      > &
         CommonSearchParams
     >;
 

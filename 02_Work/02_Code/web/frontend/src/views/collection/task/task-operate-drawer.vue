@@ -168,7 +168,7 @@ function buildRequestData() {
     isEnabled: model.value.isEnabled,
     effectiveFrom: model.value.effectiveFrom || undefined,
     effectiveTo: model.value.effectiveTo || undefined,
-    deviceIds: model.value.deviceIds.length > 0 ? model.value.deviceIds : undefined
+    deviceIds: model.value.deviceIds
   };
 
   if (props.operateType === 'add') {

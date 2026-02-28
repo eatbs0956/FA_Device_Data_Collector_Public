@@ -53,6 +53,7 @@ const formModel = reactive<Api.Device.TagEdit>({
   unit: '',
   description: '',
   enabled: true,
+  enableRealtime: false,
   minValue: undefined,
   maxValue: undefined,
   scalingFactor: 1,
@@ -96,6 +97,7 @@ function initForm() {
       unit: row.unit || '',
       description: row.description || '',
       enabled: row.enabled,
+      enableRealtime: row.enableRealtime,
       minValue: row.minValue,
       maxValue: row.maxValue,
       scalingFactor: row.scalingFactor,
@@ -121,6 +123,7 @@ function initForm() {
       unit: '',
       description: '',
       enabled: true,
+      enableRealtime: false,
       minValue: undefined,
       maxValue: undefined,
       scalingFactor: 1,
@@ -139,11 +142,10 @@ function initAddressConfig() {
   const protocol = protocolType.value;
   // 协议类型: '1'=MODBUS_TCP, '2'=MODBUS_RTU, '3'=OPC_UA, '4'=OPC_DA, '5'=S7
   if (protocol === '1' || protocol === '2') {
-    // MODBUS_TCP or MODBUS_RTU
+    // MODBUS_TCP or MODBUS_RTU - 从站ID已移至设备级别配置
     addressConfig.value = {
       functionCode: '03',
       address: 0,
-      slaveId: 1,
       quantity: 1
     };
   } else if (protocol === '3') {
@@ -262,6 +264,11 @@ watch(visible, val => {
 
       <ElFormItem :label="$t('common.status')">
         <ElSwitch v-model="formModel.enabled" />
+      </ElFormItem>
+
+      <ElFormItem :label="$t('page.tag.enableRealtime')">
+        <ElSwitch v-model="formModel.enableRealtime" />
+        <span class="ml-2 text-xs text-gray-400">{{ $t('page.tag.enableRealtimeTip') }}</span>
       </ElFormItem>
 
       <!-- 地址配置 -->

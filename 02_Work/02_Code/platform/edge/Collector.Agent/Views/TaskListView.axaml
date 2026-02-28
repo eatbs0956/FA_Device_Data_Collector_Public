@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             xmlns:l="using:Collector.Agent.Localization"
+             x:Class="Collector.Agent.Views.TaskListView"
+             x:DataType="vm:TaskListViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- 标题和工具栏 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                <Button Content="{l:Localize Tasks.StartTask, Prefix='▶ '}" 
+                        Classes="success"
+                        Command="{Binding StartTaskCommand}"/>
+                <Button Content="{l:Localize Tasks.StopTask, Prefix='⏹ '}" 
+                        Classes="danger"
+                        Command="{Binding StopTaskCommand}"/>
+                <Button Content="{l:Localize Tasks.TriggerCollection, Prefix='⚡ '}" 
+                        Classes="primary"
+                        Command="{Binding TriggerCollectionCommand}"/>
+                <Button Content="{l:Localize Common.Refresh, Prefix='🔄 '}" 
+                        Classes="secondary"
+                        Command="{Binding RefreshTasksCommand}"/>
+            </StackPanel>
+            <TextBlock Text="{l:Localize Tasks.Title}" Classes="pageTitle"
+                       VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <!-- 任务列表 -->
+        <Border Grid.Row="1" Classes="card">
+            <Border CornerRadius="6" ClipToBounds="True">
+                <DataGrid ItemsSource="{Binding Tasks}"
+                          SelectedItem="{Binding SelectedTask}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserResizeColumns="True"
+                          RowHeight="32"
+                          GridLinesVisibility="Horizontal">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{l:Localize Header.TaskName}" Binding="{Binding TaskName}" Width="250"/>
+                        <DataGridTextColumn Header="{l:Localize Header.Status}" Binding="{Binding State}" Width="180"/>
+                        <DataGridTextColumn Header="{l:Localize Header.CollectionCount}" Binding="{Binding TotalCollectionCount}" Width="120"/>
+                        <DataGridTextColumn Header="{l:Localize Header.ErrorCount}" Binding="{Binding ErrorCount}" Width="120"/>
+                        <DataGridTextColumn Header="{l:Localize Header.LastRun}" Binding="{Binding LastRunTime, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="200"/>
+                        <DataGridTextColumn Header="{l:Localize Header.LastError}" Binding="{Binding LastError}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

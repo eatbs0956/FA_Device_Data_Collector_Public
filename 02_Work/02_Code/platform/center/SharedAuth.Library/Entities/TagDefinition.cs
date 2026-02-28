@@ -79,6 +79,12 @@ public class TagDefinition : BaseEntity
     public bool Enabled { get; set; } = true;
 
     /// <summary>
+    /// 启用实时推送 - 是否将该标签的实时数据推送到前端
+    /// </summary>
+    [Column("enable_realtime")]
+    public bool EnableRealtime { get; set; } = false;
+
+    /// <summary>
     /// 最小值
     /// </summary>
     [Column("min_value", TypeName = "numeric")]

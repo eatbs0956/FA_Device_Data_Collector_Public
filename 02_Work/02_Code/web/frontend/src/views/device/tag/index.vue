@@ -314,8 +314,8 @@ function formatTagAddress(address: string): string {
   try {
     const parsed = JSON.parse(address);
     if (parsed.functionCode) {
-      // Modbus
-      return `FC${parsed.functionCode} Addr:${parsed.address} Slave:${parsed.slaveId}`;
+      // Modbus - 从站ID已移至设备级别，不在标签地址中显示
+      return `FC${parsed.functionCode} Addr:${parsed.address} Qty:${parsed.quantity || 1}`;
     } else if (parsed.nodeId) {
       // OPC UA
       return parsed.nodeId;

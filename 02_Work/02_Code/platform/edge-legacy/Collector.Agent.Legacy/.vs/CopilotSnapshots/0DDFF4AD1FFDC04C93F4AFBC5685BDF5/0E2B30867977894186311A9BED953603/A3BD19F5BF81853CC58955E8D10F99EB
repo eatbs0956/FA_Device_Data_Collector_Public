@@ -1,0 +1,333 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    public partial class LoginForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly AppService _appService;
+
+        // 控件声明
+        private Label _titleLabel;
+        private Label _gatewayLabel;
+        private TextBox _gatewayTextBox;
+        private Label _nodeIdLabel;
+        private TextBox _nodeIdTextBox;
+        private Label _nodeNameLabel;
+        private TextBox _nodeNameTextBox;
+        private Label _usernameLabel;
+        private TextBox _usernameTextBox;
+        private Label _passwordLabel;
+        private TextBox _passwordTextBox;
+        private CheckBox _showPasswordCheckBox;
+        private Button _loginButton;
+        private Button _settingsButton;
+        private Label _statusLabel;
+
+        public LoginForm()
+        {
+            _appService = AppService.Instance;
+            InitializeComponent();
+            LoadSettings();
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+
+            // 窗体设置
+            this.Text = "工业数据采集器 - 登录";
+            this.Size = new Size(420, 480);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = true;
+
+            int y = 20;
+            int labelWidth = 100;
+            int textBoxWidth = 260;
+            int leftMargin = 30;
+
+            // 标题
+            _titleLabel = new Label
+            {
+                Text = "工业数据采集器",
+                Font = new Font("Microsoft YaHei UI", 16, FontStyle.Bold),
+                Location = new Point(leftMargin, y),
+                Size = new Size(350, 35),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_titleLabel);
+            y += 50;
+
+            // 网关地址
+            _gatewayLabel = new Label
+            {
+                Text = "网关地址:",
+                Location = new Point(leftMargin, y + 3),
+                Size = new Size(labelWidth, 23)
+            };
+            this.Controls.Add(_gatewayLabel);
+
+            _gatewayTextBox = new TextBox
+            {
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(textBoxWidth, 23),
+                Text = "http://localhost:60620"
+            };
+            this.Controls.Add(_gatewayTextBox);
+            y += 35;
+
+            // 节点ID
+            _nodeIdLabel = new Label
+            {
+                Text = "节点ID:",
+                Location = new Point(leftMargin, y + 3),
+                Size = new Size(labelWidth, 23)
+            };
+            this.Controls.Add(_nodeIdLabel);
+
+            _nodeIdTextBox = new TextBox
+            {
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(textBoxWidth, 23),
+                Text = Environment.MachineName
+            };
+            this.Controls.Add(_nodeIdTextBox);
+            y += 35;
+
+            // 节点名称
+            _nodeNameLabel = new Label
+            {
+                Text = "节点名称:",
+                Location = new Point(leftMargin, y + 3),
+                Size = new Size(labelWidth, 23)
+            };
+            this.Controls.Add(_nodeNameLabel);
+
+            _nodeNameTextBox = new TextBox
+            {
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(textBoxWidth, 23),
+                Text = $"采集节点-{Environment.MachineName}"
+            };
+            this.Controls.Add(_nodeNameTextBox);
+            y += 45;
+
+            // 分隔线 - 用户认证部分
+            var separator = new Label
+            {
+                Text = "─── 用户认证 ───",
+                Location = new Point(leftMargin, y),
+                Size = new Size(350, 20),
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.Gray
+            };
+            this.Controls.Add(separator);
+            y += 30;
+
+            // 用户名
+            _usernameLabel = new Label
+            {
+                Text = "用户名:",
+                Location = new Point(leftMargin, y + 3),
+                Size = new Size(labelWidth, 23)
+            };
+            this.Controls.Add(_usernameLabel);
+
+            _usernameTextBox = new TextBox
+            {
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(textBoxWidth, 23)
+            };
+            this.Controls.Add(_usernameTextBox);
+            y += 35;
+
+            // 密码
+            _passwordLabel = new Label
+            {
+                Text = "密码:",
+                Location = new Point(leftMargin, y + 3),
+                Size = new Size(labelWidth, 23)
+            };
+            this.Controls.Add(_passwordLabel);
+
+            _passwordTextBox = new TextBox
+            {
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(textBoxWidth, 23),
+                PasswordChar = '●'
+            };
+            this.Controls.Add(_passwordTextBox);
+            y += 30;
+
+            // 显示密码复选框
+            _showPasswordCheckBox = new CheckBox
+            {
+                Text = "显示密码",
+                Location = new Point(leftMargin + labelWidth, y),
+                Size = new Size(100, 20)
+            };
+            _showPasswordCheckBox.CheckedChanged += ShowPasswordCheckBox_CheckedChanged;
+            this.Controls.Add(_showPasswordCheckBox);
+            y += 40;
+
+            // 状态标签
+            _statusLabel = new Label
+            {
+                Text = "",
+                Location = new Point(leftMargin, y),
+                Size = new Size(350, 23),
+                ForeColor = Color.Red,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            this.Controls.Add(_statusLabel);
+            y += 35;
+
+            // 登录按钮
+            _loginButton = new Button
+            {
+                Text = "登录并启动",
+                Location = new Point(leftMargin + 50, y),
+                Size = new Size(120, 35),
+                BackColor = Color.FromArgb(0, 122, 204),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            _loginButton.Click += LoginButton_Click;
+            this.Controls.Add(_loginButton);
+
+            // 设置按钮
+            _settingsButton = new Button
+            {
+                Text = "高级设置",
+                Location = new Point(leftMargin + 190, y),
+                Size = new Size(100, 35)
+            };
+            _settingsButton.Click += SettingsButton_Click;
+            this.Controls.Add(_settingsButton);
+
+            // 回车键登录
+            this.AcceptButton = _loginButton;
+
+            this.ResumeLayout(false);
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                var settings = _appService.LoadSettings();
+                if (settings != null)
+                {
+                    _gatewayTextBox.Text = settings.ApiGatewayUrl ?? "http://localhost:60620";
+                    _nodeIdTextBox.Text = settings.NodeId ?? Environment.MachineName;
+                    _nodeNameTextBox.Text = settings.NodeName ?? $"采集节点-{Environment.MachineName}";
+                    _usernameTextBox.Text = settings.Username ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "加载配置失败，使用默认值");
+            }
+        }
+
+        private void ShowPasswordCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _passwordTextBox.PasswordChar = _showPasswordCheckBox.Checked ? '\0' : '●';
+        }
+
+        private async void LoginButton_Click(object sender, EventArgs e)
+        {
+            // 验证输入
+            if (string.IsNullOrWhiteSpace(_gatewayTextBox.Text))
+            {
+                _statusLabel.Text = "请输入网关地址";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_nodeIdTextBox.Text))
+            {
+                _statusLabel.Text = "请输入节点ID";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_usernameTextBox.Text) || string.IsNullOrWhiteSpace(_passwordTextBox.Text))
+            {
+                _statusLabel.Text = "请输入用户名和密码";
+                return;
+            }
+
+            _loginButton.Enabled = false;
+            _statusLabel.ForeColor = Color.Blue;
+            _statusLabel.Text = "正在登录...";
+
+            try
+            {
+                // 保存配置
+                _appService.SaveSettings(
+                    _gatewayTextBox.Text,
+                    _nodeIdTextBox.Text,
+                    _nodeNameTextBox.Text,
+                    _usernameTextBox.Text
+                );
+
+                // 执行登录
+                var result = await _appService.LoginAsync(
+                    _gatewayTextBox.Text,
+                    _usernameTextBox.Text,
+                    _passwordTextBox.Text
+                );
+
+                if (result.Success)
+                {
+                    // 注册节点
+                    _statusLabel.Text = "正在注册节点...";
+                    var registerResult = await _appService.RegisterNodeAsync(
+                        _nodeIdTextBox.Text,
+                        _nodeNameTextBox.Text
+                    );
+
+                    if (registerResult.Success)
+                    {
+                        Logger.Info("登录成功，用户: {0}", _usernameTextBox.Text);
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                    else
+                    {
+                        _statusLabel.ForeColor = Color.Red;
+                        _statusLabel.Text = $"节点注册失败: {registerResult.ErrorMessage}";
+                    }
+                }
+                else
+                {
+                    _statusLabel.ForeColor = Color.Red;
+                    _statusLabel.Text = $"登录失败: {result.ErrorMessage}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "登录过程出错");
+                _statusLabel.ForeColor = Color.Red;
+                _statusLabel.Text = $"登录出错: {ex.Message}";
+            }
+            finally
+            {
+                _loginButton.Enabled = true;
+            }
+        }
+
+        private void SettingsButton_Click(object sender, EventArgs e)
+        {
+            using (var settingsForm = new SettingsForm())
+            {
+                settingsForm.ShowDialog(this);
+            }
+        }
+    }
+}

@@ -1,0 +1,137 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    public partial class SettingsForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly AppService _appService;
+
+        public SettingsForm()
+        {
+            _appService = AppService.Instance;
+            InitializeComponent();
+            InitializeTabPages();
+            InitializeEvents();
+            LoadSettings();
+        }
+
+        private void InitializeTabPages()
+        {
+            CreateGeneralSettings();
+            CreateCommunicationSettings();
+            CreateLoggingSettings();
+        }
+
+        private void InitializeEvents()
+        {
+            _cancelButton.Click += (s, e) => this.Close();
+        }
+
+        private void CreateGeneralSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            AddLabel(_generalTab, "心跳间隔(秒):", 20, y);
+            _heartbeatIntervalNumeric.Location = new Point(20 + labelWidth, y);
+            _generalTab.Controls.Add(_heartbeatIntervalNumeric);
+            y += 35;
+
+            AddLabel(_generalTab, "配置刷新间隔(秒):", 20, y);
+            _configRefreshIntervalNumeric.Location = new Point(20 + labelWidth, y);
+            _generalTab.Controls.Add(_configRefreshIntervalNumeric);
+            y += 35;
+
+            _autoStartCheckBox.Location = new Point(20, y);
+            _generalTab.Controls.Add(_autoStartCheckBox);
+            y += 30;
+
+            _minimizeToTrayCheckBox.Location = new Point(20, y);
+            _generalTab.Controls.Add(_minimizeToTrayCheckBox);
+        }
+
+        private void CreateCommunicationSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            AddLabel(_communicationTab, "连接超时(秒):", 20, y);
+            _connectionTimeoutNumeric.Location = new Point(20 + labelWidth, y);
+            _communicationTab.Controls.Add(_connectionTimeoutNumeric);
+            y += 35;
+
+            AddLabel(_communicationTab, "重试次数:", 20, y);
+            _retryCountNumeric.Location = new Point(20 + labelWidth, y);
+            _communicationTab.Controls.Add(_retryCountNumeric);
+            y += 35;
+
+            AddLabel(_communicationTab, "重试间隔(秒):", 20, y);
+            _retryIntervalNumeric.Location = new Point(20 + labelWidth, y);
+            _communicationTab.Controls.Add(_retryIntervalNumeric);
+        }
+
+        private void CreateLoggingSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            AddLabel(_loggingTab, "日志级别:", 20, y);
+            _logLevelComboBox.Location = new Point(20 + labelWidth, y);
+            _logLevelComboBox.SelectedIndex = 1;
+            _loggingTab.Controls.Add(_logLevelComboBox);
+            y += 35;
+
+            AddLabel(_loggingTab, "日志保留天数:", 20, y);
+            _logRetentionDaysNumeric.Location = new Point(20 + labelWidth, y);
+            _loggingTab.Controls.Add(_logRetentionDaysNumeric);
+            y += 35;
+
+            _logToFileCheckBox.Location = new Point(20, y);
+            _loggingTab.Controls.Add(_logToFileCheckBox);
+        }
+
+        private void AddLabel(Control parent, string text, int x, int y)
+        {
+            var label = new Label
+            {
+                Text = text,
+                Location = new Point(x, y + 3),
+                Size = new Size(140, 20)
+            };
+            parent.Controls.Add(label);
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                // 从配置加载设置
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "加载设置失败");
+            }
+        }
+
+        private void SaveButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Logger.Info("设置已保存");
+                MessageBox.Show("设置已保存", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "保存设置失败");
+                MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}

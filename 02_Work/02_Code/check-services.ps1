@@ -29,6 +29,7 @@ Write-Host ""
 $gatewayRunning = Test-Port -Port 60620 -ServiceName "Gateway.Api"
 $authRunning = Test-Port -Port 60621 -ServiceName "Auth.Api"
 $adminRunning = Test-Port -Port 60623 -ServiceName "Admin.Api"
+$processorRunning = Test-Port -Port 60624 -ServiceName "Processor.Worker"
 
 # Check frontend service
 $frontendRunning = Test-Port -Port 9527 -ServiceName "Frontend"
@@ -40,14 +41,15 @@ $runningCount = 0
 if ($gatewayRunning) { $runningCount++ }
 if ($authRunning) { $runningCount++ }
 if ($adminRunning) { $runningCount++ }
+if ($processorRunning) { $runningCount++ }
 if ($frontendRunning) { $runningCount++ }
 
-if ($runningCount -eq 4) {
-    Write-Host "[OK] All services running ($runningCount/4)" -ForegroundColor Green
+if ($runningCount -eq 5) {
+    Write-Host "[OK] All services running ($runningCount/5)" -ForegroundColor Green
 } elseif ($runningCount -gt 0) {
-    Write-Host "[WARNING] Partial services running ($runningCount/4)" -ForegroundColor Yellow
+    Write-Host "[WARNING] Partial services running ($runningCount/5)" -ForegroundColor Yellow
 } else {
-    Write-Host "[X] All services stopped (0/4)" -ForegroundColor Red
+    Write-Host "[X] All services stopped (0/5)" -ForegroundColor Red
 }
 
 Write-Host "=================================" -ForegroundColor Cyan
@@ -67,4 +69,4 @@ if ($nodeProcesses) {
 Write-Host "`nUsage Tips:" -ForegroundColor Cyan
 Write-Host "   - Run .\start-all-services.ps1 to start all services" -ForegroundColor Gray
 Write-Host "   - Run .\stop-all-services.ps1 to stop all services" -ForegroundColor Gray
-Write-Host "   - Run .\start-service.ps1 -ServiceName [Gateway.Api|Auth.Api|Admin.Api|Frontend] to start a single service" -ForegroundColor Gray
+Write-Host "   - Run .\start-service.ps1 -ServiceName [Gateway.Api|Auth.Api|Admin.Api|Processor.Worker|Frontend] to start a single service" -ForegroundColor Gray

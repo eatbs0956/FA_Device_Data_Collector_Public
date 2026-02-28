@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SharedAuth.Library\SharedAuth.Library.csproj" />
+    <ProjectReference Include="..\Shared.Tsdb\Shared.Tsdb.csproj" />
   </ItemGroup>
 
 </Project>

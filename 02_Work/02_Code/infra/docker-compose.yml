@@ -9,6 +9,17 @@ services:
       POSTGRES_PASSWORD: postgres
   influxdb:
     image: influxdb:2
+    ports: ["8086:8086"]
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin123
+      DOCKER_INFLUXDB_INIT_ORG: devorg
+      DOCKER_INFLUXDB_INIT_BUCKET: collected
+      DOCKER_INFLUXDB_INIT_RETENTION: 30d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: devdcp-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb
   redis:
     image: redis:7
   query-api:
@@ -29,3 +40,6 @@ services:
     build: ../platform/center/Processor.Worker
   scheduler-worker:
     build: ../platform/center/Scheduler.Worker
+
+volumes:
+  influxdb_data:

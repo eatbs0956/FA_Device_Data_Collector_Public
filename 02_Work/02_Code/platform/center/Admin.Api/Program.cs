@@ -8,6 +8,8 @@ using SharedAuth.Extensions;
 using Admin.Api.Services;
 using Admin.Api.Middlewares;
 using Admin.Api.Authorization;
+using Admin.Api.Hubs;
+using Shared.Tsdb;
 using Serilog;
 using Serilog.Events;
 
@@ -66,6 +68,24 @@ builder.Services.AddScoped<IDeviceGroupService, DeviceGroupService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IEdgeNodeService, EdgeNodeService>();
 builder.Services.AddScoped<ICollectionTaskService, CollectionTaskService>();
+builder.Services.AddScoped<IServiceAccountValidator, ServiceAccountValidator>();
+builder.Services.AddScoped<IMonitorService, MonitorService>();
+builder.Services.AddSingleton<IConfigNotifyService, ConfigNotifyService>();
+
+// 注册后台服务
+builder.Services.AddHostedService<NodeStatusCheckService>();
+
+// ========== InfluxDB 时序数据库配置 ==========
+builder.Services.AddInfluxDb(builder.Configuration);
+
+// ========== SignalR 配置 ==========
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.MaximumReceiveMessageSize = 64 * 1024; // 64KB
+});
 
 // ========== JWT认证配置 ==========
 // 从环境变量或配置文件获取Auth服务的JWKS地址
@@ -97,6 +117,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // 启用详细的认证日志
         options.Events = new JwtBearerEvents
         {
+            // SignalR 握手时 token 通过 QueryString 传递，需要手动提取
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hub/collector"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
             OnAuthenticationFailed = context =>
             {
                 var authHeader = context.Request.Headers["Authorization"].ToString();
@@ -133,7 +165,7 @@ builder.Services.AddCrossServiceButtonPermission(authDbConnection);
 // 配置授权策略
 builder.Services.AddAuthorization();
 
-// 配置 CORS
+// 配置 CORS（支持 SignalR）
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -141,6 +173,15 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+    });
+    
+    // SignalR 需要支持 credentials，不能使用 AllowAnyOrigin
+    options.AddPolicy("SignalR", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true) // 开发环境允许所有来源
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -187,7 +228,15 @@ var app = builder.Build();
 
     app.MapControllers();
 
+    // ========== SignalR Hub 路由映射 ==========
+    app.MapHub<CollectorHub>("/hub/collector", options =>
+    {
+        options.ApplicationMaxBufferSize = 64 * 1024;
+        options.TransportMaxBufferSize = 64 * 1024;
+    }).RequireCors("SignalR");
+
     Log.Information("Admin.Api started successfully");
+    Log.Information("SignalR Hub available at /hub/collector");
     app.Run();
 }
 catch (Exception ex)

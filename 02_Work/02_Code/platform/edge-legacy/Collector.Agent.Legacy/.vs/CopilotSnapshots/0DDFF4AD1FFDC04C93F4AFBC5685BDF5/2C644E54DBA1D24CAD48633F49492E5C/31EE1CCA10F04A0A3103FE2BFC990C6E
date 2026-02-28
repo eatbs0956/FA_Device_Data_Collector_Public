@@ -1,0 +1,184 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Models;
+using Collector.Agent.Legacy.Services;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    /// <summary>
+    /// 任务详情对话框
+    /// </summary>
+    public class TaskDetailForm : Form
+    {
+        private readonly TaskConfig _task;
+        private readonly List<DeviceConfig> _devices;
+        
+        private TabControl _tabControl;
+        private TabPage _configTab;
+        private TabPage _devicesTab;
+        
+        // 配置信息控件
+        private Label _taskNameValueLabel;
+        private Label _taskCodeValueLabel;
+        private Label _taskTypeValueLabel;
+        private Label _intervalValueLabel;
+        private Label _priorityValueLabel;
+        private Label _statusValueLabel;
+        
+        // 关联设备列表
+        private ListView _devicesListView;
+        
+        // 按钮
+        private Button _closeButton;
+
+        public TaskDetailForm(TaskConfig task, List<DeviceConfig> devices)
+        {
+            _task = task ?? throw new ArgumentNullException(nameof(task));
+            _devices = devices ?? new List<DeviceConfig>();
+            
+            InitializeComponent();
+            LoadTaskInfo();
+            LoadDevices();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = L.T("TaskDetailForm_Title");
+            this.Size = new Size(550, 450);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+
+            // TabControl
+            _tabControl = new TabControl
+            {
+                Location = new Point(12, 12),
+                Size = new Size(510, 350)
+            };
+            this.Controls.Add(_tabControl);
+
+            // 任务配置标签页
+            _configTab = new TabPage(L.T("TaskDetailForm_Tab_Config"));
+            _tabControl.TabPages.Add(_configTab);
+            InitializeConfigTab();
+
+            // 关联设备标签页
+            _devicesTab = new TabPage(L.T("TaskDetailForm_Tab_Devices"));
+            _tabControl.TabPages.Add(_devicesTab);
+            InitializeDevicesTab();
+
+            // 关闭按钮
+            _closeButton = new Button
+            {
+                Text = L.T("TaskDetailForm_Button_Close"),
+                Location = new Point(447, 375),
+                Size = new Size(75, 30),
+                DialogResult = DialogResult.OK
+            };
+            _closeButton.Click += (s, e) => this.Close();
+            this.Controls.Add(_closeButton);
+
+            this.AcceptButton = _closeButton;
+        }
+
+        private void InitializeConfigTab()
+        {
+            int y = 20;
+            int labelWidth = 100;
+            int valueWidth = 350;
+
+            // 任务名称
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_TaskName"), ref _taskNameValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+
+            // 任务编码
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_TaskCode"), ref _taskCodeValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+
+            // 任务类型
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_TaskType"), ref _taskTypeValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+
+            // 采集间隔
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_Interval"), ref _intervalValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+
+            // 优先级
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_Priority"), ref _priorityValueLabel, 20, y, labelWidth, valueWidth);
+            y += 30;
+
+            // 状态
+            AddLabelPair(_configTab, L.T("TaskDetailForm_Label_Status"), ref _statusValueLabel, 20, y, labelWidth, valueWidth);
+        }
+
+        private void InitializeDevicesTab()
+        {
+            _devicesListView = new ListView
+            {
+                Location = new Point(10, 10),
+                Size = new Size(480, 300),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+
+            _devicesListView.Columns.Add(L.T("TaskDetailForm_Col_DeviceName"), 200);
+            _devicesListView.Columns.Add(L.T("TaskDetailForm_Col_Protocol"), 120);
+            _devicesListView.Columns.Add(L.T("TaskDetailForm_Col_Status"), 120);
+
+            _devicesTab.Controls.Add(_devicesListView);
+        }
+
+        private void AddLabelPair(Control parent, string labelText, ref Label valueLabel, int x, int y, int labelWidth, int valueWidth)
+        {
+            var label = new Label
+            {
+                Text = labelText,
+                Location = new Point(x, y),
+                Size = new Size(labelWidth, 20)
+            };
+            parent.Controls.Add(label);
+
+            valueLabel = new Label
+            {
+                Text = "-",
+                Location = new Point(x + labelWidth, y),
+                Size = new Size(valueWidth, 20),
+                ForeColor = Color.Blue
+            };
+            parent.Controls.Add(valueLabel);
+        }
+
+        private void LoadTaskInfo()
+        {
+            _taskNameValueLabel.Text = _task.TaskName ?? "-";
+            _taskCodeValueLabel.Text = _task.TaskCode ?? "-";
+            _taskTypeValueLabel.Text = _task.TaskType ?? "-";
+            _intervalValueLabel.Text = _task.CollectIntervalMs > 0 ? $"{_task.CollectIntervalMs} ms" : "-";
+            _priorityValueLabel.Text = _task.Priority.ToString();
+            _statusValueLabel.Text = _task.IsEnabled ? L.T("Common_Enabled") : L.T("Common_Disabled");
+            _statusValueLabel.ForeColor = _task.IsEnabled ? Color.Green : Color.Gray;
+        }
+
+        private void LoadDevices()
+        {
+            _devicesListView.Items.Clear();
+
+            if (_devices == null || _devices.Count == 0)
+                return;
+
+            foreach (var device in _devices)
+            {
+                var item = new ListViewItem(device.DeviceName ?? "-");
+                item.SubItems.Add(device.Protocol ?? "-");
+                item.SubItems.Add(device.IsEnabled ? L.T("Common_Enabled") : L.T("Common_Disabled"));
+                item.Tag = device;
+                _devicesListView.Items.Add(item);
+            }
+        }
+    }
+}

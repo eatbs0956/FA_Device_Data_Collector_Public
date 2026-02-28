@@ -7,6 +7,9 @@ namespace Shared.Domain.Entities;
 /// </summary>
 /// <remarks>
 /// 继承自 BaseEntity，自动包含审计字段和多租户支持
+/// 支持两种用户类型：
+/// - user: 人员账号，用于前端登录和管理操作
+/// - service: 服务账号，用于边缘采集节点等机器认证
 /// </remarks>
 public class User : BaseEntity
 {
@@ -30,7 +33,14 @@ public class User : BaseEntity
     public string NickName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 用户性别 - 1:男 2:女
+    /// 用户类型 - user: 人员账号, service: 服务账号（机器/采集节点）
+    /// </summary>
+    [Required]
+    [MaxLength(16)]
+    public string UserType { get; set; } = "user";
+
+    /// <summary>
+    /// 用户性别 - 1:男 2:女（仅人员账号有效）
     /// </summary>
     public int? Gender { get; set; }
 

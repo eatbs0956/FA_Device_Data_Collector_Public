@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             xmlns:l="using:Collector.Agent.Localization"
+             x:Class="Collector.Agent.Views.DeviceStatusView"
+             x:DataType="vm:DeviceStatusViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <!-- 标题 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                <Button Content="{l:Localize Devices.TestConnection, Prefix='🔗 '}" 
+                        Classes="primary"
+                        Command="{Binding TestConnectionCommand}"
+                        IsEnabled="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                <Button Content="{l:Localize Common.Refresh, Prefix='🔄 '}" 
+                        Classes="secondary"
+                        Command="{Binding RefreshDevicesCommand}"/>
+            </StackPanel>
+            <TextBlock Text="{l:Localize Devices.Title}" Classes="pageTitle"
+                       VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <!-- 设备列表 -->
+        <Border Grid.Row="1" Classes="card">
+            <Border CornerRadius="6" ClipToBounds="True">
+                <DataGrid ItemsSource="{Binding Devices}"
+                          SelectedItem="{Binding SelectedDevice}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserResizeColumns="True"
+                          RowHeight="32"
+                          GridLinesVisibility="Horizontal">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{l:Localize Header.DeviceName}" Binding="{Binding DeviceName}" Width="250"/>
+                        <DataGridTextColumn Header="{l:Localize Header.ConnectionStatus}" Binding="{Binding State}" Width="180"/>
+                        <DataGridTextColumn Header="{l:Localize Header.ErrorCount}" Binding="{Binding ErrorCount}" Width="150"/>
+                        <DataGridTextColumn Header="{l:Localize Header.LastConnect}" Binding="{Binding LastConnectTime, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" Width="200"/>
+                        <DataGridTextColumn Header="{l:Localize Header.LastRead}" Binding="{Binding LastReadTime, StringFormat='{}{0:HH:mm:ss}'}" Width="200"/>
+                        <DataGridTextColumn Header="{l:Localize Header.LastError}" Binding="{Binding LastError}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Border>
+
+        <!-- 标签实时值 -->
+        <Border Grid.Row="2" 
+                Classes="card"
+                Margin="0,16,0,0"
+                IsVisible="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel>
+                <TextBlock Text="{l:Localize Devices.TagValues}" Classes="cardTitle" Margin="0,0,0,10"/>
+                <Border CornerRadius="6" ClipToBounds="True">
+                    <DataGrid ItemsSource="{Binding SelectedDeviceTags}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserResizeColumns="True"
+                              HorizontalScrollBarVisibility="Auto"
+                              RowHeight="32"
+                              GridLinesVisibility="Horizontal"
+                              MaxHeight="280">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{l:Localize Header.TagName}" Binding="{Binding TagName}" Width="250"/>
+                            <DataGridTextColumn Header="{l:Localize Header.Address}" Binding="{Binding Address}" Width="250"/>
+                            <DataGridTextColumn Header="{l:Localize Header.DataType}" Binding="{Binding DataType}" Width="180"/>
+                            <DataGridTextColumn Header="{l:Localize Devices.CurrentValue}" Binding="{Binding Value}" Width="*"/>
+                            <DataGridTextColumn Header="{l:Localize Header.Unit}" Binding="{Binding Unit}" Width="100"/>
+                            <DataGridTextColumn Header="{l:Localize Header.Quality}" Binding="{Binding Quality}" Width="100"/>
+                            <DataGridTextColumn Header="{l:Localize Header.UpdateTime}" Binding="{Binding FormattedUpdateTime}" Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- 测试结果 -->
+        <Border Grid.Row="3" 
+                Classes="card"
+                Margin="0,16,0,0"
+                IsVisible="{Binding ConnectionTestResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding ConnectionTestResult}" FontSize="14"/>
+        </Border>
+    </Grid>
+</UserControl>

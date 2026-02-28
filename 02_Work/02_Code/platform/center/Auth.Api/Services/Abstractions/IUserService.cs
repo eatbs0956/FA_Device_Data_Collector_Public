@@ -11,6 +11,7 @@ public interface IUserService
     /// <summary>
     /// 获取用户分页列表
     /// </summary>
+    /// <param name="userType">用户类型过滤 - user: 人员账号, service: 服务账号, null: 全部</param>
     Task<(List<UserDto> Items, int Total)> GetUserListAsync(
         int current = 1,
         int size = 10,
@@ -19,7 +20,8 @@ public interface IUserService
         string? userPhone = null,
         string? userEmail = null,
         int? userGender = null,
-        int? status = null);
+        int? status = null,
+        string? userType = null);
 
     /// <summary>
     /// 根据ID获取用户详情
@@ -29,9 +31,11 @@ public interface IUserService
     /// <summary>
     /// 创建新用户
     /// </summary>
+    /// <param name="userType">用户类型 - user: 人员账号, service: 服务账号</param>
     Task<User> CreateUserAsync(
         string userName,
         string nickName = "",
+        string userType = "user",
         int? userGender = null,
         string userPhone = "",
         string userEmail = "",
@@ -46,6 +50,7 @@ public interface IUserService
         Guid id,
         string userName,
         string nickName = "",
+        string? userType = null,
         int? userGender = null,
         string userPhone = "",
         string userEmail = "",

@@ -8,6 +8,10 @@ public class UserDto
     public Guid Id { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string NickName { get; set; } = string.Empty;
+    /// <summary>
+    /// 用户类型 - user: 人员账号, service: 服务账号
+    /// </summary>
+    public string UserType { get; set; } = "user";
     public string? UserGender { get; set; }
     public string UserPhone { get; set; } = string.Empty;
     public string UserEmail { get; set; } = string.Empty;

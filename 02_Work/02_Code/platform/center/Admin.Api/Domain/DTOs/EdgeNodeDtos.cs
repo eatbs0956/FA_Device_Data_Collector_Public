@@ -161,6 +161,27 @@ public class EdgeNodeDto
     /// 更新时间
     /// </summary>
     public DateTimeOffset? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 绑定的服务账号ID
+    /// </summary>
+    public string? ServiceUserId { get; set; }
+
+    /// <summary>
+    /// 绑定的服务账号名称
+    /// </summary>
+    public string? ServiceUserName { get; set; }
+}
+
+/// <summary>
+/// 绑定服务账号请求
+/// </summary>
+public class BindServiceAccountRequest
+{
+    /// <summary>
+    /// 服务账号ID（为空则解绑）
+    /// </summary>
+    public Guid? ServiceUserId { get; set; }
 }
 
 /// <summary>

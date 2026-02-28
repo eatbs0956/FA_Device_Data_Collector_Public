@@ -17,7 +17,7 @@ namespace Shared.Domain.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -571,6 +571,10 @@ namespace Shared.Domain.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("resource_limits");
 
+                    b.Property<Guid?>("ServiceUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_user_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -605,6 +609,9 @@ namespace Shared.Domain.Migrations
                     b.HasIndex("NodeId")
                         .IsUnique()
                         .HasDatabaseName("ix_edge_nodes_node_id");
+
+                    b.HasIndex("ServiceUserId")
+                        .HasDatabaseName("ix_edge_nodes_service_user_id");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_edge_nodes_tenant_id");
@@ -1021,6 +1028,10 @@ namespace Shared.Domain.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("enabled");
 
+                    b.Property<bool>("EnableRealtime")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enable_realtime");
+
                     b.Property<decimal?>("MaxValue")
                         .HasColumnType("numeric")
                         .HasColumnName("max_value");
@@ -1177,6 +1188,12 @@ namespace Shared.Domain.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("user_name");
 
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("user_type");
+
                     b.HasKey("Id")
                         .HasName("pk_user");
 
@@ -1256,6 +1273,17 @@ namespace Shared.Domain.Migrations
                         .HasConstraintName("fk_device_groups_device_groups_parent_id");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("Shared.Domain.Entities.EdgeNode", b =>
+                {
+                    b.HasOne("Shared.Domain.Entities.User", "ServiceUser")
+                        .WithMany()
+                        .HasForeignKey("ServiceUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_edge_nodes_user_service_user_id");
+
+                    b.Navigation("ServiceUser");
                 });
 
             modelBuilder.Entity("Shared.Domain.Entities.RoleButton", b =>

@@ -3,7 +3,12 @@ import { nextTick, reactive, ref } from 'vue';
 import { ElButton, ElMessageBox, ElTag } from 'element-plus';
 import type { TableInstance } from 'element-plus';
 import { nodeStatusOptions, platformTypeOptions, registrationTypeOptions } from '@/constants/business';
-import { fetchDeleteEdgeNode, fetchGetEdgeNodeDeviceCount, fetchGetEdgeNodeList } from '@/service/api';
+import {
+  fetchDeleteEdgeNode,
+  fetchGetEdgeNode,
+  fetchGetEdgeNodeDeviceCount,
+  fetchGetEdgeNodeList
+} from '@/service/api';
 import { defaultTransform, useTableOperate, useUIPaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import TableHeaderOperation from '@/components/advanced/table-header-operation.vue';
@@ -38,6 +43,38 @@ function transformSearchParams() {
     ...searchParams,
     status: searchParams.status ? statusMap[searchParams.status] : undefined
   };
+}
+
+/**
+ * 根据最后心跳时间计算节点实际状态
+ * @param row 节点数据
+ * @returns 计算后的状态
+ */
+function calculateNodeStatus(row: Api.EdgeNode.EdgeNode): string {
+  // 如果没有心跳记录，认为是离线
+  if (!row.lastHeartbeat) {
+    return 'Offline';
+  }
+
+  const lastHeartbeatTime = new Date(row.lastHeartbeat).getTime();
+  const now = Date.now();
+  const diffMinutes = (now - lastHeartbeatTime) / 1000 / 60;
+
+  // 心跳超时阈值：2分钟
+  const HEARTBEAT_TIMEOUT_MINUTES = 2;
+
+  // 如果最后心跳时间超过阈值，认为离线
+  if (diffMinutes > HEARTBEAT_TIMEOUT_MINUTES) {
+    return 'Offline';
+  }
+
+  // 如果后端返回了错误状态，保持错误状态
+  if (row.status === 'Error') {
+    return 'Error';
+  }
+
+  // 心跳正常，在线
+  return 'Online';
 }
 
 const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination } = useUIPaginatedTable({
@@ -83,7 +120,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       width: 100,
       align: 'center',
       formatter: row => {
-        if (!row.status) {
+        // 根据心跳时间动态计算状态
+        const actualStatus = calculateNodeStatus(row);
+        
+        if (!actualStatus) {
           return <ElTag type="info">-</ElTag>;
         }
 
@@ -93,10 +133,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
           Error: 'danger'
         };
 
-        const statusOption = nodeStatusOptions.find(opt => opt.value === row.status);
-        const label = statusOption ? $t(statusOption.label) : row.status;
+        const statusOption = nodeStatusOptions.find(opt => opt.value === actualStatus);
+        const label = statusOption ? $t(statusOption.label) : actualStatus;
 
-        return <ElTag type={tagMap[row.status] || 'info'}>{label}</ElTag>;
+        return <ElTag type={tagMap[actualStatus] || 'info'}>{label}</ElTag>;
       }
     },
     {
@@ -157,14 +197,24 @@ const { drawerVisible, operateType, editingData, handleAdd, onDeleted } = useTab
   getData
 );
 
-// 直接使用行数据编辑，避免通过 id 查找可能导致的问题
+// 编辑节点：先从服务端拉取最新数据（防止心跳更新后本地列表仍是旧值）
 async function editRow(row: Api.EdgeNode.EdgeNode) {
-  // 先设置数据，再打开 drawer
   operateType.value = 'edit';
-  editingData.value = { ...row }; // 深拷贝行数据
-  // 等待数据更新后再打开 drawer
+
+  // 先用本地行数据预填，保证 drawer 能立即打开
+  editingData.value = { ...row };
   await nextTick();
   drawerVisible.value = true;
+
+  // 异步拉取最新数据后再刷新 drawer 内容
+  try {
+    const { data: latestData, error } = await fetchGetEdgeNode(row.id);
+    if (!error && latestData) {
+      editingData.value = latestData;
+    }
+  } catch {
+    // 拉取失败时静默降级，使用本地快照数据，不影响用户操作
+  }
 }
 
 // 表格实例和选中行

@@ -14,15 +14,18 @@ public class DeviceService : IDeviceService
     private readonly DbContext _dbContext;
     private readonly ILogger<DeviceService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IConfigNotifyService _configNotify;
 
     public DeviceService(
         DbContext dbContext,
         ILogger<DeviceService> logger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IConfigNotifyService configNotify)
     {
         _dbContext = dbContext;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _configNotify = configNotify;
     }
 
     /// <summary>
@@ -32,6 +35,18 @@ public class DeviceService : IDeviceService
     {
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("sub")?.Value;
         return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+
+    /// <summary>
+    /// 根据 EdgeNodeId (Guid) 查询 SignalR 分组用的 NodeId 字符串
+    /// </summary>
+    private async Task<string?> GetNodeIdAsync(Guid? edgeNodeId)
+    {
+        if (!edgeNodeId.HasValue) return null;
+        return await _dbContext.Set<EdgeNode>()
+            .Where(e => e.Id == edgeNodeId.Value && !e.DeletedFlag)
+            .Select(e => e.NodeId)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<DeviceListResponse> GetDevicesAsync(DeviceQueryRequest request)
@@ -255,6 +270,10 @@ public class DeviceService : IDeviceService
 
         _logger.LogInformation("设备创建成功: {DeviceId} ({DeviceName})", device.DeviceId, device.DeviceName);
 
+        // 推送配置变更通知：新设备关联的 EdgeNode 需要同步
+        var newNodeId = await GetNodeIdAsync(device.EdgeNodeId);
+        _ = _configNotify.NotifyNodesAsync(new[] { newNodeId }, "Device", device.Id.ToString());
+
         return device.Id;
     }
 
@@ -268,8 +287,11 @@ public class DeviceService : IDeviceService
             throw new InvalidOperationException("设备不存在");
         }
 
+        // ★ 记住旧的 EdgeNodeId（更新前），用于通知旧的 EdgeNode
+        var oldEdgeNodeId = device.EdgeNodeId;
+
         // 如果更新边缘节点,验证其存在性
-        if (request.EdgeNodeId.HasValue)
+        if (request.EdgeNodeId.HasValue && request.EdgeNodeId.Value != Guid.Empty)
         {
             var edgeNodeExists = await _dbContext.Set<EdgeNode>()
                 .AnyAsync(e => e.Id == request.EdgeNodeId.Value && !e.DeletedFlag);
@@ -281,7 +303,7 @@ public class DeviceService : IDeviceService
         }
 
         // 如果更新分组,验证其存在性
-        if (request.GroupId.HasValue)
+        if (request.GroupId.HasValue && request.GroupId.Value != Guid.Empty)
         {
             var groupExists = await _dbContext.Set<DeviceGroup>()
                 .AnyAsync(g => g.Id == request.GroupId.Value && !g.DeletedFlag);
@@ -302,8 +324,9 @@ public class DeviceService : IDeviceService
         if (!string.IsNullOrWhiteSpace(request.ProtocolType))
             device.ProtocolType = request.ProtocolType;
 
+        // EdgeNodeId: Guid.Empty 表示清空，有效值表示设置，null 表示不更新
         if (request.EdgeNodeId.HasValue)
-            device.EdgeNodeId = request.EdgeNodeId.Value;
+            device.EdgeNodeId = request.EdgeNodeId.Value == Guid.Empty ? null : request.EdgeNodeId.Value;
 
         if (!string.IsNullOrWhiteSpace(request.ConnectionConfig))
             device.ConnectionConfig = request.ConnectionConfig;
@@ -329,8 +352,9 @@ public class DeviceService : IDeviceService
         if (request.Location != null)
             device.Location = request.Location;
 
+        // GroupId: Guid.Empty 表示清空，有效值表示设置，null 表示不更新
         if (request.GroupId.HasValue)
-            device.GroupId = request.GroupId;
+            device.GroupId = request.GroupId.Value == Guid.Empty ? null : request.GroupId;
 
         if (request.Enabled.HasValue)
             device.Enabled = request.Enabled.Value;
@@ -341,6 +365,14 @@ public class DeviceService : IDeviceService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("设备更新成功: {DeviceId}", id);
+
+        // 推送配置变更通知：通知新旧两个 EdgeNode（去重由 NotifyNodesAsync 内部处理）
+        // 场景1: EdgeNodeId 从 A 改为 B → 通知 A 和 B
+        // 场景2: EdgeNodeId 从 A 改为 null → 通知 A（Agent 需同步取消设备关联）
+        // 场景3: EdgeNodeId 从 null 改为 B → 通知 B
+        var oldNodeId = await GetNodeIdAsync(oldEdgeNodeId);
+        var newNodeId = await GetNodeIdAsync(device.EdgeNodeId);
+        _ = _configNotify.NotifyNodesAsync(new[] { oldNodeId, newNodeId }, "Device", id.ToString());
     }
 
     public async Task DeleteDeviceAsync(Guid id)
@@ -357,9 +389,15 @@ public class DeviceService : IDeviceService
         device.UpdatedBy = GetCurrentUserId();
         device.UpdatedAt = DateTimeOffset.UtcNow;
 
+        // 删除前先查好 NodeId（SaveChanges 后 DbContext 可能跨越请求边界）
+        var nodeId = await GetNodeIdAsync(device.EdgeNodeId);
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("设备删除成功: {DeviceId}", id);
+
+        // 推送配置变更通知
+        _ = _configNotify.NotifyNodesAsync(new[] { nodeId }, "Device", id.ToString());
     }
 
     public async Task BatchDeleteAsync(List<Guid> ids)
@@ -367,6 +405,18 @@ public class DeviceService : IDeviceService
         var devices = await _dbContext.Set<Shared.Domain.Entities.Device>()
             .Where(d => ids.Contains(d.Id) && !d.DeletedFlag)
             .ToListAsync();
+
+        // 删除前查好所有关联 EdgeNode 的 NodeId
+        var edgeNodeIds = devices
+            .Where(d => d.EdgeNodeId.HasValue)
+            .Select(d => d.EdgeNodeId!.Value)
+            .Distinct()
+            .ToList();
+        var nodeIds = new List<string?>();
+        foreach (var eid in edgeNodeIds)
+        {
+            nodeIds.Add(await GetNodeIdAsync(eid));
+        }
 
         var userId = GetCurrentUserId();
         var now = DateTimeOffset.UtcNow;
@@ -381,6 +431,9 @@ public class DeviceService : IDeviceService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("批量删除设备成功, 数量: {Count}", devices.Count);
+
+        // 推送配置变更通知
+        _ = _configNotify.NotifyNodesAsync(nodeIds, "Device", string.Join(",", ids));
     }
 
     public async Task<DeviceConnectionTestResult> TestConnectionAsync(Guid id)
@@ -454,6 +507,10 @@ public class DeviceService : IDeviceService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("设备状态切换成功: {DeviceId}, Enabled: {Enabled}", id, enabled);
+
+        // 推送配置变更通知
+        var nodeId = await GetNodeIdAsync(device.EdgeNodeId);
+        _ = _configNotify.NotifyNodesAsync(new[] { nodeId }, "Device", id.ToString());
     }
 
     /// <summary>

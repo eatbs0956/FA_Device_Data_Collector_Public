@@ -111,7 +111,7 @@
     11.4.2 [扩展性设计](#1142-扩展性设计)
 12. [接口与契约](#12-接口与契约)
   12.1 [REST OpenAPI 摘要](#121-rest-openapi-摘要)
-  12.2 [gRPC 协议（proto 示例）](#122-grpc-协议proto-示例)
+  12.2 [gRPC 协议（proto 示例）【预留·暂不实现】](#122-grpc-协议proto-示例预留暂不实现)
   12.3 [消息模型（RabbitMQ JSON Schema）](#123-消息模型rabbitmq-json-schema)
   12.4 [配置文件示例](#124-配置文件示例)
   12.5 [错误码与响应规范](#125-错误码与响应规范)
@@ -5024,7 +5024,25 @@ components:
           type: integer
 ```
 
-### 12.2 gRPC 协议（proto 示例）
+### 12.2 gRPC 协议（proto 示例）【预留·暂不实现】
+
+> **📌 实现状态说明**
+> 
+> 当前版本（v1.0）**不实现 gRPC**，原因如下：
+> 
+> | 场景 | 当前方案 | gRPC 方案 | 结论 |
+> |------|----------|-----------|------|
+> | 配置下发 | REST API + SignalR 推送 | gRPC 双向流 | REST+SignalR 已满足需求 |
+> | 采集数据上报 | RabbitMQ 异步消息 | gRPC 流式上传 | MQ 更适合（解耦、缓冲、重试） |
+> | 实时状态推送 | Redis Pub/Sub → SignalR | gRPC 服务端流 | SignalR 对浏览器原生支持 |
+> 
+> **何时考虑引入 gRPC：**
+> - 内部微服务间高频 RPC 调用（每秒数千次）成为性能瓶颈
+> - 需要为 Java/Go/Python 等多语言客户端提供 SDK
+> - 存在严格延迟要求（<10ms）的实时控制场景
+>
+> 以下 proto 定义作为**未来扩展参考**，暂不生成代码。
+
 ```proto
 syntax = "proto3";
 package ingestion;
@@ -5150,7 +5168,8 @@ acquisition:
 - 认证失败次数：`auth_failed_total`
 
 ### 12.7 兼容性与扩展性说明
-- OpenAPI、gRPC、消息模型均支持向后兼容与字段扩展。
+- OpenAPI、消息模型均支持向后兼容与字段扩展。
+- gRPC 协议作为预留扩展点，待未来高性能场景需要时实现。
 - 配置文件支持多环境（dev/prod/edge）与热加载。
 - 错误码体系可扩展，支持国际化。
 - 监控指标可按需扩展，兼容Prometheus/Grafana等主流平台。
@@ -5165,7 +5184,7 @@ acquisition:
 - 客户端改造要点：
   - 将 pointName 映射为 tagId；timestamp 映射为 eventTime（UTC ISO8601）。
   - 可选补充 envelopeId/seq/source/headers/quality 以获得更好的去重与诊断能力。
-  - REST/gRPC/消息三端字段名保持一致，便于共用 SDK/模型。
+  - REST/消息两端字段名保持一致，便于共用 SDK/模型（gRPC 预留扩展）。
 - 服务端风控与回滚：
   - 打开 valueCoercion 以降低字符串数值的迁移风险；
   - 保留 feature flag（enforceUnifiedFields/acceptDeprecatedFields）随时回滚；

@@ -1,0 +1,148 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Collector.Agent"
+             x:Class="Collector.Agent.App"
+             RequestedThemeVariant="Light">
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+    
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- ====== 全局 DataGrid 统一风格 ====== -->
+
+        <!-- DataGrid 整体 -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#e2e8f0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- 表头行 - 暗色底色 -->
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1e293b"/>
+            <Setter Property="Foreground" Value="#e2e8f0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="SeparatorBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader:pointerover">
+            <Setter Property="Background" Value="#334155"/>
+        </Style>
+
+        <!-- 左上角全选按钮区域 -->
+        <Style Selector="DataGrid /template/ Rectangle#PART_ColumnHeadersAndRowsSeparator">
+            <Setter Property="Fill" Value="#1e293b"/>
+        </Style>
+
+        <!-- 数据行 -->
+        <Style Selector="DataGridRow">
+            <Setter Property="MinHeight" Value="42"/>
+        </Style>
+        <!-- 奇数行斑马纹背景 -->
+        <Style Selector="DataGridRow:nth-child(even) /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#f8fafc"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#e2e8f0"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#dbeafe"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <!-- 数据行单元格 -->
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#1e293b"/>
+        </Style>
+
+        <!-- ====== 全局按钮基础风格 ====== -->
+
+        <!-- 主要操作按钮（蓝色） -->
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#2563eb"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1d4ed8"/>
+        </Style>
+
+        <!-- 成功按钮（绿色） -->
+        <Style Selector="Button.success">
+            <Setter Property="Background" Value="#16a34a"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="Button.success:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#15803d"/>
+        </Style>
+
+        <!-- 危险按钮（红色） -->
+        <Style Selector="Button.danger">
+            <Setter Property="Background" Value="#dc2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#b91c1c"/>
+        </Style>
+
+        <!-- 次要按钮（灰底/描边） -->
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="BorderBrush" Value="#cbd5e1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#f1f5f9"/>
+        </Style>
+
+        <!-- ====== 页面标题风格 ====== -->
+        <Style Selector="TextBlock.pageTitle">
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#0f172a"/>
+        </Style>
+
+        <!-- 卡片标题 -->
+        <Style Selector="TextBlock.cardTitle">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#1e293b"/>
+        </Style>
+
+        <!-- 统一卡片容器 -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="BoxShadow" Value="0 1 3 #10000000"/>
+        </Style>
+    </Application.Styles>
+</Application>

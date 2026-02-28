@@ -351,6 +351,7 @@ const local: App.I18n.Schema = {
         userEmail: 'Email',
         userStatus: 'User Status',
         userRole: 'User Role',
+        userTypeLabel: 'User Type',
         form: {
           userName: 'Please enter user name',
           userGender: 'Please select gender',
@@ -358,13 +359,22 @@ const local: App.I18n.Schema = {
           userPhone: 'Please enter phone number',
           userEmail: 'Please enter email',
           userStatus: 'Please select user status',
-          userRole: 'Please select user role'
+          userRole: 'Please select user role',
+          userType: 'Please select user type'
         },
         addUser: 'Add User',
         editUser: 'Edit User',
         gender: {
           male: 'Male',
           female: 'Female'
+        },
+        userType: {
+          user: 'Interactive Account',
+          service: 'Service Account'
+        },
+        userTypeChangeConfirm: {
+          toService: 'Are you sure to change user type from "Interactive Account" to "Service Account"?',
+          toUser: 'Are you sure to change user type from "Service Account" to "Interactive Account"? After changing, edge nodes using this account may not work properly.'
         }
       },
       menu: {
@@ -524,6 +534,16 @@ const local: App.I18n.Schema = {
         authenticationMode: 'Authentication Mode',
         authenticationModePlaceholder: 'Please select authentication mode',
         samplingInterval: 'Sampling Interval(ms)',
+        // OPC UA authentication fields
+        username: 'Username',
+        usernamePlaceholder: 'Enter username',
+        password: 'Password',
+        passwordPlaceholder: 'Enter password (optional)',
+        clientCertificatePath: 'Client Certificate Path',
+        clientCertificatePathPlaceholder: 'e.g.: /path/to/client.crt or C:\\certs\\client.crt',
+        clientPrivateKeyPath: 'Client Private Key Path',
+        clientPrivateKeyPathPlaceholder: 'e.g.: /path/to/client.key or C:\\certs\\client.key',
+        certificatePathWarning: 'Note: Certificate paths refer to the edge node local file system. Make sure the edge node can access these files.',
         // OPC DA
         serverName: 'OPC Server Name',
         serverNamePlaceholder: 'e.g.: Matrikon.OPC.Simulation',
@@ -580,6 +600,8 @@ const local: App.I18n.Schema = {
       scalingFactor: 'Scaling Factor',
       offset: 'Offset',
       deadband: 'Deadband',
+      enableRealtime: 'Realtime Push',
+      enableRealtimeTip: 'Enable realtime data push to frontend',
 
       // Placeholders
       tagIdPlaceholder: 'Enter tag identifier',
@@ -788,6 +810,101 @@ const local: App.I18n.Schema = {
       noDevicesSelected: 'No devices linked',
       selectDevices: 'Select Devices',
       selectedDevices: '{count} devices selected'
+    },
+    monitor: {
+      // Realtime monitoring page
+      realtime: {
+        title: 'Realtime Monitoring',
+        filterStatus: 'Status Filter',
+        statusAll: 'All',
+        statusOnline: 'Online',
+        statusOffline: 'Offline',
+        pause: 'Pause',
+        resume: 'Resume',
+        refresh: 'Refresh',
+        autoRefresh: 'Auto Refresh',
+        autoRefreshOff: 'OFF',
+        deviceCount: 'Devices',
+        noDevicesFound: 'No devices found'
+      },
+      // Device card
+      deviceCard: {
+        statusOnline: 'Online',
+        statusOffline: 'Offline',
+        statusError: 'Error',
+        statusUnknown: 'Unknown',
+        deviceId: 'Device ID',
+        belongTo: 'Belongs to',
+        updateTime: 'Update Time',
+        keyIndicators: 'Key Indicators',
+        noData: 'No data collected'
+      },
+      // Device detail dialog
+      deviceDetail: {
+        title: 'Device Details',
+        deviceName: 'Device Name',
+        deviceId: 'Device ID',
+        status: 'Status',
+        deviceType: 'Device Type',
+        protocol: 'Protocol',
+        location: 'Location',
+        lastConnect: 'Last Connect',
+        tagValues: 'Tag Values',
+        tagName: 'Tag Name',
+        value: 'Value',
+        quality: 'Quality',
+        time: 'Time',
+        noData: 'No data'
+      },
+      // Historical data page
+      historical: {
+        title: 'Historical Data',
+        timeRange: 'Time Range',
+        aggregation: 'Aggregation',
+        refresh: 'Refresh',
+        last15min: 'Last 15 min',
+        last1hour: 'Last 1 hour',
+        last6hours: 'Last 6 hours',
+        last1day: 'Last 1 day',
+        last7days: 'Last 7 days',
+        last30days: 'Last 30 days',
+        rawData: 'Raw Data',
+        avg1min: '1min Avg',
+        avg5min: '5min Avg',
+        avg1hour: '1hour Avg',
+        selectedTags: '{count} tags selected',
+        moreTags: '+{count} more',
+        selectDeviceHint: 'Please select a device from the left tree',
+        searchPlaceholder: 'Search device/tag',
+        refreshTree: 'Refresh'
+      },
+      // Statistics page
+      statistics: {
+        title: 'Statistics Report',
+        byDevice: 'By Device',
+        byGroup: 'By Group',
+        byNode: 'By Node',
+        chart: 'Chart',
+        table: 'Table',
+        chartView: 'Chart',
+        tableView: 'Table',
+        refresh: 'Refresh',
+        export: 'Export',
+        noDataToExport: 'No data to export',
+        dimension: 'Dimension',
+        name: 'Name',
+        totalPoints: 'Total Points',
+        avgDevices: 'Avg Devices',
+        onlineDevices: 'Online Devices',
+        pointCount: 'Point Count',
+        to: 'to',
+        startTime: 'Start',
+        endTime: 'End',
+        last1Hour: 'Last 1 Hour',
+        last6Hours: 'Last 6 Hours',
+        last24Hours: 'Last 24 Hours',
+        last7Days: 'Last 7 Days'
+      }
     }
   },
   form: {

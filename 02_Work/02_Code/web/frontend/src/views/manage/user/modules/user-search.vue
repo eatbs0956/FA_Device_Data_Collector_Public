@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { enableStatusOptions, userGenderOptions } from '@/constants/business';
+import { enableStatusOptions, userGenderOptions, userTypeOptions } from '@/constants/business';
 import { useForm, useFormRules } from '@/hooks/common/form';
 import { translateOptions } from '@/utils/common';
 import { $t } from '@/locales';
@@ -90,8 +90,20 @@ async function search() {
                 </ElSelect>
               </ElFormItem>
             </ElCol>
-            <ElCol :lg="12" :md="24" :sm="24">
-              <ElSpace class="w-full justify-end" alignment="end">
+            <ElCol :lg="6" :md="8" :sm="12">
+              <ElFormItem :label="$t('page.manage.user.userTypeLabel')" prop="userType">
+                <ElSelect v-model="model.userType" clearable :placeholder="$t('page.manage.user.form.userType')">
+                  <ElOption
+                    v-for="{ label, value } in translateOptions(userTypeOptions)"
+                    :key="value"
+                    :label="label"
+                    :value="value"
+                  />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+            <ElCol :lg="6" :md="8" :sm="12">
+              <ElSpace class="w-full justify-end pt-25px" alignment="end">
                 <ElButton type="primary" plain @click="search">
                   <template #icon>
                     <icon-ic-round-search class="text-icon" />

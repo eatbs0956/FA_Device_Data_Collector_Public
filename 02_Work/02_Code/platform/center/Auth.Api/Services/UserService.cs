@@ -42,7 +42,8 @@ public class UserService : IUserService
         string? userPhone = null,
         string? userEmail = null,
         int? userGender = null,
-        int? status = null)
+        int? status = null,
+        string? userType = null)
     {
         // 参数校验
         current = current <= 0 ? 1 : current;
@@ -50,6 +51,12 @@ public class UserService : IUserService
 
         // 构建查询 - 排除已删除的数据
         var query = _db.Users.Where(x => !x.DeletedFlag);
+
+        // 用户类型筛选
+        if (!string.IsNullOrWhiteSpace(userType))
+        {
+            query = query.Where(x => x.UserType == userType);
+        }
 
         // 用户名模糊搜索
         if (!string.IsNullOrWhiteSpace(userName))
@@ -118,6 +125,7 @@ public class UserService : IUserService
             Id = x.Id,
             UserName = x.UserName,
             NickName = x.NickName,
+            UserType = x.UserType,
             UserGender = x.Gender?.ToString(),
             UserPhone = x.Phone,
             UserEmail = x.Email,
@@ -149,6 +157,7 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="userName">用户名</param>
     /// <param name="nickName">昵称</param>
+    /// <param name="userType">用户类型 - user: 人员账号, service: 服务账号</param>
     /// <param name="userGender">性别</param>
     /// <param name="userPhone">手机号</param>
     /// <param name="userEmail">邮箱</param>
@@ -159,6 +168,7 @@ public class UserService : IUserService
     public async Task<User> CreateUserAsync(
         string userName,
         string nickName = "",
+        string userType = "user",
         int? userGender = null,
         string userPhone = "",
         string userEmail = "",
@@ -170,6 +180,12 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(userName))
         {
             throw new ArgumentException("用户名不能为空", nameof(userName));
+        }
+        
+        // 验证用户类型
+        if (userType != "user" && userType != "service")
+        {
+            throw new ArgumentException("用户类型必须是 'user' 或 'service'", nameof(userType));
         }
 
         // 检查用户名是否已存在
@@ -184,6 +200,7 @@ public class UserService : IUserService
         {
             UserName = userName,
             NickName = nickName,
+            UserType = userType,
             Gender = userGender,
             Phone = userPhone,
             Email = userEmail,
@@ -215,6 +232,7 @@ public class UserService : IUserService
     /// <param name="id">用户ID</param>
     /// <param name="userName">用户名</param>
     /// <param name="nickName">昵称</param>
+    /// <param name="userType">用户类型 - user: 人员账号, service: 服务账号</param>
     /// <param name="userGender">性别</param>
     /// <param name="userPhone">手机号</param>
     /// <param name="userEmail">邮箱</param>
@@ -226,6 +244,7 @@ public class UserService : IUserService
         Guid id,
         string userName,
         string nickName = "",
+        string? userType = null,
         int? userGender = null,
         string userPhone = "",
         string userEmail = "",
@@ -253,6 +272,11 @@ public class UserService : IUserService
         // 更新字段
         user.UserName = userName;
         user.NickName = nickName;
+        // 更新用户类型（如果提供且有效）
+        if (!string.IsNullOrWhiteSpace(userType) && (userType == "user" || userType == "service"))
+        {
+            user.UserType = userType;
+        }
         user.Gender = userGender;
         user.Phone = userPhone;
         user.Email = userEmail;

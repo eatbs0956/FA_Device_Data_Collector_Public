@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
 using Gateway.Api.Middleware;
+using Gateway.Api.Hubs;
+using Gateway.Api.Services;
+using Shared.Realtime;
 
 // ========== 配置 Serilog ==========
 Log.Logger = new LoggerConfiguration()
@@ -33,6 +36,16 @@ try
     builder.Services.AddReverseProxy()
         .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
+    // 添加 SignalR
+    builder.Services.AddSignalR();
+
+    // 添加实时消息服务
+    var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+    builder.Services.AddRealtime(redisConnectionString);
+
+    // 添加实时消息桥接服务
+    builder.Services.AddHostedService<RealtimeBridgeService>();
+
     // 添加 CORS 支持
     builder.Services.AddCors(options =>
     {
@@ -41,6 +54,15 @@ try
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
                   .AllowAnyHeader();
+        });
+
+        // SignalR 需要支持凭据的 CORS 策略
+        options.AddPolicy("SignalR", policy =>
+        {
+            policy.SetIsOriginAllowed(_ => true)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         });
     });
 
@@ -71,15 +93,24 @@ try
     // 健康检查端点
     app.MapHealthChecks("/health");
 
+    // SignalR Hub 端点（使用 SignalR CORS 策略）
+    app.MapHub<RealtimeHub>("/hubs/realtime").RequireCors("SignalR");
+
     // 简单的根路径响应
     app.MapGet("/", () => Results.Ok(new 
     { 
         service = "DevDCP API Gateway",
         version = "1.0.0",
-        timestamp = DateTime.UtcNow
+        timestamp = DateTime.UtcNow,
+        endpoints = new
+        {
+            health = "/health",
+            signalr = "/hubs/realtime"
+        }
     }));
 
-    // 映射反向代理
+    // 映射反向代理（启用 WebSocket 支持以透传 SignalR）
+    app.UseWebSockets();
     app.MapReverseProxy();
     
     Log.Information("Gateway.Api started successfully on {Urls}", string.Join(", ", app.Urls));

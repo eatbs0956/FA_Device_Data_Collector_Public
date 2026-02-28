@@ -351,6 +351,7 @@ const local: App.I18n.Schema = {
         userEmail: '邮箱',
         userStatus: '用户状态',
         userRole: '用户角色',
+        userTypeLabel: '用户类型',
         form: {
           userName: '请输入用户名',
           userGender: '请选择性别',
@@ -358,13 +359,22 @@ const local: App.I18n.Schema = {
           userPhone: '请输入手机号',
           userEmail: '请输入邮箱',
           userStatus: '请选择用户状态',
-          userRole: '请选择用户角色'
+          userRole: '请选择用户角色',
+          userType: '请选择用户类型'
         },
         addUser: '新增用户',
         editUser: '编辑用户',
         gender: {
           male: '男',
           female: '女'
+        },
+        userType: {
+          user: '交互账号',
+          service: '服务账号'
+        },
+        userTypeChangeConfirm: {
+          toService: '确定将用户类型从"交互账号"改为"服务账号"吗？',
+          toUser: '确定将用户类型从"服务账号"改为"交互账号"吗？服务账号改为交互账号后，使用该账号的采集节点可能无法正常工作。'
         }
       },
       menu: {
@@ -524,6 +534,16 @@ const local: App.I18n.Schema = {
         authenticationMode: '认证模式',
         authenticationModePlaceholder: '请选择认证模式',
         samplingInterval: '采样间隔(ms)',
+        // OPC UA 认证字段
+        username: '用户名',
+        usernamePlaceholder: '请输入用户名',
+        password: '密码',
+        passwordPlaceholder: '请输入密码（可选）',
+        clientCertificatePath: '客户端证书路径',
+        clientCertificatePathPlaceholder: '例如: /path/to/client.crt 或 C:\\certs\\client.crt',
+        clientPrivateKeyPath: '客户端私钥路径',
+        clientPrivateKeyPathPlaceholder: '例如: /path/to/client.key 或 C:\\certs\\client.key',
+        certificatePathWarning: '注意：证书路径是边缘节点本地文件系统的路径，请确保边缘节点可以访问这些文件。',
         // OPC DA
         serverName: 'OPC服务器名称',
         serverNamePlaceholder: '例如: Matrikon.OPC.Simulation',
@@ -580,6 +600,8 @@ const local: App.I18n.Schema = {
       scalingFactor: '比例因子',
       offset: '偏移量',
       deadband: '死区值',
+      enableRealtime: '实时推送',
+      enableRealtimeTip: '启用后将实时推送数据到前端',
 
       // 占位符
       tagIdPlaceholder: '请输入标签标识符',
@@ -785,6 +807,101 @@ const local: App.I18n.Schema = {
       noDevicesSelected: '暂无关联设备',
       selectDevices: '选择设备',
       selectedDevices: '已选 {count} 个设备'
+    },
+    monitor: {
+      // 实时监控页面
+      realtime: {
+        title: '实时监控',
+        filterStatus: '状态筛选',
+        statusAll: '全部',
+        statusOnline: '在线',
+        statusOffline: '离线',
+        pause: '暂停',
+        resume: '恢复',
+        refresh: '刷新',
+        autoRefresh: '自动刷新',
+        autoRefreshOff: '关闭',
+        deviceCount: '设备数量',
+        noDevicesFound: '未找到设备'
+      },
+      // 设备卡片
+      deviceCard: {
+        statusOnline: '在线',
+        statusOffline: '离线',
+        statusError: '错误',
+        statusUnknown: '未知',
+        deviceId: '设备标识',
+        belongTo: '归属',
+        updateTime: '更新时间',
+        keyIndicators: '关键指标',
+        noData: '暂无采集数据'
+      },
+      // 设备详情对话框
+      deviceDetail: {
+        title: '设备详情',
+        deviceName: '设备名称',
+        deviceId: '设备ID',
+        status: '状态',
+        deviceType: '设备类型',
+        protocol: '协议类型',
+        location: '位置',
+        lastConnect: '最后连接',
+        tagValues: '标签值',
+        tagName: '标签名称',
+        value: '值',
+        quality: '质量',
+        time: '时间',
+        noData: '暂无数据'
+      },
+      // 历史数据页面
+      historical: {
+        title: '历史数据',
+        timeRange: '时间范围',
+        aggregation: '聚合方式',
+        refresh: '刷新',
+        last15min: '最近15分钟',
+        last1hour: '最近1小时',
+        last6hours: '最近6小时',
+        last1day: '最近1天',
+        last7days: '最近7天',
+        last30days: '最近30天',
+        rawData: '原始数据',
+        avg1min: '1分钟平均',
+        avg5min: '5分钟平均',
+        avg1hour: '1小时平均',
+        selectedTags: '已选 {count} 个标签',
+        moreTags: '还有 {count} 个',
+        selectDeviceHint: '请从左侧树选择设备',
+        searchPlaceholder: '搜索设备/标签',
+        refreshTree: '刷新'
+      },
+      // 统计报表页面
+      statistics: {
+        title: '统计报表',
+        byDevice: '按设备',
+        byGroup: '按分组',
+        byNode: '按节点',
+        chart: '图表',
+        table: '表格',
+        chartView: '图表',
+        tableView: '表格',
+        refresh: '刷新',
+        export: '导出',
+        noDataToExport: '没有数据可导出',
+        dimension: '维度',
+        name: '名称',
+        totalPoints: '数据点总数',
+        avgDevices: '平均设备数',
+        onlineDevices: '在线设备数',
+        pointCount: '数据点数',
+        to: '至',
+        startTime: '开始时间',
+        endTime: '结束时间',
+        last1Hour: '最近1小时',
+        last6Hours: '最近6小时',
+        last24Hours: '最近24小时',
+        last7Days: '最近7天'
+      }
     }
   },
   form: {

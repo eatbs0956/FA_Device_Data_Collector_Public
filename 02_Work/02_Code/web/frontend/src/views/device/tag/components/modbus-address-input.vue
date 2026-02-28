@@ -19,10 +19,10 @@ const emit = defineEmits<{
   'update:modelValue': [value: Record<string, any>];
 }>();
 
+// 注意：从站ID (slaveId) 已移至设备级别配置，不在标签地址中配置
 const config = reactive({
   functionCode: '03',
   address: 0,
-  slaveId: 1,
   quantity: 1
 });
 
@@ -33,7 +33,6 @@ watch(
     if (val) {
       config.functionCode = val.functionCode || '03';
       config.address = val.address || 0;
-      config.slaveId = val.slaveId || 1;
       config.quantity = val.quantity || 1;
     }
   },
@@ -64,17 +63,6 @@ function handleChange() {
         v-model="config.address"
         :min="0"
         :max="65535"
-        :controls="false"
-        class="w-full"
-        @change="handleChange"
-      />
-    </ElFormItem>
-
-    <ElFormItem :label="$t('page.tag.modbus.slaveId')">
-      <ElInputNumber
-        v-model="config.slaveId"
-        :min="1"
-        :max="247"
         :controls="false"
         class="w-full"
         @change="handleChange"

@@ -124,6 +124,14 @@ const alertType = computed(() => {
   return 'warning';
 });
 
+// 格式化最后心跳时间
+const formattedLastHeartbeat = computed(() => {
+  if (!isEdit.value || !props.rowData?.lastHeartbeat) {
+    return '-';
+  }
+  return new Date(props.rowData.lastHeartbeat).toLocaleString('zh-CN');
+});
+
 // 统一监听：当 drawer 打开且有数据时初始化
 watch(
   [visible, () => props.rowData, () => props.operateType],
@@ -248,92 +256,79 @@ async function handleSubmit() {
       </ElFormItem>
 
       <!-- 系统字段区域 -->
-      <!-- 新增模式：显示可编辑的系统字段 -->
-      <!-- 编辑模式：手动未连接可编辑，其他只读展示 -->
       <ElDivider content-position="left">{{ $t('page.edgeNode.systemInfo') }}</ElDivider>
 
-      <!-- 可编辑的系统字段（新增模式 或 手动未连接） -->
-      <template v-if="!isEdit || canEditSystemFields">
-        <ElRow :gutter="16">
-          <ElCol :span="12">
-            <ElFormItem :label="$t('page.edgeNode.version')">
-              <ElInput v-model="model.version" :placeholder="$t('page.edgeNode.form.version')" clearable />
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="12">
-            <ElFormItem :label="$t('page.edgeNode.ipAddress')">
-              <ElInput v-model="model.ipAddress" :placeholder="$t('page.edgeNode.form.ipAddress')" clearable />
-            </ElFormItem>
-          </ElCol>
-        </ElRow>
+      <!-- 统一的系统字段布局（可编辑或只读） -->
+      <ElRow :gutter="16">
+        <ElCol :span="12">
+          <ElFormItem :label="$t('page.edgeNode.version')">
+            <ElInput
+              v-model="model.version"
+              :placeholder="$t('page.edgeNode.form.version')"
+              :disabled="isEdit && !canEditSystemFields"
+              clearable
+            />
+          </ElFormItem>
+        </ElCol>
+        <ElCol :span="12">
+          <ElFormItem :label="$t('page.edgeNode.ipAddress')">
+            <ElInput
+              v-model="model.ipAddress"
+              :placeholder="$t('page.edgeNode.form.ipAddress')"
+              :disabled="isEdit && !canEditSystemFields"
+              clearable
+            />
+          </ElFormItem>
+        </ElCol>
+      </ElRow>
 
-        <ElRow :gutter="16">
-          <ElCol :span="12">
-            <ElFormItem :label="$t('page.edgeNode.port')">
-              <ElInputNumber v-model="model.port" :min="1" :max="65535" controls-position="right" class="w-full" />
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="12">
-            <ElFormItem :label="$t('page.edgeNode.installPath')">
-              <ElInput v-model="model.installPath" :placeholder="$t('page.edgeNode.form.installPath')" clearable />
-            </ElFormItem>
-          </ElCol>
-        </ElRow>
+      <ElRow :gutter="16">
+        <ElCol :span="12">
+          <ElFormItem :label="$t('page.edgeNode.port')">
+            <ElInputNumber
+              v-model="model.port"
+              :min="1"
+              :max="65535"
+              controls-position="right"
+              :disabled="isEdit && !canEditSystemFields"
+              class="w-full"
+            />
+          </ElFormItem>
+        </ElCol>
+        <ElCol :span="12">
+          <ElFormItem :label="$t('page.edgeNode.lastHeartbeat')">
+            <ElInput :model-value="formattedLastHeartbeat" disabled />
+          </ElFormItem>
+        </ElCol>
+      </ElRow>
 
-        <ElFormItem :label="$t('page.edgeNode.osInfo')">
-          <ElInput v-model="model.osInfo" :placeholder="$t('page.edgeNode.form.osInfo')" clearable />
-        </ElFormItem>
+      <ElFormItem :label="$t('page.edgeNode.osInfo')">
+        <ElInput
+          v-model="model.osInfo"
+          :placeholder="$t('page.edgeNode.form.osInfo')"
+          :disabled="isEdit && !canEditSystemFields"
+          clearable
+        />
+      </ElFormItem>
 
-        <ElFormItem :label="$t('page.edgeNode.hardwareInfo')">
-          <ElInput
-            v-model="model.hardwareInfo"
-            type="textarea"
-            :rows="2"
-            :placeholder="$t('page.edgeNode.form.hardwareInfo')"
-          />
-        </ElFormItem>
-      </template>
+      <ElFormItem :label="$t('page.edgeNode.hardwareInfo')">
+        <ElInput
+          v-model="model.hardwareInfo"
+          type="textarea"
+          :rows="2"
+          :placeholder="$t('page.edgeNode.form.hardwareInfo')"
+          :disabled="isEdit && !canEditSystemFields"
+        />
+      </ElFormItem>
 
-      <!-- 已连接或自动注册：只读展示系统信息 -->
-      <template v-else-if="isEdit && rowData">
-        <ElDescriptions :column="2" border>
-          <ElDescriptionsItem :label="$t('page.edgeNode.status')">
-            <ElTag :type="rowData.status === 'Online' ? 'success' : rowData.status === 'Error' ? 'danger' : 'warning'">
-              {{ rowData.status || '-' }}
-            </ElTag>
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.registrationType')">
-            <ElTag :type="rowData.registrationType === 'manual' ? 'success' : 'primary'">
-              {{
-                rowData.registrationType === 'manual'
-                  ? $t('page.edgeNode.registrationTypeOptions.manual')
-                  : $t('page.edgeNode.registrationTypeOptions.auto')
-              }}
-            </ElTag>
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.version')">
-            {{ rowData.version || '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.ipAddress')">
-            {{ rowData.ipAddress || '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.port')">
-            {{ rowData.port || '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.lastHeartbeat')">
-            {{ rowData.lastHeartbeat ? new Date(rowData.lastHeartbeat).toLocaleString('zh-CN') : '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.osInfo')" :span="2">
-            {{ rowData.osInfo || '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.hardwareInfo')" :span="2">
-            {{ rowData.hardwareInfo || '-' }}
-          </ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.edgeNode.installPath')" :span="2">
-            {{ rowData.installPath || '-' }}
-          </ElDescriptionsItem>
-        </ElDescriptions>
-      </template>
+      <ElFormItem :label="$t('page.edgeNode.installPath')">
+        <ElInput
+          v-model="model.installPath"
+          :placeholder="$t('page.edgeNode.form.installPath')"
+          :disabled="isEdit && !canEditSystemFields"
+          clearable
+        />
+      </ElFormItem>
 
       <!-- 高级配置 -->
       <ElDivider content-position="left">{{ $t('page.edgeNode.advancedConfig') }}</ElDivider>

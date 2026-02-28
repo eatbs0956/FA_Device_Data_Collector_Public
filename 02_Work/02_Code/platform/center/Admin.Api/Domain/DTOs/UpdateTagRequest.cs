@@ -52,6 +52,11 @@ public class UpdateTagRequest
     public bool Enabled { get; set; } = true;
 
     /// <summary>
+    /// 是否启用实时推送
+    /// </summary>
+    public bool EnableRealtime { get; set; }
+
+    /// <summary>
     /// 最小值
     /// </summary>
     public decimal? MinValue { get; set; }

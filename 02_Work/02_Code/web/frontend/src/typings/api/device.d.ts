@@ -332,6 +332,8 @@ declare namespace Api {
       description?: string;
       /** enabled status */
       enabled: boolean;
+      /** enable realtime push */
+      enableRealtime: boolean;
       /** minimum value */
       minValue?: number;
       /** maximum value */
@@ -374,6 +376,8 @@ declare namespace Api {
       description?: string;
       /** enabled status */
       enabled: boolean;
+      /** enable realtime push */
+      enableRealtime: boolean;
       /** minimum value */
       minValue?: number;
       /** maximum value */

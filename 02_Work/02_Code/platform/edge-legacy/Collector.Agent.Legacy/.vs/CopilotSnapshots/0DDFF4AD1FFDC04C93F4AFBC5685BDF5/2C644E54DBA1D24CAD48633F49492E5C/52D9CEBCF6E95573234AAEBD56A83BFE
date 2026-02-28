@@ -1,0 +1,35 @@
+﻿using System;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    /// <summary>
+    /// 关于对话框
+    /// </summary>
+    public partial class AboutForm : Form
+    {
+        public AboutForm()
+        {
+            InitializeComponent();
+            InitializeText();
+        }
+
+        private void InitializeText()
+        {
+            this.Text = L.T("AboutForm_Title");
+            _appNameLabel.Text = L.T("AboutForm_AppName");
+            _versionLabel.Text = L.T("AboutForm_Version", "1.0.0");
+            _copyrightLabel.Text = L.T("AboutForm_Copyright");
+            _okButton.Text = L.T("AboutForm_Button_OK");
+        }
+
+        private void VersionLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            using (var historyForm = new VersionHistoryForm())
+            {
+                historyForm.ShowDialog(this);
+            }
+        }
+    }
+}

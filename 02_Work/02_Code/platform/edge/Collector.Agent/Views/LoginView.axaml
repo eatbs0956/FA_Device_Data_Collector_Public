@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             x:Class="Collector.Agent.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+
+    <Border Background="White" 
+            CornerRadius="12" 
+            Padding="40"
+            Width="400"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            BoxShadow="0 4 20 #20000000">
+        <StackPanel>
+            <!-- Logo -->
+            <TextBlock Text="📡" FontSize="48" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding AppTitle}" 
+                       FontSize="20" 
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding LoginTitle}" 
+                       Foreground="#64748b"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,24"/>
+
+            <!-- 错误提示 -->
+            <Border Background="#fef2f2" 
+                    CornerRadius="6" 
+                    Padding="12"
+                    Margin="0,0,0,16"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           Foreground="#dc2626"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- 用户名 -->
+            <TextBlock Text="{Binding UsernameLabel}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <TextBox Text="{Binding UserName}"
+                     Watermark="{Binding UsernamePlaceholder}"
+                     Padding="12"
+                     Margin="0,0,0,16"
+                     KeyDown="OnUserNameOrPasswordKeyDown"/>
+
+            <!-- 密码 -->
+            <TextBlock Text="{Binding PasswordLabel}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border BorderBrush="{DynamicResource TextControlBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Background="{DynamicResource TextControlBackground}"
+                    Margin="0,0,0,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0"
+                             Text="{Binding Password}"
+                             PasswordChar="{Binding PasswordChar}"
+                             RevealPassword="{Binding ShowPassword}"
+                             Watermark="{Binding PasswordPlaceholder}"
+                             Padding="12"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             KeyDown="OnUserNameOrPasswordKeyDown"/>
+                    <Button Grid.Column="1"
+                            Content="{Binding ShowPasswordIcon}"
+                            Command="{Binding TogglePasswordVisibilityCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            VerticalAlignment="Stretch"
+                            ToolTip.Tip="{Binding ShowPasswordTooltip}"/>
+                </Grid>
+            </Border>
+
+            <!-- 记住我 -->
+            <CheckBox IsChecked="{Binding RememberMe}" 
+                      Content="{Binding RememberMeLabel}"
+                      Margin="0,12,0,24"/>
+
+            <!-- 登录按钮 -->
+            <Button Content="{Binding LoginButtonText}"
+                    Command="{Binding LoginCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Background="#2563eb"
+                    Foreground="White"
+                    Padding="16"
+                    FontWeight="SemiBold"
+                    IsEnabled="{Binding !IsBusy}"/>
+
+            <!-- 加载指示器 -->
+            <ProgressBar IsIndeterminate="True" 
+                         Margin="0,16,0,0"
+                         IsVisible="{Binding IsBusy}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

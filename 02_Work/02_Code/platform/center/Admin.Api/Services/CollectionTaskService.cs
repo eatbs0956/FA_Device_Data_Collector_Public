@@ -12,6 +12,7 @@ public class CollectionTaskService : ICollectionTaskService
     private readonly DbContext _dbContext;
     private readonly ILogger<CollectionTaskService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IConfigNotifyService _configNotify;
 
     // 有效的任务类型
     private static readonly HashSet<string> ValidTaskTypes = new()
@@ -34,11 +35,13 @@ public class CollectionTaskService : ICollectionTaskService
     public CollectionTaskService(
         DbContext dbContext,
         ILogger<CollectionTaskService> logger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IConfigNotifyService configNotify)
     {
         _dbContext = dbContext;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _configNotify = configNotify;
     }
 
     /// <summary>
@@ -48,6 +51,48 @@ public class CollectionTaskService : ICollectionTaskService
     {
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("sub")?.Value;
         return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+
+    /// <summary>
+    /// 根据设备 ID 列表查询所有关联的 EdgeNode NodeId 列表（去重，排除无关联的）
+    /// </summary>
+    private async Task<List<string?>> GetNodeIdsByDeviceIdsAsync(IEnumerable<Guid> deviceIds)
+    {
+        var ids = deviceIds.ToList();
+        if (ids.Count == 0) return new List<string?>();
+
+        return await _dbContext.Set<Device>()
+            .Where(d => !d.DeletedFlag && d.EdgeNodeId.HasValue && ids.Contains(d.Id))
+            .Join(
+                _dbContext.Set<EdgeNode>().Where(e => !e.DeletedFlag),
+                d => d.EdgeNodeId!.Value,
+                e => e.Id,
+                (d, e) => e.NodeId)
+            .Distinct()
+            .Cast<string?>()
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// 根据任务 ID 查询任务关联的所有设备的 EdgeNode NodeId 列表
+    /// </summary>
+    private async Task<List<string?>> GetNodeIdsByTaskIdAsync(Guid taskId)
+    {
+        return await _dbContext.Set<CollectionTaskDevice>()
+            .Where(td => td.TaskId == taskId)
+            .Join(
+                _dbContext.Set<Device>().Where(d => !d.DeletedFlag && d.EdgeNodeId.HasValue),
+                td => td.DeviceId,
+                d => d.Id,
+                (td, d) => d.EdgeNodeId!.Value)
+            .Join(
+                _dbContext.Set<EdgeNode>().Where(e => !e.DeletedFlag),
+                edgeNodeId => edgeNodeId,
+                e => e.Id,
+                (edgeNodeId, e) => e.NodeId)
+            .Distinct()
+            .Cast<string?>()
+            .ToListAsync();
     }
 
     public async Task<CollectionTaskListResponse> GetTasksAsync(CollectionTaskQueryRequest request)
@@ -223,6 +268,10 @@ public class CollectionTaskService : ICollectionTaskService
 
         _logger.LogInformation("创建采集任务成功: {TaskId}, 名称: {Name}", task.Id, task.Name);
 
+        // 推送配置变更通知（任务已有设备关联时通知对应 EdgeNode）
+        var nodeIds = await GetNodeIdsByTaskIdAsync(task.Id);
+        _ = _configNotify.NotifyNodesAsync(nodeIds, "Task", task.Id.ToString());
+
         return task.Id;
     }
 
@@ -313,6 +362,9 @@ public class CollectionTaskService : ICollectionTaskService
         // 验证配置
         ValidateTaskConfig(task.TaskType, task.DefaultInterval, task.CronExpression);
 
+        // ★ 记住更新前的关联设备（用于通知旧的 EdgeNode）
+        var oldDeviceIds = task.TaskDevices.Select(td => td.DeviceId).ToList();
+
         // 更新关联设备
         if (request.DeviceIds != null)
         {
@@ -334,23 +386,40 @@ public class CollectionTaskService : ICollectionTaskService
             }
         }
 
+        // ★ 收集新的关联设备 ID（在 SaveChanges 之前查好 NodeId）
+        var newDeviceIds = request.DeviceIds?
+            .Where(s => Guid.TryParse(s, out _))
+            .Select(s => Guid.Parse(s))
+            .ToList() ?? new List<Guid>();
+        // 合并新旧设备列表，查出所有涉及的 EdgeNode NodeId
+        var allDeviceIds = oldDeviceIds.Union(newDeviceIds).Distinct().ToList();
+        var nodeIds = await GetNodeIdsByDeviceIdsAsync(allDeviceIds);
+
         task.UpdatedBy = GetCurrentUserId();
         task.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("更新采集任务成功: {TaskId}", id);
+
+        // 推送配置变更通知：通知新旧两组 EdgeNode
+        _ = _configNotify.NotifyNodesAsync(nodeIds, "Task", id.ToString());
     }
 
     public async Task DeleteTaskAsync(Guid id)
     {
         var task = await _dbContext.Set<CollectionTask>()
+            .Include(t => t.TaskDevices)
             .FirstOrDefaultAsync(t => t.Id == id && !t.DeletedFlag);
 
         if (task == null)
         {
             throw new KeyNotFoundException($"采集任务不存在: {id}");
         }
+
+        // 删除前先记录关联设备 ID 并查好 NodeId（用于通知）
+        var deviceIds = task.TaskDevices.Select(td => td.DeviceId).ToList();
+        var nodeIds = await GetNodeIdsByDeviceIdsAsync(deviceIds);
 
         // 软删除
         task.DeletedFlag = true;
@@ -360,6 +429,9 @@ public class CollectionTaskService : ICollectionTaskService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("删除采集任务成功: {TaskId}", id);
+
+        // 推送配置变更通知（用删除前查好的 NodeId 列表）
+        _ = _configNotify.NotifyNodesAsync(nodeIds, "Task", id.ToString());
     }
 
     public async Task ChangeStatusAsync(Guid id, string targetStatus)
@@ -388,6 +460,10 @@ public class CollectionTaskService : ICollectionTaskService
 
         _logger.LogInformation("采集任务状态变更成功: {TaskId}, {OldStatus} -> {NewStatus}", 
             id, task.Status, targetStatus);
+
+        // 推送配置变更通知
+        var nodeIds = await GetNodeIdsByTaskIdAsync(id);
+        _ = _configNotify.NotifyNodesAsync(nodeIds, "Task", id.ToString());
     }
 
     public async Task<List<TaskDeviceOptionDto>> GetAvailableDevicesAsync()

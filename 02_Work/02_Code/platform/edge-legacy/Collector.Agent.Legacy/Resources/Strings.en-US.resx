@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>Data Collection Agent</value>
+  </data>
+  <data name="MainForm_Title" xml:space="preserve">
+    <value>Data Collection Agent - Main</value>
+  </data>
+  <data name="MainForm_Menu_Task" xml:space="preserve">
+    <value>&amp;Task</value>
+  </data>
+  <data name="MainForm_Menu_RefreshConfig" xml:space="preserve">
+    <value>&amp;Refresh Config</value>
+  </data>
+  <data name="MainForm_Menu_Settings" xml:space="preserve">
+    <value>&amp;Settings</value>
+  </data>
+  <data name="MainForm_Menu_Exit" xml:space="preserve">
+    <value>E&amp;xit</value>
+  </data>
+  <data name="MainForm_Menu_Help" xml:space="preserve">
+    <value>&amp;Help</value>
+  </data>
+  <data name="MainForm_Menu_About" xml:space="preserve">
+    <value>&amp;About</value>
+  </data>
+  <data name="MainForm_Group_NodeInfo" xml:space="preserve">
+    <value>Node Information</value>
+  </data>
+  <data name="MainForm_Label_NodeId" xml:space="preserve">
+    <value>Node ID:</value>
+  </data>
+  <data name="MainForm_Label_NodeName" xml:space="preserve">
+    <value>Node Name:</value>
+  </data>
+  <data name="MainForm_Label_Platform" xml:space="preserve">
+    <value>Platform:</value>
+  </data>
+  <data name="MainForm_Label_ConnectionStatus" xml:space="preserve">
+    <value>Connection:</value>
+  </data>
+  <data name="MainForm_Group_CollectionControl" xml:space="preserve">
+    <value>Collection Control</value>
+  </data>
+  <data name="MainForm_Group_Devices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="MainForm_Group_Tasks" xml:space="preserve">
+    <value>Tasks</value>
+  </data>
+  <data name="MainForm_Button_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="MainForm_Button_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="MainForm_Button_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="MainForm_Group_Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="MainForm_Label_Devices" xml:space="preserve">
+    <value>Devices:</value>
+  </data>
+  <data name="MainForm_Label_Tasks" xml:space="preserve">
+    <value>Tasks:</value>
+  </data>
+  <data name="MainForm_Label_DataPoints" xml:space="preserve">
+    <value>Data Points:</value>
+  </data>
+  <data name="MainForm_Label_LastCollection" xml:space="preserve">
+    <value>Last Collection:</value>
+  </data>
+  <data name="MainForm_Label_Status" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <!-- MainForm Menus and Columns -->
+  <data name="MainForm_Menu_File" xml:space="preserve">
+    <value>File(&amp;F)</value>
+  </data>
+  <data name="MainForm_Menu_StartCollection" xml:space="preserve">
+    <value>Start Collection(&amp;S)</value>
+  </data>
+  <data name="MainForm_Menu_StopCollection" xml:space="preserve">
+    <value>Stop Collection(&amp;P)</value>
+  </data>
+  <data name="MainForm_Col_DeviceName" xml:space="preserve">
+    <value>Device Name</value>
+  </data>
+  <data name="MainForm_Col_Protocol" xml:space="preserve">
+    <value>Protocol</value>
+  </data>
+  <data name="MainForm_Col_IpAddress" xml:space="preserve">
+    <value>IP Address</value>
+  </data>
+  <data name="MainForm_Col_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="MainForm_Col_TaskName" xml:space="preserve">
+    <value>Task Name</value>
+  </data>
+  <data name="MainForm_Col_TaskCode" xml:space="preserve">
+    <value>Task Code</value>
+  </data>
+  <data name="MainForm_Col_CollectInterval" xml:space="preserve">
+    <value>Interval</value>
+  </data>
+  <data name="MainForm_Status_Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="MainForm_Status_Collecting" xml:space="preserve">
+    <value>Collecting</value>
+  </data>
+  <data name="MainForm_Status_Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="MainForm_Msg_ConfirmExit" xml:space="preserve">
+    <value>Collection task is running. Are you sure you want to exit?</value>
+  </data>
+  <data name="MainForm_Msg_ConfirmExitTitle" xml:space="preserve">
+    <value>Confirm Exit</value>
+  </data>
+  <data name="MainForm_Log_StartingEngine" xml:space="preserve">
+    <value>Starting collection engine...</value>
+  </data>
+  <data name="MainForm_Log_EngineStarted" xml:space="preserve">
+    <value>Collection engine started successfully</value>
+  </data>
+  <data name="MainForm_Log_EngineStartFailed" xml:space="preserve">
+    <value>Failed to start collection: {0}</value>
+  </data>
+  <data name="MainForm_Log_StoppingEngine" xml:space="preserve">
+    <value>Stopping collection engine...</value>
+  </data>
+  <data name="MainForm_Log_EngineStopped" xml:space="preserve">
+    <value>Collection engine stopped</value>
+  </data>
+  <data name="MainForm_Log_EngineStopFailed" xml:space="preserve">
+    <value>Failed to stop collection: {0}</value>
+  </data>
+  <data name="MainForm_TaskStatus" xml:space="preserve">
+    <value>Tasks: {0}/{1}</value>
+  </data>
+  <data name="MainForm_Group_Log" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="MainForm_Status_Polling" xml:space="preserve">
+    <value>Connection: Polling Mode</value>
+  </data>
+  <data name="MainForm_Status_Connected" xml:space="preserve">
+    <value>Connection: Connected</value>
+  </data>
+  <data name="MainForm_Status_Disconnected" xml:space="preserve">
+    <value>Connection: Disconnected</value>
+  </data>
+  <data name="Log_MainFormLoaded" xml:space="preserve">
+    <value>Main window loaded</value>
+  </data>
+  <data name="Log_SignalRDisabled" xml:space="preserve">
+    <value>SignalR disabled (using HTTP polling)</value>
+  </data>
+  <data name="Log_RefreshingConfig" xml:space="preserve">
+    <value>Refreshing configuration...</value>
+  </data>
+  <data name="Log_ConfigRefreshSuccess" xml:space="preserve">
+    <value>Configuration refreshed successfully</value>
+  </data>
+  <data name="Log_ConfigRefreshFailed" xml:space="preserve">
+    <value>Failed to refresh configuration: {0}</value>
+  </data>
+  <data name="Log_CollectionStarted" xml:space="preserve">
+    <value>Collection started</value>
+  </data>
+  <data name="Log_CollectionStopped" xml:space="preserve">
+    <value>Collection stopped</value>
+  </data>
+  <data name="Log_HeartbeatSent" xml:space="preserve">
+    <value>Heartbeat sent successfully</value>
+  </data>
+  <data name="Log_HeartbeatFailed" xml:space="preserve">
+    <value>Heartbeat failed: {0}</value>
+  </data>
+  <data name="Msg_ConfirmExit" xml:space="preserve">
+    <value>Collection task is running. Are you sure you want to exit?</value>
+  </data>
+  <data name="Msg_ConfirmExitTitle" xml:space="preserve">
+    <value>Confirm Exit</value>
+  </data>
+  <data name="Msg_NoDevices" xml:space="preserve">
+    <value>No devices available for collection</value>
+  </data>
+  <data name="Msg_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Msg_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Msg_Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="LoginForm_Title" xml:space="preserve">
+    <value>Data Collection Agent - Login</value>
+  </data>
+  <data name="LoginForm_Label_Server" xml:space="preserve">
+    <value>Server URL:</value>
+  </data>
+  <data name="LoginForm_Label_Username" xml:space="preserve">
+    <value>Username:</value>
+  </data>
+  <data name="LoginForm_Label_Password" xml:space="preserve">
+    <value>Password:</value>
+  </data>
+  <data name="LoginForm_Label_NodeId" xml:space="preserve">
+    <value>Node ID:</value>
+  </data>
+  <data name="LoginForm_Label_NodeName" xml:space="preserve">
+    <value>Node Name:</value>
+  </data>
+  <data name="LoginForm_Button_Login" xml:space="preserve">
+    <value>Login &amp; Start</value>
+  </data>
+  <data name="LoginForm_Button_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LoginForm_Button_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="LoginForm_Checkbox_ShowPassword" xml:space="preserve">
+    <value>Show Password</value>
+  </data>
+  <data name="LoginForm_Checkbox_RememberPassword" xml:space="preserve">
+    <value>Remember Password</value>
+  </data>
+  <data name="LoginForm_Label_Status" xml:space="preserve">
+    <value>Status: Ready</value>
+  </data>
+  <data name="LoginForm_Status_Logging" xml:space="preserve">
+    <value>Status: Logging in...</value>
+  </data>
+  <data name="LoginForm_Status_Registering" xml:space="preserve">
+    <value>Status: Registering node...</value>
+  </data>
+  <data name="LoginForm_Status_Success" xml:space="preserve">
+    <value>Status: Login successful</value>
+  </data>
+  <data name="LoginForm_Error_EmptyFields" xml:space="preserve">
+    <value>Please fill in all required fields</value>
+  </data>
+  <data name="LoginForm_Error_LoginFailed" xml:space="preserve">
+    <value>Login failed: {0}</value>
+  </data>
+  <data name="LoginForm_Error_RegisterFailed" xml:space="preserve">
+    <value>Node registration failed: {0}</value>
+  </data>
+  <data name="LoginForm_Error_GatewayEmpty" xml:space="preserve">
+    <value>Please enter gateway address</value>
+  </data>
+  <data name="LoginForm_Error_NodeIdEmpty" xml:space="preserve">
+    <value>Please enter node ID</value>
+  </data>
+  <data name="LoginForm_Error_CredentialsEmpty" xml:space="preserve">
+    <value>Please enter username and password</value>
+  </data>
+  <data name="LoginForm_Error_Exception" xml:space="preserve">
+    <value>Login error: {0}</value>
+  </data>
+  <data name="LoginForm_Label_UserAuth" xml:space="preserve">
+    <value>─── User Authentication ───</value>
+  </data>
+  <data name="LoginForm_DefaultNodeName" xml:space="preserve">
+    <value>Collector Node-{0}</value>
+  </data>
+  <data name="SettingsForm_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsForm_Group_Collection" xml:space="preserve">
+    <value>Collection Settings</value>
+  </data>
+  <data name="SettingsForm_Label_Interval" xml:space="preserve">
+    <value>Interval (sec):</value>
+  </data>
+  <data name="SettingsForm_Label_ConfigRefresh" xml:space="preserve">
+    <value>Config Refresh (sec):</value>
+  </data>
+  <data name="SettingsForm_Group_Log" xml:space="preserve">
+    <value>Log Settings</value>
+  </data>
+  <data name="SettingsForm_Label_LogLevel" xml:space="preserve">
+    <value>Log Level:</value>
+  </data>
+  <data name="SettingsForm_Group_Language" xml:space="preserve">
+    <value>Language Settings</value>
+  </data>
+  <data name="SettingsForm_Label_Language" xml:space="preserve">
+    <value>Language:</value>
+  </data>
+  <data name="SettingsForm_Language_System" xml:space="preserve">
+    <value>System Default</value>
+  </data>
+  <data name="SettingsForm_Language_Chinese" xml:space="preserve">
+    <value>中文</value>
+  </data>
+  <data name="SettingsForm_Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="SettingsForm_Button_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SettingsForm_Button_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsForm_Msg_RestartRequired" xml:space="preserve">
+    <value>Language changes will take effect after restart</value>
+  </data>
+  <!-- SettingsForm Tab and Labels -->
+  <data name="SettingsForm_Tab_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="SettingsForm_Tab_Communication" xml:space="preserve">
+    <value>Communication</value>
+  </data>
+  <data name="SettingsForm_Tab_Logging" xml:space="preserve">
+    <value>Logging</value>
+  </data>
+  <data name="SettingsForm_Label_HeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat Interval (sec):</value>
+  </data>
+  <data name="SettingsForm_Label_ConfigRefreshInterval" xml:space="preserve">
+    <value>Config Refresh Interval (sec):</value>
+  </data>
+  <data name="SettingsForm_Label_ConnectionTimeout" xml:space="preserve">
+    <value>Connection Timeout (sec):</value>
+  </data>
+  <data name="SettingsForm_Label_RetryCount" xml:space="preserve">
+    <value>Retry Count:</value>
+  </data>
+  <data name="SettingsForm_Label_RetryInterval" xml:space="preserve">
+    <value>Retry Interval (sec):</value>
+  </data>
+  <data name="SettingsForm_Label_LogRetention" xml:space="preserve">
+    <value>Log Retention (days):</value>
+  </data>
+  <data name="SettingsForm_Checkbox_AutoStart" xml:space="preserve">
+    <value>Start on system boot</value>
+  </data>
+  <data name="SettingsForm_Checkbox_MinimizeToTray" xml:space="preserve">
+    <value>Minimize to system tray</value>
+  </data>
+  <data name="SettingsForm_Checkbox_LogToFile" xml:space="preserve">
+    <value>Log to file</value>
+  </data>
+  <data name="AboutForm_Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutForm_AppName" xml:space="preserve">
+    <value>Data Collection Agent</value>
+  </data>
+  <data name="AboutForm_Version" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="AboutForm_Copyright" xml:space="preserve">
+    <value>Copyright MIT © 2025 JeaaonQC</value>
+  </data>
+  <data name="AboutForm_Button_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="AboutForm_Button_ViewHistory" xml:space="preserve">
+    <value>Version History</value>
+  </data>
+  <data name="VersionHistoryForm_Title" xml:space="preserve">
+    <value>Version History</value>
+  </data>
+  <data name="VersionHistory_1_0_0" xml:space="preserve">
+    <value>v1.0.0 - Initial Release
+• Basic login and node registration
+• Device configuration sync
+• Collection task management
+• Heartbeat keep-alive mechanism
+• HTTP polling mode (SignalR push not implemented, .NET Framework package not supported)</value>
+  </data>
+  <data name="DeviceDetailForm_Title" xml:space="preserve">
+    <value>Device Details</value>
+  </data>
+  <data name="DeviceDetailForm_Tab_Basic" xml:space="preserve">
+    <value>Basic Info</value>
+  </data>
+  <data name="DeviceDetailForm_Tab_Tags" xml:space="preserve">
+    <value>Tags</value>
+  </data>
+  <data name="DeviceDetailForm_Label_DeviceName" xml:space="preserve">
+    <value>Device Name:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Protocol" xml:space="preserve">
+    <value>Protocol:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_IP" xml:space="preserve">
+    <value>IP Address:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Port" xml:space="preserve">
+    <value>Port:</value>
+  </data>
+  <data name="DeviceDetailForm_Label_Status" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="DeviceDetailForm_Status_Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="DeviceDetailForm_Status_Disconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="DeviceDetailForm_Button_TestConnection" xml:space="preserve">
+    <value>Test Connection</value>
+  </data>
+  <data name="DeviceDetailForm_Button_TestCollection" xml:space="preserve">
+    <value>Test Collection</value>
+  </data>
+  <data name="DeviceDetailForm_Button_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="DeviceDetailForm_Col_TagName" xml:space="preserve">
+    <value>Tag Name</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="DeviceDetailForm_Col_DataType" xml:space="preserve">
+    <value>Data Type</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_TestingConnection" xml:space="preserve">
+    <value>Testing connection...</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_ConnectionSuccess" xml:space="preserve">
+    <value>Connection test successful</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_ConnectionFailed" xml:space="preserve">
+    <value>Connection test failed: {0}</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_Collecting" xml:space="preserve">
+    <value>Collecting...</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionSuccess" xml:space="preserve">
+    <value>Collection completed, {0} points</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionComplete" xml:space="preserve">
+    <value>Collection completed: {0}/{1} tags succeeded, elapsed {2}ms</value>
+  </data>
+  <data name="DeviceDetailForm_Msg_CollectionFailed" xml:space="preserve">
+    <value>Collection failed: {0}</value>
+  </data>
+  <data name="DeviceDetailForm_Col_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="TaskDetailForm_Title" xml:space="preserve">
+    <value>Task Details</value>
+  </data>
+  <data name="TaskDetailForm_Tab_Config" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="TaskDetailForm_Tab_Devices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskName" xml:space="preserve">
+    <value>Task Name:</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskCode" xml:space="preserve">
+    <value>Task Code:</value>
+  </data>
+  <data name="TaskDetailForm_Label_TaskType" xml:space="preserve">
+    <value>Task Type:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Interval" xml:space="preserve">
+    <value>Interval:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Priority" xml:space="preserve">
+    <value>Priority:</value>
+  </data>
+  <data name="TaskDetailForm_Label_Status" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="TaskDetailForm_Button_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="TaskDetailForm_Col_DeviceName" xml:space="preserve">
+    <value>Device Name</value>
+  </data>
+  <data name="TaskDetailForm_Col_Protocol" xml:space="preserve">
+    <value>Protocol</value>
+  </data>
+  <data name="TaskDetailForm_Col_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Common_Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Common_Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <!-- Task Types -->
+  <data name="TaskType_Periodic" xml:space="preserve">
+    <value>Periodic</value>
+  </data>
+  <data name="TaskType_Scheduled" xml:space="preserve">
+    <value>Scheduled</value>
+  </data>
+  <data name="TaskType_Cron" xml:space="preserve">
+    <value>Scheduled</value>
+  </data>
+  <data name="TaskType_Event" xml:space="preserve">
+    <value>Event-driven</value>
+  </data>
+  <data name="TaskType_Hybrid" xml:space="preserve">
+    <value>Hybrid</value>
+  </data>
+  <data name="TaskType_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <!-- Collection Log Messages -->
+  <data name="MainForm_Log_NoDevicesToCollect" xml:space="preserve">
+    <value>No enabled devices to collect</value>
+  </data>
+  <data name="MainForm_Log_TagValueCollected" xml:space="preserve">
+    <value>[{0}] {1} = {2}</value>
+  </data>
+  <data name="MainForm_Log_CollectionError" xml:space="preserve">
+    <value>[{0}] Collection error: {1}</value>
+  </data>
+  <data name="MainForm_Log_DeviceConnected" xml:space="preserve">
+    <value>Device connected: {0}</value>
+  </data>
+  <data name="MainForm_Log_DeviceDisconnected" xml:space="preserve">
+    <value>Device disconnected: {0}</value>
+  </data>
+  <!-- RabbitMQ Settings -->
+  <data name="SettingsForm_Label_RabbitMqHost" xml:space="preserve">
+    <value>RabbitMQ Host:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqPort" xml:space="preserve">
+    <value>RabbitMQ Port:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqUser" xml:space="preserve">
+    <value>RabbitMQ User:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqPassword" xml:space="preserve">
+    <value>RabbitMQ Password:</value>
+  </data>
+  <data name="SettingsForm_Label_RabbitMqExchange" xml:space="preserve">
+    <value>RabbitMQ Exchange:</value>
+  </data>
+</root>

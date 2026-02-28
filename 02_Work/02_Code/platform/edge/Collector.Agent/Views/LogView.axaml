@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             xmlns:l="using:Collector.Agent.Localization"
+             x:Class="Collector.Agent.Views.LogView"
+             x:DataType="vm:LogViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- 第1行：标题和工具栏 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                <Button Content="{l:Localize Logs.Clear, Prefix='🗑 '}"
+                        Classes="secondary"
+                        Command="{Binding ClearLogsCommand}"
+                        Padding="12,6"/>
+            </StackPanel>
+            <TextBlock Text="{l:Localize Logs.Title}" Classes="pageTitle" VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <!-- 第2行：过滤工具栏 -->
+        <Border Grid.Row="1" Classes="card" Margin="0,0,0,12" Padding="12,8">
+            <DockPanel>
+                <!-- 右侧：自动滚动开关 -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="12"
+                            VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding AutoScroll}"
+                              Content="{l:Localize Logs.AutoScroll}"
+                              VerticalAlignment="Center"
+                              FontSize="12"/>
+                </StackPanel>
+
+                <!-- 左侧：级别 + 搜索 -->
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="{l:Localize Logs.Level, Suffix=':'}" VerticalAlignment="Center" FontSize="12"
+                               Foreground="#94a3b8"/>
+                    <ComboBox ItemsSource="{Binding LogLevels}"
+                              SelectedItem="{Binding SelectedLogLevel}"
+                              Width="100"
+                              FontSize="12"/>
+
+                    <TextBlock Text="{l:Localize Logs.Search}" VerticalAlignment="Center" FontSize="12"
+                               Foreground="#94a3b8" Margin="8,0,0,0"/>
+                    <TextBox Text="{Binding SearchKeyword, Mode=TwoWay}"
+                             Watermark="{l:Localize Logs.SearchPlaceholder}"
+                             Width="220"
+                             FontSize="12"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 第3行：日志列表 DataGrid -->
+        <Border Grid.Row="2" Classes="card">
+            <DataGrid x:Name="LogDataGrid"
+                      ItemsSource="{Binding LogEntries}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      HorizontalScrollBarVisibility="Auto"
+                      RowHeight="28"
+                      FontSize="12"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="{l:Localize Header.Time}"
+                                        Binding="{Binding FormattedTime}"
+                                        Width="180"/>
+                    <DataGridTextColumn Header=""
+                                        Binding="{Binding LevelIcon}"
+                                        Width="80"/>
+                    <DataGridTextColumn Header="{l:Localize Header.Level}"
+                                        Binding="{Binding Level}"
+                                        Width="80"/>
+                    <DataGridTextColumn Header="{l:Localize Header.Source}"
+                                        Binding="{Binding Source}"
+                                        Width="200"/>
+                    <DataGridTextColumn Header="{l:Localize Header.Message}"
+                                        Binding="{Binding Message}"
+                                        Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- 第4行：底部统计栏 -->
+        <Border Grid.Row="3" Margin="0,8,0,0" Padding="12,6"
+                Background="#1e293b" CornerRadius="6">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="{Binding CountSummary}"
+                               FontSize="11" Foreground="#64748b" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="{l:Localize Logs.RealtimeHint}"
+                           FontSize="11"
+                           Foreground="#475569"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

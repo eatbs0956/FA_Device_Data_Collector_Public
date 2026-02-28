@@ -51,8 +51,8 @@ cd ..
 ### 启动所有微服务
 ```powershell
 .\start-all-services.ps1
-# 会自动打开 3 个窗口：Auth.Api、Device.Api、Frontend
-# 等待 10-15 秒后访问：http://localhost:3200
+# 会自动打开 5 个窗口：Auth.Api、Admin.Api、Gateway.Api、Processor.Worker、Frontend
+# 等待 10-15 秒后访问：http://localhost:9527
 ```
 
 ### 验证服务运行
@@ -62,9 +62,11 @@ cd ..
 ```
 
 ### 服务地址
-- **前端**: http://localhost:3200
+- **前端**: http://localhost:9527
+- **Gateway.Api**: http://localhost:60620 (API Gateway + SignalR Hub)
 - **Auth.Api**: http://localhost:60621
-- **Device.Api**: http://localhost:60623
+- **Admin.Api**: http://localhost:60623
+- **Processor.Worker**: http://localhost:60624 (数据处理后台服务)
 - **数据库**: localhost:5432 (数据库: devdcp, 用户: devdcp, 密码: devdcp)
 
 ### 停止所有服务
@@ -85,9 +87,9 @@ docker-compose -f docker-compose.dev.yml down
 
 ```
 02_Code/
-├── start-all-services.ps1      # 启动所有服务（Auth.Api + Device.Api + Frontend）
+├── start-all-services.ps1      # 启动所有服务（Auth.Api + Admin.Api + Gateway.Api + Processor.Worker + Frontend）
 ├── stop-all-services.ps1       # 停止所有服务（关闭所有 dotnet 和 node 进程）
-├── start-service.ps1           # 启动单个服务（支持 Auth.Api / Device.Api / Frontend）
+├── start-service.ps1           # 启动单个服务（支持 Auth.Api / Admin.Api / Gateway.Api / Processor.Worker / Frontend）
 ├── check-services.ps1          # 检查微服务状态（应用层：.NET + 前端）
 ├── check-docker-services.ps1   # 检查 Docker 基础设施（PostgreSQL / RabbitMQ / InfluxDB / Redis）
 └── README-服务管理.md          # 本文档
@@ -100,7 +102,7 @@ docker-compose -f docker-compose.dev.yml down
 | `start-all-services.ps1` | 启动所有微服务 | - | 开发启动 |
 | `stop-all-services.ps1` | 停止所有微服务 | - | 下班关闭 |
 | `start-service.ps1` | 启动单个微服务 | - | 调试单个服务 |
-| `check-services.ps1` | 检查微服务状态 | Auth.Api、Device.Api、Frontend | 验证应用是否运行 |
+| `check-services.ps1` | 检查微服务状态 | Auth.Api、Admin.Api、Gateway.Api、Processor.Worker、Frontend | 验证应用是否运行 |
 | `check-docker-services.ps1` | 检查 Docker 容器状态 | PostgreSQL、RabbitMQ、InfluxDB、Redis | 验证基础设施是否就绪 |
 
 ## ⚠️ 重要说明
@@ -178,15 +180,17 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 
 **新特性：**
 - ✅ 自动检查 Docker 服务是否运行
-- ✅ 等待 Auth.Api 启动完成后再启动 Device.Api
+- ✅ 按依赖顺序启动：Auth.Api → Admin.Api → Gateway.Api → Processor.Worker → Frontend
 - ✅ 健康检查确保服务就绪
-- ✅ 自动打开 3 个 PowerShell 窗口
+- ✅ 自动打开多个 PowerShell 窗口
 - ✅ 每个窗口显示实时日志
 
 **服务地址：**
+- Gateway.Api: http://localhost:60620 (API Gateway + SignalR Hub)
 - Auth.Api: http://localhost:60621
-- Device.Api: http://localhost:60623
-- Frontend: http://localhost:3200
+- Admin.Api: http://localhost:60623
+- Processor.Worker: http://localhost:60624
+- Frontend: http://localhost:9527
 
 **数据库信息：**
 - 数据库: `devdcp` (PostgreSQL 14)
@@ -214,8 +218,14 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 # 只启动 Auth.Api
 .\start-service.ps1 Auth.Api
 
-# 只启动 Device.Api
-.\start-service.ps1 Device.Api
+# 只启动 Admin.Api
+.\start-service.ps1 Admin.Api
+
+# 只启动 Gateway.Api
+.\start-service.ps1 Gateway.Api
+
+# 只启动 Processor.Worker
+.\start-service.ps1 Processor.Worker
 
 # 只启动前端
 .\start-service.ps1 Frontend
@@ -230,7 +240,7 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 
 ### 4️⃣ 检查服务状态
 
-#### 检查微服务状态（Auth.Api、Device.Api、Frontend）
+#### 检查微服务状态（Auth.Api、Admin.Api、Gateway.Api、Processor.Worker、Frontend）
 ```powershell
 .\check-services.ps1
 ```
@@ -238,14 +248,16 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 **输出示例：**
 ```
 📊 DevDCP 服务状态检查
+✅ Gateway.Api           运行中 (端口 60620)
 ✅ Auth.Api              运行中 (端口 60621)
-✅ Device.Api            运行中 (端口 60623)
+✅ Admin.Api             运行中 (端口 60623)
+✅ Processor.Worker      运行中 (端口 60624)
 ✅ Frontend              运行中 (端口 9527)
 
-✅ 所有服务运行正常 (3/3)
+✅ 所有服务运行正常 (5/5)
 
 📋 进程信息：
-   dotnet 进程: 2 个
+   dotnet 进程: 4 个
    node 进程: 1 个
 ```
 
@@ -290,19 +302,21 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 .\start-all-services.ps1
 
 # 5. 等待 10-15 秒后访问前端
-# http://localhost:3200
+# http://localhost:9527
 ```
 
 ### 只修改前端代码
 ```powershell
 # 1. 启动 Docker 服务
 cd d:\00_QC-share\01_DevDCP\02_Work\02_Code\infra
-docker-compose -f docker-compose.dev.yml up -d postgres
+docker-compose -f docker-compose.dev.yml up -d
 
 # 2. 启动后端服务
 cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 .\start-service.ps1 Auth.Api
-.\start-service.ps1 Device.Api
+.\start-service.ps1 Admin.Api
+.\start-service.ps1 Gateway.Api
+.\start-service.ps1 Processor.Worker
 
 # 3. 在前端目录手动启动
 cd d:\00_QC-share\01_DevDCP\02_Work\02_Code\web\frontend
@@ -315,13 +329,13 @@ pnpm dev
 cd d:\00_QC-share\01_DevDCP\02_Work\02_Code\infra
 docker-compose -f docker-compose.dev.yml up -d postgres
 
-# 2. 启动依赖的服务（Device.Api 依赖 Auth.Api）
+# 2. 启动依赖的服务（Admin.Api 依赖 Auth.Api）
 cd d:\00_QC-share\01_DevDCP\02_Work\02_Code
 .\start-service.ps1 Auth.Api
 
-# 3. 在 VS Code 中按 F5 调试 Device.Api
+# 3. 在 VS Code 中按 F5 调试 Admin.Api
 # 或使用脚本启动
-.\start-service.ps1 Device.Api
+.\start-service.ps1 Admin.Api
 ```
 
 ### 下班前
@@ -346,13 +360,10 @@ docker-compose -f docker-compose.dev.yml down
 在 "启动后端服务" 部分添加：
 
 ```powershell
-# 3. 启动 Monitor.Api (监控服务)
-Write-Host "`n📌 [3/3] 启动 Monitor.Api (端口 60625/60626)..." -ForegroundColor Yellow
-Start-Process pwsh -ArgumentList @(
-    "-NoExit",
-    "-Command",
-    "Set-Location '$baseDir\Monitor.Api'; `$host.ui.RawUI.WindowTitle='DevDCP - Monitor.Api'; Write-Host '📊 Monitor.Api 启动中...' -ForegroundColor Green; dotnet run"
-) -WindowStyle Normal
+# 启动 Monitor.Api (监控服务)
+Write-Host "`nStep X: Starting Monitor.Api on port 60625..." -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$baseDir\Monitor.Api'; dotnet run --urls http://localhost:60625"
+$monitorHealthy = Test-ServiceHealth -Url "http://localhost:60625/health" -ServiceName "Monitor.Api"
 ```
 
 ### 2. 修改 `start-service.ps1`
@@ -360,20 +371,19 @@ Start-Process pwsh -ArgumentList @(
 在 ValidateSet 中添加新服务：
 
 ```powershell
-[ValidateSet("Auth.Api", "Device.Api", "Monitor.Api", "Frontend")]
+[ValidateSet("Auth.Api", "Admin.Api", "Gateway.Api", "Processor.Worker", "Monitor.Api", "Frontend")]
 ```
 
 在 switch 中添加分支：
 
 ```powershell
 "Monitor.Api" {
-    Write-Host "📊 启动 Monitor.Api..." -ForegroundColor Green
-    Start-Process pwsh -ArgumentList @(
-        "-NoExit",
-        "-Command",
-        "Set-Location '$baseDir\Monitor.Api'; `$host.ui.RawUI.WindowTitle='DevDCP - Monitor.Api'; dotnet run"
-    ) -WindowStyle Normal
-    Write-Host "✅ Monitor.Api 启动中 (http://localhost:60625)" -ForegroundColor Green
+    Write-Host "`nStep 2: Starting Monitor.Api on port 60625..." -ForegroundColor Cyan
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$baseDir\Monitor.Api'; dotnet run --urls http://localhost:60625"
+    $healthy = Test-ServiceHealth -Url "http://localhost:60625/health" -ServiceName "Monitor.Api"
+    if ($healthy) {
+        Write-Host "`nMonitor.Api started successfully!" -ForegroundColor Green
+    }
 }
 ```
 
@@ -464,12 +474,12 @@ cd infra
 docker-compose -f docker-compose.dev.yml down
 ```
 
-### Q5: Auth.Api 未就绪，Device.Api 启动失败
+### Q5: Auth.Api 未就绪，Admin.Api 启动失败
 
 **错误提示：**
 ```
 ⚠️  Auth.Api 未运行或未就绪
-💡 Device.Api 依赖 Auth.Api 的 JWT 验证
+💡 Admin.Api 依赖 Auth.Api 的 JWT 验证
 ```
 
 **解决方法 1（推荐）：**
@@ -484,8 +494,8 @@ docker-compose -f docker-compose.dev.yml down
 .\start-service.ps1 Auth.Api
 Start-Sleep -Seconds 10
 
-# 再启动 Device.Api
-.\start-service.ps1 Device.Api
+# 再启动 Admin.Api
+.\start-service.ps1 Admin.Api
 ```
 
 ### Q6: 数据库连接失败
@@ -524,7 +534,7 @@ dotnet run
 **方法 2：** 使用脚本：
 ```powershell
 # 找到对应进程并关闭窗口，然后重新启动
-.\start-service.ps1 Device.Api
+.\start-service.ps1 Admin.Api
 ```
 
 ### Q8: 前端启动失败
@@ -540,16 +550,16 @@ cd d:\00_QC-share\01_DevDCP\02_Work\02_Code\web\frontend
 pnpm install
 ```
 
-### Q9: Device.Api 配置的数据库连接字符串错误
+### Q9: Admin.Api 配置的数据库连接字符串错误
 
-**问题：** Device.Api 使用了独立数据库 `device_db`，导致找不到认证相关的表。
+**问题：** Admin.Api 使用了独立数据库，导致找不到认证相关的表。
 
 **解决方法：**
 已在 `appsettings.json` 中修复，确保使用共享数据库：
 ```json
 {
   "ConnectionStrings": {
-    "DeviceDatabase": "Host=localhost;Port=5432;Database=devdcp;Username=devdcp;Password=devdcp"
+    "AdminDatabase": "Host=localhost;Port=5432;Database=devdcp;Username=devdcp;Password=devdcp"
   }
 }
 ```
@@ -659,45 +669,56 @@ Get-Process node | Select-Object Id, ProcessName, CPU, WorkingSet
 
 ### 微服务架构
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Frontend (Vue 3)                     │
-│                  http://localhost:3200                  │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-         ┌─────────────┴─────────────┐
-         │                           │
-         ▼                           ▼
-┌────────────────┐          ┌────────────────┐
-│   Auth.Api     │          │  Device.Api    │
-│  port: 60621   │◄─────────│  port: 60623   │
-│  (JWT 签发)    │  依赖JWT  │  (设备管理)    │
-└────────┬───────┘          └────────┬───────┘
-         │                           │
-         └─────────────┬─────────────┘
-                       │
-         ┌─────────────┴─────────────┐
-         │                           │
-         ▼                           ▼
-┌────────────────┐          ┌────────────────┐
-│  PostgreSQL    │          │   RabbitMQ     │
-│  (共享数据库)  │          │  (消息队列)    │
-│  port: 5432    │          │  port: 5672    │
-└────────────────┘          └────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                       Frontend (Vue 3)                              │
+│                    http://localhost:9527                            │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Gateway.Api (60620)                            │
+│              API Gateway + SignalR Hub + 实时推送                    │
+└───────────┬──────────────────┬───────────────────┬──────────────────┘
+            │                  │                   │
+   ┌────────┴────────┐  ┌──────┴──────┐  ┌────────┴────────┐
+   ▼                 ▼  ▼             ▼  ▼                 ▼
+┌───────────┐  ┌───────────┐  ┌───────────────┐  ┌──────────────┐
+│ Auth.Api  │  │ Admin.Api │  │Processor.Worker│  │    Redis    │
+│   60621   │  │   60623   │  │     60624      │  │  Pub/Sub    │
+│ (JWT签发) │  │ (设备管理)│  │ (数据处理)     │  │  (实时消息)  │
+└─────┬─────┘  └─────┬─────┘  └───────┬───────┘  └──────────────┘
+      │              │                │
+      └──────────────┴────────────────┘
+                     │
+      ┌──────────────┼──────────────┬───────────────┐
+      │              │              │               │
+      ▼              ▼              ▼               ▼
+┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
+│ PostgreSQL│  │ RabbitMQ  │  │ InfluxDB  │  │   Redis   │
+│   5432    │  │   5672    │  │   8086    │  │   6379    │
+│ (主数据库)│  │ (消息队列)│  │ (时序数据)│  │  (缓存)   │
+└───────────┘  └───────────┘  └───────────┘  └───────────┘
 ```
 
 ### 数据库架构
-- **共享数据库模式**：Auth.Api 和 Device.Api 共享 `devdcp` 数据库
+- **共享数据库模式**：Auth.Api 和 Admin.Api 共享 `devdcp` 数据库
 - **统一实体管理**：所有实体类和 DbContext 在 `SharedAuth.Library` 项目中
-- **数据库迁移**：在 `SharedAuth.Library` 中统一管理 EF Core Migrations
+- **数据库迁移**：在 `Platform.DbMigrations` 中统一管理 EF Core Migrations
+- **时序数据**：设备数据点存储在 InfluxDB 中
 - **审计字段**：所有表包含 `created_by`, `created_at`, `updated_by`, `updated_at`, `deleted_flag`
 
 ### 认证授权流程
 1. **登录**：前端 → Auth.Api `/auth/login` → 返回 JWT Token
-2. **访问 Device.Api**：
-   - 前端携带 JWT Token → Device.Api
-   - Device.Api 通过 Auth.Api 的公钥验证 JWT（本地验证，不调用接口）
+2. **访问 Admin.Api**：
+   - 前端携带 JWT Token → Admin.Api
+   - Admin.Api 通过 Auth.Api 的公钥验证 JWT（本地验证，不调用接口）
    - 验证成功 → 返回数据
-3. **跨服务按钮权限**：Device.Api 通过 `SharedAuth.Library` 的扩展方法直接查询数据库验证权限
+3. **跨服务按钮权限**：Admin.Api 通过 `SharedAuth.Library` 的扩展方法直接查询数据库验证权限
+
+### 实时数据流
+1. **数据采集**：Collector.Agent → RabbitMQ (采集数据)
+2. **数据处理**：Processor.Worker 消费 RabbitMQ → 写入 InfluxDB → 发布 Redis Pub/Sub
+3. **实时推送**：Gateway.Api 订阅 Redis Pub/Sub → SignalR Hub → 前端 WebSocket
 
 ---
 
@@ -706,10 +727,17 @@ Get-Process node | Select-Object Id, ProcessName, CPU, WorkingSet
 ```
 02_Code/
 ├── platform/center/
+│   ├── Gateway.Api/              # API 网关 + SignalR Hub（端口 60620）
 │   ├── Auth.Api/                 # 认证授权服务（端口 60621）
-│   ├── Device.Api/               # 设备管理服务（端口 60623）
-│   └── SharedAuth.Library/       # 共享库（实体、DbContext、迁移）
-├── web/frontend/                 # 前端项目（端口 3200）
+│   ├── Admin.Api/                # 管理服务（端口 60623）
+│   ├── Processor.Worker/         # 数据处理服务（端口 60624）
+│   ├── Shared.Realtime/          # 实时消息共享库
+│   ├── Shared.Tsdb/              # 时序数据库共享库
+│   ├── SharedAuth.Library/       # 认证共享库（实体、DbContext）
+│   └── Platform.DbMigrations/    # 数据库迁移项目
+├── platform/edge/
+│   └── Collector.Agent/          # 边缘采集代理
+├── web/frontend/                 # 前端项目（端口 9527）
 ├── infra/
 │   └── docker-compose.dev.yml   # Docker 基础设施配置
 ├── start-all-services.ps1        # 启动所有服务

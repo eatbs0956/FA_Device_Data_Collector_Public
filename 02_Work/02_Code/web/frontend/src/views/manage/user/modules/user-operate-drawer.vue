@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { enableStatusOptions, userGenderOptions } from '@/constants/business';
+import { ElMessageBox } from 'element-plus';
+import { enableStatusOptions, userGenderOptions, userTypeOptions } from '@/constants/business';
 import { fetchAddUser, fetchGetAllRoles, fetchUpdateUser } from '@/service/api';
 import { useForm, useFormRules } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -39,12 +40,15 @@ const title = computed(() => {
 
 type Model = Pick<
   Api.SystemManage.User,
-  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'status'
+  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'status' | 'userType'
 > & {
   password?: string;
 };
 
 const model = ref(createDefaultModel());
+
+// 记录编辑时的原始用户类型，用于确认提示
+const originalUserType = ref<Api.SystemManage.UserType>('user');
 
 function createDefaultModel(): Model {
   return {
@@ -55,6 +59,7 @@ function createDefaultModel(): Model {
     userEmail: '',
     userRoles: [],
     status: '1' as Api.Common.EnableStatus,
+    userType: 'user' as Api.SystemManage.UserType,
     password: ''
   };
 }
@@ -98,6 +103,8 @@ function handleInitModel() {
   model.value = createDefaultModel();
 
   if (props.operateType === 'edit' && props.rowData) {
+    // 记录原始用户类型
+    originalUserType.value = props.rowData.userType || 'user';
     // 将后端返回的数据赋值给 model，并确保类型正确
     Object.assign(model.value, {
       ...props.rowData,
@@ -105,7 +112,8 @@ function handleInitModel() {
       status:
         props.rowData.status !== undefined
           ? (String(props.rowData.status) as Api.Common.EnableStatus)
-          : ('1' as Api.Common.EnableStatus)
+          : ('1' as Api.Common.EnableStatus),
+      userType: props.rowData.userType || 'user'
     });
   }
 }
@@ -114,8 +122,36 @@ function closeDrawer() {
   visible.value = false;
 }
 
+/** 检查用户类型变更是否需要确认，返回 true 表示可以继续提交 */
+async function confirmUserTypeChange(): Promise<boolean> {
+  if (props.operateType !== 'edit' || model.value.userType === originalUserType.value) {
+    return true;
+  }
+
+  const confirmMsg =
+    model.value.userType === 'service'
+      ? $t('page.manage.user.userTypeChangeConfirm.toService')
+      : $t('page.manage.user.userTypeChangeConfirm.toUser');
+
+  try {
+    await ElMessageBox.confirm(confirmMsg, $t('common.tip'), {
+      confirmButtonText: $t('common.confirm'),
+      cancelButtonText: $t('common.cancel'),
+      type: 'warning'
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function handleSubmit() {
   await validate();
+
+  // 编辑模式下，如果用户类型发生变化，需要确认
+  if (!(await confirmUserTypeChange())) {
+    return;
+  }
 
   // 准备提交数据，将 status 和 userGender 从字符串转换为数字
   const submitData: Api.SystemManage.UserEdit = {
@@ -125,6 +161,7 @@ async function handleSubmit() {
     userPhone: model.value.userPhone || undefined,
     userEmail: model.value.userEmail || undefined,
     status: model.value.status ? Number(model.value.status) : undefined,
+    userType: model.value.userType,
     userRoles: model.value.userRoles && model.value.userRoles.length > 0 ? model.value.userRoles : undefined,
     password: model.value.password || undefined
   };
@@ -167,6 +204,11 @@ watch(visible, () => {
     <ElForm ref="formRef" :model="model" :rules="rules" label-position="top">
       <ElFormItem :label="$t('page.manage.user.userName')" prop="userName">
         <ElInput v-model="model.userName" :placeholder="$t('page.manage.user.form.userName')" />
+      </ElFormItem>
+      <ElFormItem :label="$t('page.manage.user.userTypeLabel')" prop="userType">
+        <ElRadioGroup v-model="model.userType">
+          <ElRadio v-for="item in userTypeOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
+        </ElRadioGroup>
       </ElFormItem>
       <ElFormItem
         v-if="operateType === 'add' || operateType === 'edit'"

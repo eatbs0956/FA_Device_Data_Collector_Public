@@ -1,0 +1,75 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    /// <summary>
+    /// 版本履历对话框
+    /// </summary>
+    public class VersionHistoryForm : Form
+    {
+        private TextBox _historyTextBox;
+        private Button _closeButton;
+
+        public VersionHistoryForm()
+        {
+            InitializeComponent();
+            LoadVersionHistory();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = L.T("VersionHistoryForm_Title");
+            this.Size = new Size(500, 400);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+
+            // 版本履历文本框
+            _historyTextBox = new TextBox
+            {
+                Location = new Point(12, 12),
+                Size = new Size(460, 300),
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                Font = new Font("Consolas", 9F),
+                BackColor = Color.White
+            };
+            this.Controls.Add(_historyTextBox);
+
+            // 关闭按钮
+            _closeButton = new Button
+            {
+                Text = L.T("Common_Close"),
+                Location = new Point(397, 325),
+                Size = new Size(75, 25),
+                DialogResult = DialogResult.OK
+            };
+            _closeButton.Click += (s, e) => this.Close();
+            this.Controls.Add(_closeButton);
+
+            this.AcceptButton = _closeButton;
+        }
+
+        private void LoadVersionHistory()
+        {
+            // 加载所有版本履历（从最新到最旧）
+            var history = new System.Text.StringBuilder();
+            
+            // v1.0.0
+            history.AppendLine(L.T("VersionHistory_1_0_0"));
+            history.AppendLine();
+            
+            // 可以在这里添加更多版本...
+            // history.AppendLine(L.T("VersionHistory_1_0_1"));
+            // history.AppendLine();
+
+            _historyTextBox.Text = history.ToString();
+        }
+    }
+}

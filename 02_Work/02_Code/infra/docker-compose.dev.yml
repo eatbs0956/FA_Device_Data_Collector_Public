@@ -1,6 +1,5 @@
 # Dev mode docker compose for DevDCP
 # 说明: VS Code schema 报错多为临时网络问题，不影响运行；可忽略或在设置中关闭远程 schema 校验。
-version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -47,8 +46,10 @@ services:
       DOCKER_INFLUXDB_INIT_USERNAME: devdcp
       DOCKER_INFLUXDB_INIT_PASSWORD: devdcp123
       DOCKER_INFLUXDB_INIT_ORG: devorg
-      DOCKER_INFLUXDB_INIT_BUCKET: raw
+      DOCKER_INFLUXDB_INIT_BUCKET: collected
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: devdcp-token
+      # 保留期: 0 表示无限保留（开发阶段永久保存原始数据）
+      DOCKER_INFLUXDB_INIT_RETENTION: 0s
     ports: ["8086:8086"]
     healthcheck:
       test: ["CMD", "influx", "ping"]
@@ -77,27 +78,6 @@ services:
       - backend
     restart: unless-stopped
 
-  query-api:
-    build: ../platform/center/Query.Api
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      PG_CONN: Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp
-      INFLUX_URL: http://influxdb:8086
-      INFLUX_TOKEN: devdcp-token
-    ports: ["18080:8080"]
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      influxdb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - backend
-    restart: unless-stopped
-
   auth-api:
     build: ../platform/center/Auth.Api
     environment:
@@ -114,8 +94,8 @@ services:
       - backend
     restart: unless-stopped
 
-  device-api:
-    build: ../platform/center/Device.Api
+  admin-api:
+    build: ../platform/center/Admin.Api
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       PG_CONN: "Host=postgres;Username=devdcp;Password=devdcp;Database=devdcp"
@@ -144,7 +124,7 @@ services:
     depends_on:
       auth-api:
         condition: service_started
-      device-api:
+      admin-api:
         condition: service_started
     volumes:
       - ./logs/gateway:/app/logs
@@ -181,17 +161,6 @@ services:
       influxdb:
         condition: service_healthy
       postgres:
-        condition: service_healthy
-    networks:
-      - backend
-    restart: unless-stopped
-
-  scheduler-worker:
-    build: ../platform/center/Scheduler.Worker
-    environment:
-      RABBITMQ_HOST: rabbitmq
-    depends_on:
-      rabbitmq:
         condition: service_healthy
     networks:
       - backend

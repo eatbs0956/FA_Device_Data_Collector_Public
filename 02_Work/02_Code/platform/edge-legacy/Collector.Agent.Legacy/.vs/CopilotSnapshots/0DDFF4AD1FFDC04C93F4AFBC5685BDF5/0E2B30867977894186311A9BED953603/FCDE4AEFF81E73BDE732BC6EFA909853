@@ -1,0 +1,151 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    public partial class LoginForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly AppService _appService;
+
+        public LoginForm()
+        {
+            _appService = AppService.Instance;
+            InitializeComponent();
+            InitializeData();
+            LoadSettings();
+        }
+
+        private void InitializeData()
+        {
+            _nodeIdTextBox.Text = Environment.MachineName;
+            _nodeNameTextBox.Text = $"采集节点-{Environment.MachineName}";
+            
+            var separator = new Label
+            {
+                Text = "─── 用户认证 ───",
+                Location = new Point(30, 185),
+                Size = new Size(350, 20),
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.Gray
+            };
+            this.Controls.Add(separator);
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                var settings = _appService.LoadSettings();
+                if (settings != null)
+                {
+                    _gatewayTextBox.Text = settings.ApiGatewayUrl ?? "http://localhost:60620";
+                    _nodeIdTextBox.Text = settings.NodeId ?? Environment.MachineName;
+                    _nodeNameTextBox.Text = settings.NodeName ?? $"采集节点-{Environment.MachineName}";
+                    _usernameTextBox.Text = settings.Username ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "加载配置失败，使用默认值");
+            }
+        }
+
+        private void ShowPasswordCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _passwordTextBox.PasswordChar = _showPasswordCheckBox.Checked ? '\0' : '●';
+        }
+
+        private async void LoginButton_Click(object sender, EventArgs e)
+        {
+            // 验证输入
+            if (string.IsNullOrWhiteSpace(_gatewayTextBox.Text))
+            {
+                _statusLabel.Text = "请输入网关地址";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_nodeIdTextBox.Text))
+            {
+                _statusLabel.Text = "请输入节点ID";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_usernameTextBox.Text) || string.IsNullOrWhiteSpace(_passwordTextBox.Text))
+            {
+                _statusLabel.Text = "请输入用户名和密码";
+                return;
+            }
+
+            _loginButton.Enabled = false;
+            _statusLabel.ForeColor = Color.Blue;
+            _statusLabel.Text = "正在登录...";
+
+            try
+            {
+                // 保存配置
+                _appService.SaveSettings(
+                    _gatewayTextBox.Text,
+                    _nodeIdTextBox.Text,
+                    _nodeNameTextBox.Text,
+                    _usernameTextBox.Text
+                );
+
+                // 执行登录
+                var result = await _appService.LoginAsync(
+                    _gatewayTextBox.Text,
+                    _usernameTextBox.Text,
+                    _passwordTextBox.Text
+                );
+
+                if (result.Success)
+                {
+                    // 注册节点
+                    _statusLabel.Text = "正在注册节点...";
+                    var registerResult = await _appService.RegisterNodeAsync(
+                        _nodeIdTextBox.Text,
+                        _nodeNameTextBox.Text
+                    );
+
+                    if (registerResult.Success)
+                    {
+                        Logger.Info("登录成功，用户: {0}", _usernameTextBox.Text);
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                    else
+                    {
+                        _statusLabel.ForeColor = Color.Red;
+                        _statusLabel.Text = $"节点注册失败: {registerResult.ErrorMessage}";
+                    }
+                }
+                else
+                {
+                    _statusLabel.ForeColor = Color.Red;
+                    _statusLabel.Text = $"登录失败: {result.ErrorMessage}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "登录过程出错");
+                _statusLabel.ForeColor = Color.Red;
+                _statusLabel.Text = $"登录出错: {ex.Message}";
+            }
+            finally
+            {
+                _loginButton.Enabled = true;
+            }
+        }
+
+        private void SettingsButton_Click(object sender, EventArgs e)
+        {
+            using (var settingsForm = new SettingsForm())
+            {
+                settingsForm.ShowDialog(this);
+            }
+        }
+    }
+}

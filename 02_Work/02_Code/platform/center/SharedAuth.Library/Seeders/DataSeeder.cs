@@ -224,6 +224,25 @@ public static class DataSeeder
             Console.WriteLine("[DataSeeder] ✓ 创建默认租户角色: R_ADMIN, R_USER (租户: t1)");
         }
 
+        // 创建 t1 租户的边缘采集器服务角色
+        if (!context.Roles.IgnoreQueryFilters().Any(r => r.Code == "R_EDGE_COLLECTOR" && r.TenantId == "t1"))
+        {
+            context.Roles.Add(new Role
+            {
+                Name = "EdgeCollector",
+                Code = "R_EDGE_COLLECTOR",
+                Status = 1,
+                Description = "边缘采集器服务账号角色，用于采集节点的 API 访问授权",
+                CreatedBy = superUser.Id,
+                UpdatedBy = null,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                DeletedFlag = false,
+                TenantId = "t1" // 默认租户
+            });
+            Console.WriteLine("[DataSeeder] ✓ 创建边缘采集器角色: R_EDGE_COLLECTOR (租户: t1)");
+        }
+
         context.SaveChanges();
     }
 

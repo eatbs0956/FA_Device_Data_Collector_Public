@@ -127,6 +127,18 @@ public class EdgeNode : BaseEntity
     public string RegistrationType { get; set; } = "auto";
 
     /// <summary>
+    /// 关联的服务账号用户ID
+    /// 该节点归属于哪个服务账号管理，用于权限控制
+    /// </summary>
+    [Column("service_user_id")]
+    public Guid? ServiceUserId { get; set; }
+
+    /// <summary>
+    /// 服务账号导航属性
+    /// </summary>
+    public virtual User? ServiceUser { get; set; }
+
+    /// <summary>
     /// 关联的设备列表（导航属性）
     /// </summary>
     public virtual ICollection<Device> Devices { get; set; } = new List<Device>();

@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("Auth.Api", "Admin.Api", "Gateway.Api", "Frontend")]
+    [ValidateSet("Auth.Api", "Admin.Api", "Gateway.Api", "Processor.Worker", "Frontend")]
     [string]$ServiceName
 )
 
@@ -85,6 +85,19 @@ switch ($ServiceName) {
             Write-Host "Gateway URL: http://localhost:60620" -ForegroundColor Cyan
         } else {
             Write-Host "Failed to start Gateway.Api" -ForegroundColor Red
+            exit 1
+        }
+    }
+    
+    "Processor.Worker" {
+        Write-Host "`nStep 2: Starting Processor.Worker on port 60624..." -ForegroundColor Cyan
+        Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$baseDir\Processor.Worker'; dotnet run --urls http://localhost:60624"
+        $healthy = Test-ServiceHealth -Url "http://localhost:60624/health" -ServiceName "Processor.Worker"
+        if ($healthy) {
+            Write-Host "`nProcessor.Worker started successfully!" -ForegroundColor Green
+            Write-Host "Health: http://localhost:60624/health" -ForegroundColor Cyan
+        } else {
+            Write-Host "Failed to start Processor.Worker" -ForegroundColor Red
             exit 1
         }
     }

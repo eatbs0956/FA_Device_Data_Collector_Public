@@ -52,7 +52,7 @@
     "@antv/g6": "5.0.49",
     "@better-scroll/core": "2.5.1",
     "@iconify/vue": "5.0.0",
-
+    "@microsoft/signalr": "^10.0.0",
     "@sa/axios": "workspace:*",
     "@sa/color": "workspace:*",
     "@sa/hooks": "workspace:*",

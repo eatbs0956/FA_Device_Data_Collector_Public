@@ -362,14 +362,15 @@ app.MapPost("/api/admin/addUsers", async (UserCreateRequest req, UserService use
 	try
 	{
 		var user = await userSvc.CreateUserAsync(
-			req.UserName,
-			req.NickName ?? "",
-			req.UserGender,
-			req.UserPhone ?? "",
-			req.UserEmail ?? "",
-			req.Status ?? 1,
-			req.UserRoles,
-			req.Password);
+			userName: req.UserName,
+			nickName: req.NickName ?? "",
+			userType: "user", // 默认为普通用户
+			userGender: req.UserGender,
+			userPhone: req.UserPhone ?? "",
+			userEmail: req.UserEmail ?? "",
+			status: req.Status ?? 1,
+			userRoles: req.UserRoles,
+			password: req.Password);
 
 		return Results.Json(Envelope<object>.Ok(new { id = user.Id }, "用户创建成功"));
 	}
@@ -390,15 +391,16 @@ app.MapPut("/api/admin/updateUsers/{id:guid}", async (Guid id, UserUpdateRequest
 	try
 	{
 		var success = await userSvc.UpdateUserAsync(
-			id,
-			req.UserName,
-			req.NickName ?? "",
-			req.UserGender,
-			req.UserPhone ?? "",
-			req.UserEmail ?? "",
-			req.Status,
-			req.UserRoles,
-			req.Password);
+			id: id,
+			userName: req.UserName,
+			nickName: req.NickName ?? "",
+			userType: req.UserType, // 支持更新用户类型
+			userGender: req.UserGender,
+			userPhone: req.UserPhone ?? "",
+			userEmail: req.UserEmail ?? "",
+			status: req.Status,
+			userRoles: req.UserRoles,
+			password: req.Password);
 
 		if (!success)
 		{

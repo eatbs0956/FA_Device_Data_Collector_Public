@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Collector.Agent.ViewModels"
+             xmlns:l="using:Collector.Agent.Localization"
+             x:Class="Collector.Agent.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <ScrollViewer>
+        <StackPanel Margin="0,0,0,20">
+            <!-- 标题 -->
+            <DockPanel Margin="0,0,0,20">
+                <Button DockPanel.Dock="Right" 
+                        Classes="secondary"
+                        Content="{l:Localize Common.Refresh, Prefix='🔄 '}" 
+                        Command="{Binding RefreshDataCommand}"/>
+                <TextBlock Text="{l:Localize Dashboard.Title}" Classes="pageTitle"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <!-- 统计卡片 -->
+            <UniformGrid Columns="4" Margin="0,0,0,20">
+                <!-- 运行任务数 -->
+                <Border Classes="card" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="{l:Localize Dashboard.RunningTasks}" Foreground="#64748b" FontSize="12"/>
+                        <TextBlock Text="{Binding RunningTaskCount}" 
+                                   FontSize="32" FontWeight="Bold" 
+                                   Foreground="#2563eb"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 连接设备数 -->
+                <Border Classes="card" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="{l:Localize Dashboard.ConnectedDevices}" Foreground="#64748b" FontSize="12"/>
+                        <TextBlock Text="{Binding ConnectedDeviceCount}" 
+                                   FontSize="32" FontWeight="Bold" 
+                                   Foreground="#16a34a"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 采集总数 -->
+                <Border Classes="card" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="{l:Localize Dashboard.TotalCollections}" Foreground="#64748b" FontSize="12"/>
+                        <TextBlock Text="{Binding TotalCollectionCount}" 
+                                   FontSize="32" FontWeight="Bold" 
+                                   Foreground="#9333ea"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 错误数 -->
+                <Border Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="{l:Localize Dashboard.Errors}" Foreground="#64748b" FontSize="12"/>
+                        <TextBlock Text="{Binding ErrorCount}" 
+                                   FontSize="32" FontWeight="Bold" 
+                                   Foreground="#dc2626"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- 任务状态列表 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Dashboard.TaskStatus}" Classes="cardTitle" Margin="0,0,0,12"/>
+                    <Border CornerRadius="6" ClipToBounds="True">
+                        <DataGrid ItemsSource="{Binding TaskStatuses}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  RowHeight="32"
+                                  Height="{Binding TaskGridHeight}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:Localize Header.TaskName}" Binding="{Binding TaskName}" Width="250"/>
+                                <DataGridTextColumn Header="{l:Localize Header.Status}" Binding="{Binding State}" Width="150"/>
+                                <DataGridTextColumn Header="{l:Localize Header.CollectionCount}" Binding="{Binding TotalCollectionCount}" Width="150"/>
+                                <DataGridTextColumn Header="{l:Localize Header.ErrorCount}" Binding="{Binding ErrorCount}" Width="150"/>
+                                <DataGridTextColumn Header="{l:Localize Header.LastRun}" Binding="{Binding LastRunTime, StringFormat='{}{0:HH:mm:ss}'}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- 设备状态列表 -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="{l:Localize Dashboard.DeviceStatus}" Classes="cardTitle" Margin="0,0,0,12"/>
+                    <Border CornerRadius="6" ClipToBounds="True">
+                        <DataGrid ItemsSource="{Binding DeviceStatuses}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  RowHeight="32"
+                                  Height="{Binding DeviceGridHeight}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:Localize Header.DeviceName}" Binding="{Binding DeviceName}" Width="250"/>
+                                <DataGridTextColumn Header="{l:Localize Header.ConnectionStatus}" Binding="{Binding State}" Width="150"/>
+                                <DataGridTextColumn Header="{l:Localize Header.ErrorCount}" Binding="{Binding ErrorCount}" Width="150"/>
+                                <DataGridTextColumn Header="{l:Localize Header.LastConnect}" Binding="{Binding LastConnectTime, StringFormat='{}{0:HH:mm:ss}'}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- 实时数据预览 -->
+            <Border Classes="card">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" 
+                                Classes="secondary"
+                                Content="{l:Localize DataPreview.Clear, Prefix='🗑 '}" 
+                                Command="{Binding ClearRecentDataCommand}"
+                                Padding="10,5"
+                                FontSize="12"/>
+                        <TextBlock Text="{l:Localize Dashboard.RealtimePreview}" Classes="cardTitle"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border CornerRadius="6" ClipToBounds="True">
+                        <DataGrid ItemsSource="{Binding RecentDataPoints}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserResizeColumns="True"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  RowHeight="32"
+                                  Height="{Binding DataGridHeight}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{l:Localize Header.Time}" Binding="{Binding FormattedTime}" Width="200"/>
+                                <DataGridTextColumn Header="{l:Localize Header.Device}" Binding="{Binding DeviceName}" Width="200"/>
+                                <DataGridTextColumn Header="{l:Localize Header.Tag}" Binding="{Binding TagName}" Width="*"/>
+                                <DataGridTextColumn Header="{l:Localize Header.Value}" Binding="{Binding Value}" Width="*"/>
+                                <DataGridTextColumn Header="{l:Localize Header.Quality}" Binding="{Binding Quality}" Width="150"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                    <TextBlock Text="{l:Localize Dashboard.NoData}"
+                               IsVisible="{Binding !RecentDataPoints.Count}"
+                               Foreground="#94a3b8"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,20"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 更新时间 -->
+            <TextBlock Text="{Binding LastUpdateTime, StringFormat='{}{0}'}" 
+                       Foreground="#94a3b8" 
+                       FontSize="11"
+                       HorizontalAlignment="Right"
+                       Margin="0,10,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -4,10 +4,10 @@
 declare namespace Api {
   namespace CollectionTask {
     /** 任务类型 */
-    type TaskType = "Periodic" | "Scheduled" | "EventDriven" | "Hybrid";
+    type TaskType = 'Periodic' | 'Scheduled' | 'EventDriven' | 'Hybrid';
 
     /** 任务状态 */
-    type TaskStatus = "Draft" | "Active" | "Paused" | "Stopped";
+    type TaskStatus = 'Draft' | 'Active' | 'Paused' | 'Stopped';
 
     /** 采集任务 */
     interface CollectionTask {

@@ -1,0 +1,144 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge-legacy\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E17D2C4C-DE15-4A2E-8010-3F3A92472F79}|..\\edge\\Collector.Core\\Collector.Core.csproj|d:\\00_qc-share\\01_devdcp\\02_work\\02_code\\platform\\edge\\collector.core\\drivers\\driverfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E17D2C4C-DE15-4A2E-8010-3F3A92472F79}|..\\edge\\Collector.Core\\Collector.Core.csproj|d:\\00_qc-share\\01_devdcp\\02_work\\02_code\\platform\\edge\\collector.core\\drivers\\driverbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5971E2E-9DD3-F7CA-9F9F-222B69D9EDB8}|Collector.Agent.Legacy\\Collector.Agent.Legacy.csproj|d:\\00_qc-share\\01_devdcp\\02_work\\02_code\\platform\\edge-legacy\\collector.agent.legacy\\forms\\devicedetailform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A5971E2E-9DD3-F7CA-9F9F-222B69D9EDB8}|Collector.Agent.Legacy\\Collector.Agent.Legacy.csproj|solutionrelative:collector.agent.legacy\\forms\\devicedetailform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5971E2E-9DD3-F7CA-9F9F-222B69D9EDB8}|Collector.Agent.Legacy\\Collector.Agent.Legacy.csproj|d:\\00_qc-share\\01_devdcp\\02_work\\02_code\\platform\\edge-legacy\\collector.agent.legacy\\services\\collectionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A5971E2E-9DD3-F7CA-9F9F-222B69D9EDB8}|Collector.Agent.Legacy\\Collector.Agent.Legacy.csproj|solutionrelative:collector.agent.legacy\\services\\collectionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E17D2C4C-DE15-4A2E-8010-3F3A92472F79}|..\\edge\\Collector.Core\\Collector.Core.csproj|d:\\00_qc-share\\01_devdcp\\02_work\\02_code\\platform\\edge\\collector.core\\drivers\\modbustcpdriver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 233,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{ecb7191a-597b-41f5-9843-03a4cf275dde}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{5a4e9529-b6a0-46b5-be4f-0f0b239bc0eb}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{9a7cebbb-dc5c-4986-bc49-962da46aa506}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DriverFactory.cs",
+              "DocumentMoniker": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\DriverFactory.cs",
+              "RelativeDocumentMoniker": "..\\edge\\Collector.Core\\Drivers\\DriverFactory.cs",
+              "ToolTip": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\DriverFactory.cs",
+              "RelativeToolTip": "..\\edge\\Collector.Core\\Drivers\\DriverFactory.cs",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAUwGUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T09:13:51.317Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DriverBase.cs",
+              "DocumentMoniker": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\DriverBase.cs",
+              "RelativeDocumentMoniker": "..\\edge\\Collector.Core\\Drivers\\DriverBase.cs",
+              "ToolTip": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\DriverBase.cs",
+              "RelativeToolTip": "..\\edge\\Collector.Core\\Drivers\\DriverBase.cs",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAmwD4AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T08:30:16.808Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ModbusTcpDriver.cs",
+              "DocumentMoniker": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\ModbusTcpDriver.cs",
+              "RelativeDocumentMoniker": "..\\edge\\Collector.Core\\Drivers\\ModbusTcpDriver.cs",
+              "ToolTip": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge\\Collector.Core\\Drivers\\ModbusTcpDriver.cs",
+              "RelativeToolTip": "..\\edge\\Collector.Core\\Drivers\\ModbusTcpDriver.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAACIAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T07:42:12.945Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "CollectionService.cs",
+              "DocumentMoniker": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge-legacy\\Collector.Agent.Legacy\\Services\\CollectionService.cs",
+              "RelativeDocumentMoniker": "Collector.Agent.Legacy\\Services\\CollectionService.cs",
+              "ToolTip": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge-legacy\\Collector.Agent.Legacy\\Services\\CollectionService.cs",
+              "RelativeToolTip": "Collector.Agent.Legacy\\Services\\CollectionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADECAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T07:31:02.433Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DeviceDetailForm.cs",
+              "DocumentMoniker": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge-legacy\\Collector.Agent.Legacy\\Forms\\DeviceDetailForm.cs",
+              "RelativeDocumentMoniker": "Collector.Agent.Legacy\\Forms\\DeviceDetailForm.cs",
+              "ToolTip": "D:\\00_QC-share\\01_DevDCP\\02_Work\\02_Code\\platform\\edge-legacy\\Collector.Agent.Legacy\\Forms\\DeviceDetailForm.cs",
+              "RelativeToolTip": "Collector.Agent.Legacy\\Forms\\DeviceDetailForm.cs",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAAAN4AAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T07:25:06.768Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 167,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

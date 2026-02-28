@@ -1,17 +1,15 @@
-import { request } from "../request";
+import { request } from '../request';
 
 // ==================== 采集任务 API ====================
 
 /**
  * 获取采集任务列表（分页）
  */
-export function fetchGetCollectionTaskList(
-  params?: Api.CollectionTask.CollectionTaskSearchParams,
-) {
+export function fetchGetCollectionTaskList(params?: Api.CollectionTask.CollectionTaskSearchParams) {
   return request<Api.CollectionTask.CollectionTaskList>({
-    url: "/api/collection-tasks",
-    method: "get",
-    params,
+    url: '/api/collection-tasks',
+    method: 'get',
+    params
   });
 }
 
@@ -21,34 +19,29 @@ export function fetchGetCollectionTaskList(
 export function fetchGetCollectionTask(id: string) {
   return request<Api.CollectionTask.CollectionTask>({
     url: `/api/collection-tasks/${id}`,
-    method: "get",
+    method: 'get'
   });
 }
 
 /**
  * 创建采集任务
  */
-export function fetchAddCollectionTask(
-  data: Api.CollectionTask.CreateCollectionTaskRequest,
-) {
+export function fetchAddCollectionTask(data: Api.CollectionTask.CreateCollectionTaskRequest) {
   return request<{ id: string }>({
-    url: "/api/collection-tasks",
-    method: "post",
-    data,
+    url: '/api/collection-tasks',
+    method: 'post',
+    data
   });
 }
 
 /**
  * 更新采集任务
  */
-export function fetchUpdateCollectionTask(
-  id: string,
-  data: Api.CollectionTask.UpdateCollectionTaskRequest,
-) {
+export function fetchUpdateCollectionTask(id: string, data: Api.CollectionTask.UpdateCollectionTaskRequest) {
   return request<null>({
     url: `/api/collection-tasks/${id}`,
-    method: "put",
-    data,
+    method: 'put',
+    data
   });
 }
 
@@ -58,21 +51,18 @@ export function fetchUpdateCollectionTask(
 export function fetchDeleteCollectionTask(id: string) {
   return request<null>({
     url: `/api/collection-tasks/${id}`,
-    method: "delete",
+    method: 'delete'
   });
 }
 
 /**
  * 变更任务状态
  */
-export function fetchChangeCollectionTaskStatus(
-  id: string,
-  data: Api.CollectionTask.TaskStatusChangeRequest,
-) {
+export function fetchChangeCollectionTaskStatus(id: string, data: Api.CollectionTask.TaskStatusChangeRequest) {
   return request<null>({
     url: `/api/collection-tasks/${id}/status`,
-    method: "put",
-    data,
+    method: 'put',
+    data
   });
 }
 
@@ -81,8 +71,8 @@ export function fetchChangeCollectionTaskStatus(
  */
 export function fetchGetAvailableDevices(taskId?: string) {
   return request<Api.CollectionTask.AvailableDevice[]>({
-    url: "/api/collection-tasks/available-devices",
-    method: "get",
-    params: taskId ? { taskId } : undefined,
+    url: '/api/collection-tasks/available-devices',
+    method: 'get',
+    params: taskId ? { taskId } : undefined
   });
 }

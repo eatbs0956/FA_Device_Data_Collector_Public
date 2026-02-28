@@ -1,0 +1,283 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Collector.Agent.Legacy.Services;
+using NLog;
+
+namespace Collector.Agent.Legacy.Forms
+{
+    public partial class SettingsForm : Form
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly AppService _appService;
+
+        // 控件
+        private TabControl _tabControl;
+        private TabPage _generalTab;
+        private TabPage _communicationTab;
+        private TabPage _loggingTab;
+        private Button _saveButton;
+        private Button _cancelButton;
+
+        // 通用设置
+        private NumericUpDown _heartbeatIntervalNumeric;
+        private NumericUpDown _configRefreshIntervalNumeric;
+        private CheckBox _autoStartCheckBox;
+        private CheckBox _minimizeToTrayCheckBox;
+
+        // 通信设置
+        private NumericUpDown _connectionTimeoutNumeric;
+        private NumericUpDown _retryCountNumeric;
+        private NumericUpDown _retryIntervalNumeric;
+
+        // 日志设置
+        private ComboBox _logLevelComboBox;
+        private NumericUpDown _logRetentionDaysNumeric;
+        private CheckBox _logToFileCheckBox;
+
+        public SettingsForm()
+        {
+            _appService = AppService.Instance;
+            InitializeComponent();
+            LoadSettings();
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+
+            // 窗体设置
+            this.Text = "设置";
+            this.Size = new Size(500, 400);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            // Tab控件
+            _tabControl = new TabControl
+            {
+                Location = new Point(10, 10),
+                Size = new Size(465, 300)
+            };
+
+            // 通用设置页
+            _generalTab = new TabPage("通用设置");
+            CreateGeneralSettings();
+            _tabControl.TabPages.Add(_generalTab);
+
+            // 通信设置页
+            _communicationTab = new TabPage("通信设置");
+            CreateCommunicationSettings();
+            _tabControl.TabPages.Add(_communicationTab);
+
+            // 日志设置页
+            _loggingTab = new TabPage("日志设置");
+            CreateLoggingSettings();
+            _tabControl.TabPages.Add(_loggingTab);
+
+            this.Controls.Add(_tabControl);
+
+            // 保存按钮
+            _saveButton = new Button
+            {
+                Text = "保存",
+                Location = new Point(300, 320),
+                Size = new Size(80, 30)
+            };
+            _saveButton.Click += SaveButton_Click;
+            this.Controls.Add(_saveButton);
+
+            // 取消按钮
+            _cancelButton = new Button
+            {
+                Text = "取消",
+                Location = new Point(390, 320),
+                Size = new Size(80, 30)
+            };
+            _cancelButton.Click += (s, e) => this.Close();
+            this.Controls.Add(_cancelButton);
+
+            this.ResumeLayout(false);
+        }
+
+        private void CreateGeneralSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            // 心跳间隔
+            AddLabel(_generalTab, "心跳间隔(秒):", 20, y);
+            _heartbeatIntervalNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 5,
+                Maximum = 300,
+                Value = 30
+            };
+            _generalTab.Controls.Add(_heartbeatIntervalNumeric);
+            y += 35;
+
+            // 配置刷新间隔
+            AddLabel(_generalTab, "配置刷新间隔(秒):", 20, y);
+            _configRefreshIntervalNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 30,
+                Maximum = 3600,
+                Value = 300
+            };
+            _generalTab.Controls.Add(_configRefreshIntervalNumeric);
+            y += 35;
+
+            // 开机自启动
+            _autoStartCheckBox = new CheckBox
+            {
+                Text = "开机自动启动",
+                Location = new Point(20, y),
+                Size = new Size(200, 23)
+            };
+            _generalTab.Controls.Add(_autoStartCheckBox);
+            y += 30;
+
+            // 最小化到托盘
+            _minimizeToTrayCheckBox = new CheckBox
+            {
+                Text = "最小化到系统托盘",
+                Location = new Point(20, y),
+                Size = new Size(200, 23)
+            };
+            _generalTab.Controls.Add(_minimizeToTrayCheckBox);
+        }
+
+        private void CreateCommunicationSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            // 连接超时
+            AddLabel(_communicationTab, "连接超时(秒):", 20, y);
+            _connectionTimeoutNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 5,
+                Maximum = 120,
+                Value = 30
+            };
+            _communicationTab.Controls.Add(_connectionTimeoutNumeric);
+            y += 35;
+
+            // 重试次数
+            AddLabel(_communicationTab, "重试次数:", 20, y);
+            _retryCountNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 0,
+                Maximum = 10,
+                Value = 3
+            };
+            _communicationTab.Controls.Add(_retryCountNumeric);
+            y += 35;
+
+            // 重试间隔
+            AddLabel(_communicationTab, "重试间隔(秒):", 20, y);
+            _retryIntervalNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 1,
+                Maximum = 60,
+                Value = 5
+            };
+            _communicationTab.Controls.Add(_retryIntervalNumeric);
+        }
+
+        private void CreateLoggingSettings()
+        {
+            int y = 20;
+            int labelWidth = 150;
+
+            // 日志级别
+            AddLabel(_loggingTab, "日志级别:", 20, y);
+            _logLevelComboBox = new ComboBox
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(120, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            _logLevelComboBox.Items.AddRange(new object[] { "Debug", "Info", "Warn", "Error" });
+            _logLevelComboBox.SelectedIndex = 1;
+            _loggingTab.Controls.Add(_logLevelComboBox);
+            y += 35;
+
+            // 日志保留天数
+            AddLabel(_loggingTab, "日志保留天数:", 20, y);
+            _logRetentionDaysNumeric = new NumericUpDown
+            {
+                Location = new Point(20 + labelWidth, y),
+                Size = new Size(80, 23),
+                Minimum = 1,
+                Maximum = 365,
+                Value = 30
+            };
+            _loggingTab.Controls.Add(_logRetentionDaysNumeric);
+            y += 35;
+
+            // 写入文件
+            _logToFileCheckBox = new CheckBox
+            {
+                Text = "写入日志文件",
+                Location = new Point(20, y),
+                Size = new Size(200, 23),
+                Checked = true
+            };
+            _loggingTab.Controls.Add(_logToFileCheckBox);
+        }
+
+        private void AddLabel(Control parent, string text, int x, int y)
+        {
+            var label = new Label
+            {
+                Text = text,
+                Location = new Point(x, y + 3),
+                Size = new Size(140, 20)
+            };
+            parent.Controls.Add(label);
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                // 从配置加载设置
+                // 这里可以从 AppService 或配置文件加载
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "加载设置失败");
+            }
+        }
+
+        private void SaveButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // 保存设置
+                // 这里可以保存到 AppService 或配置文件
+                Logger.Info("设置已保存");
+                MessageBox.Show("设置已保存", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "保存设置失败");
+                MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}

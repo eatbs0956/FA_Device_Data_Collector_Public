@@ -1,117 +1,280 @@
-# DevDCP Monorepo
+# DevDCP — 工业数据采集与处理平台
 
-工业数据采集与处理平台（Industrial Data Acquisition & Processing Platform）。
+<p align="center">
+  <b>Industrial Data Collection & Processing Platform</b><br/>
+  面向制造业的多协议设备数据采集、处理、存储与可视化统一平台
+</p>
 
-## 概述
-面向多源工业设备数据采集、清洗、聚合、查询与分发的统一平台：
-- 边缘采集：统一插件式适配器、可靠上传、幂等保证。
-- 中心处理：消息解耦、窗口/聚合、清洗、指标存储（Influx / PostgreSQL）。
-- 查询与推送：统一 REST/gRPC/消息契约，支持实时订阅、重放、节流。
-- 安全与治理：JWT + JWKS、RBAC+ABAC、审计、连接与资源治理。
-- 统一契约：单一来源 (gRPC + OpenAPI + JSON Schema) 与迁移策略。
+<p align="center">
+  <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
+  <img src="https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs" alt="Vue 3"/>
+  <img src="https://img.shields.io/badge/Avalonia-11-8B5CF6" alt="Avalonia"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-14-336791?logo=postgresql" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/InfluxDB-2.x-22ADF6?logo=influxdb" alt="InfluxDB"/>
+  <img src="https://img.shields.io/badge/RabbitMQ-3.x-FF6600?logo=rabbitmq" alt="RabbitMQ"/>
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License"/>
+</p>
 
-## 技术栈
-- 语言/运行时：.NET 8、.NET Framework 4.7.2（Legacy Edge）、TypeScript
-- 前端：Vue3 + Vite + Element Plus (基于 soybean-admin ElementPlus 版本)
-- 消息：RabbitMQ（发布/确认/死信/Prefetch）
-- 存储：PostgreSQL (元数据/审计/幂等)、InfluxDB (时序)、Redis (缓存)
-- 协议：gRPC、REST、WebSocket、消息(JSON)
+<p align="center">
+  <img src="https://img.shields.io/badge/⚠_开发阶段-Alpha-orange?style=for-the-badge" alt="Alpha"/>
+</p>
 
-## 目录结构
+> **⚠️ 项目状态：开发中（Alpha）**
+>
+> 目前已完成主体架构搭建与核心模块开发，包括：认证鉴权服务、API 网关、管理后台服务、数据处理 Worker、前端管理平台、边缘采集客户端框架及 Modbus TCP 驱动。
+> 更多协议驱动（OPC UA、MQTT、Siemens S7、Mitsubishi MC 等）和高级功能（告警规则、数据聚合、报表导出等）正在持续开发中。
+> API 和数据结构可能在后续版本中发生变更。
+
+> **[English Version (README_en.md)](./README_en.md)**
+
+---
+
+## 📋 目录
+
+- [项目简介](#-项目简介)
+- [系统架构](#-系统架构)
+- [技术栈](#-技术栈)
+- [目录结构](#-目录结构)
+- [快速开始](#-快速开始)
+- [服务端口清单](#-服务端口清单)
+- [致谢](#-致谢)
+- [许可证](#-许可证)
+
+---
+
+## 📖 项目简介
+
+DevDCP 是一个面向**制造业单工厂内部**的工业数据采集通用后台系统，解决以下核心问题：
+
+- **多协议统一接入** — 支持 OPC UA、Modbus TCP/RTU、MQTT、三菱 MC、西门子 S7 等主流工业协议
+- **分布式边缘采集** — 可在车间/产线级部署边缘采集节点，秒级数据采集
+- **实时数据处理** — 消息驱动架构，支持数据清洗、聚合、时序存储
+- **可视化管理** — Web 管理平台实现设备配置、实时监控、历史查询、告警管理
+- **标准 API 集成** — 为 MES 等上层系统提供 RESTful API 和 WebSocket 实时推送
+
+### 系统组成
+
+| 层级 | 组件 | 说明 |
+|------|------|------|
+| **前端** | Web Frontend | Vue3 管理控制台（设备/数据/规则/监控） |
+| **网关** | Gateway.Api | YARP 反向代理、路由、限流、SignalR Hub |
+| **中心服务** | Auth.Api | JWT 认证、RBAC 权限、用户/角色/菜单管理 |
+| | Admin.Api | 设备管理、分组、节点、查询聚合、SignalR 实时推送 |
+| | Processor.Worker | 消费 RabbitMQ 消息，数据清洗后写入 InfluxDB |
+| | Monitor.Api | 监控与健康检查（预留） |
+| **边缘采集** | Collector.Agent | .NET 8 + Avalonia 桌面客户端，多协议采集引擎 |
+| | Collector.Agent.Legacy | .NET Framework 4.7.2 旧版采集（向下兼容） |
+| **基础设施** | Docker Compose | PostgreSQL + RabbitMQ + InfluxDB + Redis |
+
+---
+
+## 🏗 系统架构
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    Web Frontend (Vue3)                        │
+│                   http://localhost:9527                       │
+└──────────────────────┬───────────────────────────────────────┘
+                       │
+┌──────────────────────▼───────────────────────────────────────┐
+│              Gateway.Api (YARP + SignalR Hub)                 │
+│                   http://localhost:60620                      │
+├──────────────┬──────────────┬────────────────────────────────┤
+│  Auth.Api    │  Admin.Api   │  Processor.Worker              │
+│  :60621      │  :60623      │  :60624                        │
+│  JWT/RBAC    │  设备/节点    │  消息消费/写入 InfluxDB         │
+└──────┬───────┴──────┬───────┴──────────┬─────────────────────┘
+       │              │                  │
+┌──────▼──────────────▼──────────────────▼─────────────────────┐
+│  PostgreSQL    RabbitMQ     InfluxDB     Redis                │
+│  :5432         :5672/:15672 :8086        :6379                │
+└──────────────────────▲───────────────────────────────────────┘
+                       │  AMQP
+┌──────────────────────┴───────────────────────────────────────┐
+│           Collector.Agent (Avalonia 桌面客户端)                │
+│         边缘采集节点 — 部署在车间/产线现场                      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠 技术栈
+
+| 分类 | 技术 |
+|------|------|
+| **后端运行时** | .NET 8 (ASP.NET Core) |
+| **桌面客户端** | .NET 8 + Avalonia UI 11 + CommunityToolkit.Mvvm |
+| **旧版采集** | .NET Framework 4.7.2 |
+| **前端框架** | Vue 3 + Vite + TypeScript + Element Plus + UnoCSS |
+| **API 网关** | YARP (Yet Another Reverse Proxy) |
+| **认证授权** | JWT + JWKS + RBAC |
+| **消息队列** | RabbitMQ（发布确认 / 死信队列 / Prefetch） |
+| **关系数据库** | PostgreSQL 14（元数据 / 审计 / 幂等） |
+| **时序数据库** | InfluxDB 2.x（高频采集数据存储） |
+| **缓存** | Redis 7（会话 / 实时推送 Pub/Sub） |
+| **实时通信** | SignalR（WebSocket 全双工推送） |
+| **日志** | Serilog |
+| **容器化** | Docker + Docker Compose |
+
+---
+
+## 📁 目录结构
+
 ```
 02_Work/02_Code/
-├─ contracts/                # 统一契约中心（gRPC / OpenAPI / JSON Schema）
-│  ├─ grpc/                  # gRPC .proto 文件（与 12.x 对齐）
-│  ├─ openapi/               # OpenAPI 规范
-│  └─ schemas/               # 消息与事件 JSON Schema
-├─ platform/
-│  ├─ center/                # 中心服务与处理组件
-│  │  ├─ Admin.Api/          # 前端业务聚合服务（设备/分组/节点管理）
-│  │  ├─ Auth.Api/           # 认证鉴权（JWKS/RBAC/用户/角色/菜单）
-│  │  ├─ Gateway.Api/        # API网关（YARP反向代理/路由/限流）
-│  │  ├─ Query.Api/          # 查询与实时订阅 API（占位）
-│  │  ├─ Monitor.Api/        # 监控 / 健康（占位）
-│  │  ├─ Processor.Worker/   # 消费消息进行清洗/聚合（占位）
-│  │  ├─ Scheduler.Worker/   # 定时/窗口任务（占位）
-│  │  └─ SharedAuth.Library/ # 共享库（数据库上下文/实体/扩展）
-│  ├─ edge/                  # 现代边缘采集代理 (.NET 8)
-│  │  └─ Collector.Agent/    # 采集 + 上传（占位）
-│  └─ edge-legacy/           # Legacy 边缘 (.NET Framework)
-│     └─ Collector.Agent.Legacy/
-├─ web/
-│  └─ frontend/              # 前端门户 (soybean-admin ElementPlus 定制)
-├─ infra/                    # docker compose 模板（dev/prod）
-├─ scripts/                  # 运维与初始化脚本（RabbitMQ 等）
-├─ docs/                     # 实现映射、路线图等补充说明
-├─ Directory.Build.props     # 全局 .NET 编译配置
-└─ data-acq-prototype/       # 旧原型（待迁移/参考）
+├── infra/                        # Docker Compose 基础设施编排
+│   ├── docker-compose.dev.yml    #   开发环境
+│   └── docker-compose.yml        #   生产环境
+├── scripts/                      # 初始化与运维脚本
+│   ├── influxdb-init.ps1         #   InfluxDB 初始化
+│   ├── rabbitmq-init.ps1         #   RabbitMQ 初始化 (Windows)
+│   └── rabbitmq-init.sh          #   RabbitMQ 初始化 (Linux)
+├── platform/
+│   ├── center/                   # ── 中心服务 ──
+│   │   ├── Auth.Api/             #   认证鉴权服务
+│   │   ├── Admin.Api/            #   管理业务聚合服务
+│   │   ├── Gateway.Api/          #   API 网关 (YARP)
+│   │   ├── Monitor.Api/          #   监控服务（预留）
+│   │   ├── Processor.Worker/     #   数据处理 Worker
+│   │   ├── Shared.Tsdb/          #   时序数据库共享库
+│   │   ├── Shared.Realtime/      #   实时推送共享库
+│   │   └── SharedAuth.Library/   #   认证共享库
+│   ├── edge/                     # ── 现代边缘采集 (.NET 8) ──
+│   │   ├── Collector.Agent/      #   Avalonia 桌面采集客户端
+│   │   └── Collector.Core/       #   采集引擎核心库
+│   └── edge-legacy/              # ── 旧版采集 (.NET Framework) ──
+│       └── Collector.Agent.Legacy/
+├── web/
+│   └── frontend/                 # Vue3 前端管理平台
+├── start-all-services.ps1        # 一键启动所有服务
+├── stop-all-services.ps1         # 一键停止所有服务
+├── check-services.ps1            # 检查服务状态
+└── Directory.Build.props         # 全局 .NET 编译配置
 ```
 
-### 目录说明
-- `contracts/`：所有上下游服务均引用此处生成客户端/服务端代码，避免契约漂移。
-- `platform/center`：核心业务逻辑组件；通过消息与存储实现清洗、聚合、查询。
-- `platform/edge`：新一代可扩展采集代理；后续接入插件化适配器体系。
-- `platform/edge-legacy`：旧式设备或仅支持 .NET Framework 的场景，逐步抽离至现代代理。
-- `web/frontend`：基于 soybean-admin (Element Plus) 的运营与运维控制台，实现设备/数据/规则/监控可视化。
-- `infra/`：运行所需的基础设施服务编排；后续可扩展 Observability（Prometheus/Grafana）。
-- `scripts/`：初始化、迁移、运维脚本；Kafka 脚本已废弃（改用 RabbitMQ）。
-- `docs/`：与 LLD 的章节映射、Roadmap、后续设计差异说明。
-- `data-acq-prototype/`：临时参考，分阶段拆分入新结构后删除。
+---
 
-## 快速开始
-### 基础设施（开发）
-```
+## 🚀 快速开始
+
+### 环境要求
+
+| 软件 | 最低版本 | 用途 |
+|------|----------|------|
+| **Docker Desktop** | 4.x | 运行基础设施 (PostgreSQL / RabbitMQ / InfluxDB / Redis) |
+| **.NET SDK** | 8.0 | 编译运行后端服务 |
+| **Node.js** | 20.19+ | 前端构建 |
+| **pnpm** | 8.7+ | 前端包管理 |
+
+### 第一步：启动基础设施
+
+```powershell
 cd 02_Work/02_Code/infra
-# 启动核心依赖
-# (需已安装 Docker Desktop)
 docker compose -f docker-compose.dev.yml up -d
 ```
-### 前端
+
+验证所有容器正常运行：
+
+```powershell
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 ```
-cd 02_Work/02_Code/web/frontend
-# 推荐使用 pnpm (若无则: npm i -g pnpm)
+
+应看到 `devdcp-postgres`、`devdcp-rabbitmq`、`devdcp-influx`、`devdcp-redis` 均为 running。
+
+### 第二步：初始化数据
+
+```powershell
+cd 02_Work/02_Code/scripts
+
+# InfluxDB 初始化（创建 bucket、token 等）
+.\influxdb-init.ps1
+
+# RabbitMQ 初始化（创建 exchange、queue、binding）
+.\rabbitmq-init.ps1
+```
+
+### 第三步：一键启动所有服务
+
+```powershell
+cd 02_Work/02_Code
+.\start-all-services.ps1
+```
+
+该脚本会按依赖顺序启动：
+1. ✅ 检查 Docker 基础设施
+2. ✅ Auth.Api（认证服务）
+3. ✅ Admin.Api（管理服务）
+4. ✅ Gateway.Api（API 网关）
+5. ✅ Processor.Worker（数据处理）
+6. ✅ Frontend（前端开发服务器）
+
+### 第四步：启动边缘采集客户端
+
+```powershell
+cd 02_Work/02_Code/platform/edge/Collector.Agent
+dotnet run
+```
+
+### 第五步：访问系统
+
+打开浏览器访问前端：**http://localhost:9527**
+
+---
+
+### 手动启动单个服务
+
+如果不使用一键脚本，也可以单独启动各服务：
+
+```powershell
+# 认证服务
+cd platform/center/Auth.Api
+dotnet run --urls http://localhost:60621
+
+# 管理服务
+cd platform/center/Admin.Api
+dotnet run --urls http://localhost:60623
+
+# API 网关
+cd platform/center/Gateway.Api
+dotnet run --urls http://localhost:60620
+
+# 数据处理
+cd platform/center/Processor.Worker
+dotnet run --urls http://localhost:60624
+
+# 前端
+cd web/frontend
 pnpm install
 pnpm dev
 ```
-### 构建中心与边缘服务
-```
-cd 02_Work/02_Code/platform/center/Query.Api
-dotnet run
-```
-或在根目录：
-```
-dotnet build 02_Work/02_Code/platform/center/Processor.Worker/Processor.Worker.csproj
-```
-### RabbitMQ 初始化
-```
-# Linux / WSL
-bash scripts/rabbitmq-init.sh
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File scripts/rabbitmq-init.ps1
-```
 
-## 迁移策略（契约与数据）
-- 旧字段：`deviceId/pointName/timestamp` 标记 deprecated；新字段 `tenantId/tagId/eventTime` 已生效。
-- 幂等：通过 `envelopeId + seq (+ tenantId/device/tag)` 组合保证幂等插入。
-- 分阶段：
-  1) 双写：新旧字段并存（当前）
-  2) 监测：统计旧字段使用率 < 阈值
-  3) 禁用旧字段写入（配置开关）
-  4) 清理旧字段与兼容逻辑
+---
 
-## 后续里程碑（Roadmap 摘要）
-1. Ingestion 流程接入（gRPC/REST/消息统一 → Processor）
-2. Processor 写入 Influx/PostgreSQL + 聚合窗口实现
-3. Query.Api 聚合/订阅/重放，对接前端实时面板
-4. Auth.Api: JWKS、RBAC+ABAC、审计流水
-5. 监控：指标、Tracing、告警策略
+## 🌐 服务端口清单
 
-完整见：`docs/ROADMAP.md` 与 `docs/LLD-mapping.md`。
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| **Gateway.Api** | `60620` | API 网关入口，前端所有请求经由此转发 |
+| **Auth.Api** | `60621` | 认证鉴权，Swagger: `/swagger` |
+| **Admin.Api** | `60623` | 管理业务，Swagger: `/swagger` |
+| **Processor.Worker** | `60624` | 数据处理，健康检查: `/health` |
+| **Frontend** | `9527` | Vue3 前端开发服务器 |
+| **PostgreSQL** | `5432` | 关系数据库 (用户: `devdcp` / 密码: `devdcp`) |
+| **RabbitMQ** | `5672` / `15672` | 消息队列 / 管理面板 (用户: `devdcp` / 密码: `devdcp`) |
+| **InfluxDB** | `8086` | 时序数据库 (Token: `devdcp-token`) |
+| **Redis** | `6379` | 缓存 |
 
-## 约定
-- 所有跨服务数据模型以 `contracts/` 为单一来源 (SSOT)。
-- 严禁在单独项目中复制/粘贴 proto 或 schema。引用生成方式后续在 CI 中强制检查。
-- 新特性优先更新 LLD → 契约 → 实现代码。
+---
 
-## 许可
-内部项目（License 待定）。
+## 🙏 致谢
+
+- **[Soybean Admin](https://github.com/soybeanjs/soybean-admin)** — 本项目前端基于 Soybean Admin (Element Plus 版本) 二次开发。感谢 [Soybean](https://github.com/soybeanjs) 团队提供的清新优雅的开源中后台框架！
+- **[Avalonia UI](https://avaloniaui.net/)** — 跨平台桌面 UI 框架，用于边缘采集客户端
+- **[YARP](https://github.com/microsoft/reverse-proxy)** — 微软开源反向代理，用于 API 网关
+
+---
+
+## 📄 许可证
+
+本项目采用 [MIT License](./LICENSE) 开源。
+
+前端部分基于 [Soybean Admin (MIT License)](https://github.com/soybeanjs/soybean-admin/blob/main/LICENSE) 进行定制开发。

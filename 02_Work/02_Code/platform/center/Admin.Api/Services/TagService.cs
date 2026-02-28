@@ -135,6 +135,7 @@ public class TagService : ITagService
             Unit = request.Unit,
             Description = request.Description,
             Enabled = request.Enabled,
+            EnableRealtime = request.EnableRealtime,
             MinValue = request.MinValue,
             MaxValue = request.MaxValue,
             ScalingFactor = request.ScalingFactor,
@@ -182,6 +183,7 @@ public class TagService : ITagService
         tag.Unit = request.Unit;
         tag.Description = request.Description;
         tag.Enabled = request.Enabled;
+        tag.EnableRealtime = request.EnableRealtime;
         tag.MinValue = request.MinValue;
         tag.MaxValue = request.MaxValue;
         tag.ScalingFactor = request.ScalingFactor;
@@ -355,6 +357,7 @@ public class TagService : ITagService
                 Unit = tagRequest.Unit,
                 Description = tagRequest.Description,
                 Enabled = tagRequest.Enabled,
+                EnableRealtime = tagRequest.EnableRealtime,
                 MinValue = tagRequest.MinValue,
                 MaxValue = tagRequest.MaxValue,
                 ScalingFactor = tagRequest.ScalingFactor,
@@ -413,6 +416,7 @@ public class TagService : ITagService
             Unit = tag.Unit,
             Description = tag.Description,
             Enabled = tag.Enabled,
+            EnableRealtime = tag.EnableRealtime,
             MinValue = tag.MinValue,
             MaxValue = tag.MaxValue,
             ScalingFactor = tag.ScalingFactor,
