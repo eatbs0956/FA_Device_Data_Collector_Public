@@ -80,17 +80,23 @@ declare namespace Api {
       tagCount: number;
       /** edge node id (optional) */
       edgeNodeId?: string;
-      /** edge node info */
+      /** edge node name (flat field from API) */
+      edgeNodeName?: string;
+      /** edge node info (nested, for backward compatibility) */
       edgeNode?: EdgeNode;
       /** device location */
       location?: string;
       /** device group id (optional) */
       groupId?: string;
+      /** group name (flat field from API) */
+      groupName?: string;
       /** enabled status */
       enabled: boolean;
       /** connection status */
       connectionStatus: ConnectionStatus;
-      /** last connection time */
+      /** last connection time (from API: lastConnectTime) */
+      lastConnectTime?: string;
+      /** last connection time (alias) */
       lastConnectedAt?: string;
       /** created by user id - audit field */
       createdBy?: string;

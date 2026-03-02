@@ -159,10 +159,10 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       }
     },
     {
-      prop: 'edgeNode',
+      prop: 'edgeNodeName',
       label: $t('page.device.edgeNode'),
       minWidth: 120,
-      formatter: row => row.edgeNode?.nodeName || '-'
+      formatter: row => row.edgeNodeName || row.edgeNode?.nodeName || '-'
     },
     { prop: 'location', label: $t('page.device.location'), minWidth: 120 },
     {
@@ -189,10 +189,13 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       }
     },
     {
-      prop: 'lastConnectedAt',
+      prop: 'lastConnectTime',
       label: $t('page.device.lastConnectedAt'),
       width: 180,
-      formatter: row => (row.lastConnectedAt ? new Date(row.lastConnectedAt).toLocaleString('zh-CN') : '-')
+      formatter: row => {
+        const t = row.lastConnectTime || row.lastConnectedAt;
+        return t ? new Date(t).toLocaleString('zh-CN') : '-';
+      }
     },
     {
       prop: 'operate',

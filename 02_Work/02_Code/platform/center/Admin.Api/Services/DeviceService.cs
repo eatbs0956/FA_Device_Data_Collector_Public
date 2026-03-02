@@ -114,12 +114,13 @@ public class DeviceService : IDeviceService
         // 排序
         query = ApplySorting(query, request.SortBy, request.SortOrder);
 
-        // 分页并查询数据（先加载到内存，避免 EF Core 无法转换 CountTagsFromJson 方法）
+        // 分页并查询数据
         var devices = await query
             .Skip((request.Current - 1) * request.Size)
             .Take(request.Size)
             .Include(d => d.EdgeNode)
             .Include(d => d.Group)
+            .Include(d => d.TagDefinitions)
             .ToListAsync();
 
         // 在内存中执行投影
@@ -138,7 +139,7 @@ public class DeviceService : IDeviceService
             LastConnectTime = d.LastConnectTime,
             ErrorCount = d.ErrorCount,
             LastError = d.LastError,
-            TagCount = CountTagsFromJson(d.TagsConfig),
+            TagCount = d.TagDefinitions.Count(t => !t.DeletedFlag),
             Vendor = d.Vendor,
             Model = d.Model,
             FirmwareVersion = d.FirmwareVersion,
@@ -169,6 +170,7 @@ public class DeviceService : IDeviceService
             .Where(d => d.Id == id && !d.DeletedFlag)
             .Include(d => d.EdgeNode)
             .Include(d => d.Group)
+            .Include(d => d.TagDefinitions)
             .FirstOrDefaultAsync();
 
         if (device == null)
@@ -189,7 +191,7 @@ public class DeviceService : IDeviceService
             LastConnectTime = device.LastConnectTime,
             ErrorCount = device.ErrorCount,
             LastError = device.LastError,
-            TagCount = CountTagsFromJson(device.TagsConfig),
+            TagCount = device.TagDefinitions.Count(t => !t.DeletedFlag),
             Vendor = device.Vendor,
             Model = device.Model,
             FirmwareVersion = device.FirmwareVersion,

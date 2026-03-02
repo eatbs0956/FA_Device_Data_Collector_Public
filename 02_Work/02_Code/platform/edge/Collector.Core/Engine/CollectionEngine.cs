@@ -356,6 +356,17 @@ public class CollectionEngine : ICollectionEngine, IDisposable
         // 确保 CancellationTokenSource 已初始化（单独启动任务时引擎可能未执行 StartAsync）
         _cancellationTokenSource ??= new CancellationTokenSource();
 
+        // 确保 RabbitMQ 已连接（单独启动任务时引擎可能未执行 StartAsync）
+        if (!_publisher.IsConnected)
+        {
+            _logger.LogInformation("RabbitMQ 未连接，尝试自动连接...");
+            var connected = await _publisher.ConnectAsync(_appSettings);
+            if (!connected)
+            {
+                _logger.LogWarning("RabbitMQ 连接失败，采集数据将无法上报。任务仍将启动，待连接恢复后自动恢复发送");
+            }
+        }
+
         var executor = new TaskExecutor(task, this, _logger);
         _taskExecutors[task.Id] = executor;
 

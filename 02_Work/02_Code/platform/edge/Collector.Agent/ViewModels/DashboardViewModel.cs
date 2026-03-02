@@ -243,9 +243,6 @@ public partial class DashboardViewModel : ViewModelBase
         
         var calculatedHeight = TaskStatuses.Count * rowHeight + headerHeight;
         TaskGridHeight = Math.Min(calculatedHeight, maxHeight);
-        
-        _logger.LogDebug("任务 DataGrid 高度已更新: {Height}px (行数: {RowCount})", 
-            TaskGridHeight, TaskStatuses.Count);
     }
 
     /// <summary>
@@ -260,9 +257,6 @@ public partial class DashboardViewModel : ViewModelBase
         
         var calculatedHeight = DeviceStatuses.Count * rowHeight + headerHeight;
         DeviceGridHeight = Math.Min(calculatedHeight, maxHeight);
-        
-        _logger.LogDebug("设备 DataGrid 高度已更新: {Height}px (行数: {RowCount})", 
-            DeviceGridHeight, DeviceStatuses.Count);
     }
 
     /// <summary>
@@ -277,9 +271,6 @@ public partial class DashboardViewModel : ViewModelBase
         
         var calculatedHeight = RecentDataPoints.Count * rowHeight + headerHeight;
         DataGridHeight = Math.Min(calculatedHeight, maxHeight);
-        
-        _logger.LogDebug("数据 DataGrid 高度已更新: {Height}px (行数: {RowCount})", 
-            DataGridHeight, RecentDataPoints.Count);
     }
 }
 

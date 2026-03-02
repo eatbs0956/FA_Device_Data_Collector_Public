@@ -16,6 +16,9 @@ public class RabbitMqPublisher : IRabbitMqPublisher
     private IModel? _channel;
     private string _exchangeName = "devdcp.collection";
     private readonly object _lockObject = new();
+    private AppSettings? _lastSettings;
+    private DateTime _lastDisconnectWarning = DateTime.MinValue;
+    private bool _isReconnecting;
 
     public bool IsConnected => _connection?.IsOpen == true && _channel?.IsOpen == true;
 
@@ -30,6 +33,7 @@ public class RabbitMqPublisher : IRabbitMqPublisher
     {
         try
         {
+            _lastSettings = settings;
             _logger.LogInformation("连接 RabbitMQ: {Host}:{Port}", settings.RabbitMqHost, settings.RabbitMqPort);
 
             var factory = new ConnectionFactory
@@ -91,12 +95,40 @@ public class RabbitMqPublisher : IRabbitMqPublisher
         return Task.CompletedTask;
     }
 
-    public Task<bool> PublishAsync(CollectionData data)
+    public async Task<bool> PublishAsync(CollectionData data)
     {
         if (!IsConnected)
         {
-            _logger.LogWarning("RabbitMQ 未连接，无法发送消息");
-            return Task.FromResult(false);
+            // 尝试自动重连
+            if (_lastSettings != null && !_isReconnecting)
+            {
+                _isReconnecting = true;
+                try
+                {
+                    _logger.LogInformation("RabbitMQ 未连接，尝试自动重连...");
+                    var reconnected = await ConnectAsync(_lastSettings);
+                    if (reconnected)
+                    {
+                        _logger.LogInformation("RabbitMQ 自动重连成功");
+                    }
+                }
+                finally
+                {
+                    _isReconnecting = false;
+                }
+            }
+
+            // 重连后仍未连接，限流输出警告（每 30 秒一次）
+            if (!IsConnected)
+            {
+                var now = DateTime.UtcNow;
+                if ((now - _lastDisconnectWarning).TotalSeconds >= 30)
+                {
+                    _lastDisconnectWarning = now;
+                    _logger.LogWarning("RabbitMQ 未连接，无法发送消息（此警告每 30 秒输出一次）");
+                }
+                return false;
+            }
         }
 
         try
@@ -125,12 +157,12 @@ public class RabbitMqPublisher : IRabbitMqPublisher
             _logger.LogDebug("发送采集数据: {MessageId}, Device: {DeviceCode}, Points: {Count}",
                 data.MessageId, data.DeviceCode, data.DataPoints.Count);
 
-            return Task.FromResult(true);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送消息失败");
-            return Task.FromResult(false);
+            return false;
         }
     }
 

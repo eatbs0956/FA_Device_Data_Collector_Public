@@ -117,8 +117,10 @@ public class CollectorHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var connectionId = Context.ConnectionId;
+        string? nodeId = null;
+        var isLastConnection = false;
 
-        if (_connectionToNode.TryRemove(connectionId, out var nodeId))
+        if (_connectionToNode.TryRemove(connectionId, out nodeId))
         {
             lock (_lock)
             {
@@ -128,15 +130,105 @@ public class CollectorHub : Hub
                     if (connections.Count == 0)
                     {
                         _nodeToConnections.TryRemove(nodeId, out _);
+                        isLastConnection = true;
                     }
                 }
             }
 
-            _logger.LogInformation("采集器断开连接: NodeId={NodeId}, ConnectionId={ConnectionId}, Exception={Exception}", 
-                nodeId, connectionId, exception?.Message ?? "无");
+            _logger.LogInformation("采集器断开连接: NodeId={NodeId}, ConnectionId={ConnectionId}, IsLastConnection={IsLast}, Exception={Exception}", 
+                nodeId, connectionId, isLastConnection, exception?.Message ?? "无");
+        }
+
+        // 当节点的最后一个连接断开时，将该节点下的设备和任务标记为离线/停止
+        if (isLastConnection && nodeId != null)
+        {
+            await MarkNodeOfflineAsync(nodeId);
         }
 
         await base.OnDisconnectedAsync(exception);
+    }
+
+    /// <summary>
+    /// 节点离线时，更新该节点下所有设备为 Disconnected、所有运行中任务为 Stopped
+    /// </summary>
+    private async Task MarkNodeOfflineAsync(string nodeId)
+    {
+        try
+        {
+            // 查找节点对应的 EdgeNode 记录
+            var edgeNode = await _dbContext.Set<EdgeNode>()
+                .Where(e => e.NodeId == nodeId && !e.DeletedFlag)
+                .FirstOrDefaultAsync();
+
+            if (edgeNode == null)
+            {
+                _logger.LogWarning("节点离线处理：未找到 EdgeNode 记录: {NodeId}", nodeId);
+                return;
+            }
+
+            // 1. 将该节点下所有 Connected 状态的设备标记为 Disconnected
+            var devices = await _dbContext.Set<Device>()
+                .Where(d => d.EdgeNodeId == edgeNode.Id && !d.DeletedFlag && d.ConnectionStatus == "Connected")
+                .ToListAsync();
+
+            foreach (var device in devices)
+            {
+                device.ConnectionStatus = "Disconnected";
+                device.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+
+            if (devices.Count > 0)
+            {
+                _logger.LogInformation("节点离线，已将 {Count} 个设备标记为 Disconnected: NodeId={NodeId}", 
+                    devices.Count, nodeId);
+            }
+
+            // 2. 将通过这些设备关联的运行中任务标记为 Stopped
+            var deviceIds = await _dbContext.Set<Device>()
+                .Where(d => d.EdgeNodeId == edgeNode.Id && !d.DeletedFlag)
+                .Select(d => d.Id)
+                .ToListAsync();
+
+            if (deviceIds.Count > 0)
+            {
+                var activeTasks = await _dbContext.Set<CollectionTask>()
+                    .Include(t => t.TaskDevices)
+                    .Where(t => !t.DeletedFlag && t.Status == "Active" 
+                        && t.TaskDevices.Any(td => deviceIds.Contains(td.DeviceId)))
+                    .ToListAsync();
+
+                foreach (var task in activeTasks)
+                {
+                    task.Status = "Stopped";
+                    task.UpdatedAt = DateTimeOffset.UtcNow;
+                }
+
+                if (activeTasks.Count > 0)
+                {
+                    _logger.LogInformation("节点离线，已将 {Count} 个任务标记为 Stopped: NodeId={NodeId}", 
+                        activeTasks.Count, nodeId);
+                }
+            }
+
+            // 3. 更新节点自身状态
+            edgeNode.Status = "Offline";
+            edgeNode.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("节点离线处理完成: NodeId={NodeId}", nodeId);
+
+            // 4. 广播离线事件给管理端
+            await Clients.Group("admin").SendAsync("NodeOffline", new 
+            { 
+                nodeId, 
+                deviceCount = devices.Count,
+                timestamp = DateTimeOffset.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "节点离线处理失败: NodeId={NodeId}", nodeId);
+        }
     }
 
     /// <summary>
