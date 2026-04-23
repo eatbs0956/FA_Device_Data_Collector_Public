@@ -1,0 +1,32 @@
+FA Device Data Collector (DCP)
+Copyright 2024-2026 eatbs0956
+
+This product includes software developed by:
+
+- Soybean Admin (Element Plus flavor)
+  https://github.com/soybeanjs/soybean-admin-element-plus
+  Licensed under MIT.
+
+- NModbus (by Maxwe11y)
+  Licensed under MIT.
+
+- S7netplus
+  Licensed under MIT.
+
+- ECharts (Apache ECharts)
+  Licensed under Apache-2.0.
+
+- Avalonia UI
+  Licensed under MIT.
+
+- .NET runtime / ASP.NET Core / EF Core
+  Licensed under MIT.
+
+- PostgreSQL / Npgsql / InfluxDB / RabbitMQ / Redis / nginx: see each upstream
+  project for its respective license.
+
+This product does NOT bundle any GPL-licensed components. A previous
+dependency on dhtmlx-gantt (GPL) was evaluated and removed before release.
+
+For the complete list of third-party components and their licenses, see
+`docs/THIRD_PARTY_NOTICES.md`.

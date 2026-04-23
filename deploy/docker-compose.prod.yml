@@ -1,0 +1,188 @@
+# docker-compose.prod.yml
+# ---------------------------------------------------------------------------
+# 生产部署编排文件。所有服务使用发布到 GHCR 的预编译镜像，不在本地构建。
+#
+# 用法：
+#   1. 拷贝 .env.example 为 .env 并填写必要的密码/Token
+#   2. 登录 GHCR（如果镜像为 private）：docker login ghcr.io -u <user> -p <PAT>
+#   3. 启动： docker compose -f docker-compose.prod.yml --env-file .env up -d
+#
+# 必需环境变量（见 .env.example）：
+#   - IMAGE_REGISTRY   : ghcr.io/<owner>
+#   - IMAGE_TAG        : 镜像版本，对应 Git Tag，例如 v0.1.0
+#   - PG_PASSWORD / INFLUX_TOKEN / RABBITMQ_PASSWORD / JWT_SIGNING_KEY 等
+#   - PUBLIC_API_BASE  : 前端通过浏览器访问的网关地址，例如 https://dcp.example.com
+# ---------------------------------------------------------------------------
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: devdcp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-devdcp}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks: [backend]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14
+    container_name: devdcp-postgres
+    environment:
+      POSTGRES_DB: ${PG_DATABASE:-devdcp}
+      POSTGRES_USER: ${PG_USER:-devdcp}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?PG_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks: [backend]
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2
+    container_name: devdcp-influx
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUX_USER:-devdcp}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_PASSWORD:?INFLUX_PASSWORD is required}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-devorg}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-collected}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN:?INFLUX_TOKEN is required}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUX_RETENTION:-90d}
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - influx-data:/var/lib/influxdb2
+    networks: [backend]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: devdcp-redis
+    command: ["redis-server", "--save", "60", "1000", "--loglevel", "warning", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - redis-data:/data
+    networks: [backend]
+    restart: unless-stopped
+
+  auth-api:
+    image: ${IMAGE_REGISTRY:?IMAGE_REGISTRY is required}/fa-dc-auth:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: devdcp-auth
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: Production
+      PG_CONN: "Host=postgres;Username=${PG_USER:-devdcp};Password=${PG_PASSWORD};Database=${PG_DATABASE:-devdcp}"
+      PASSWORD_EXPIRE_DAYS: ${PASSWORD_EXPIRE_DAYS:-90}
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY is required}
+      JWT_ISSUER: ${JWT_ISSUER:-dcp-auth}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-dcp}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks: [backend]
+    restart: unless-stopped
+
+  admin-api:
+    image: ${IMAGE_REGISTRY}/fa-dc-admin:${IMAGE_TAG}
+    container_name: devdcp-admin
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: Production
+      PG_CONN: "Host=postgres;Username=${PG_USER:-devdcp};Password=${PG_PASSWORD};Database=${PG_DATABASE:-devdcp}"
+      JWKS_URL: "http://auth-api:8080/api/auth/jwks"
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-devorg}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      auth-api: { condition: service_started }
+    networks: [backend]
+    restart: unless-stopped
+
+  gateway-api:
+    image: ${IMAGE_REGISTRY}/fa-dc-gateway:${IMAGE_TAG}
+    container_name: devdcp-gateway
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "${GATEWAY_PORT:-18020}:8080"   # 网关是唯一对外端口
+    depends_on:
+      auth-api:  { condition: service_started }
+      admin-api: { condition: service_started }
+    volumes:
+      - gateway-logs:/app/logs
+    networks: [backend]
+    restart: unless-stopped
+
+  monitor-api:
+    image: ${IMAGE_REGISTRY}/fa-dc-monitor:${IMAGE_TAG}
+    container_name: devdcp-monitor
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: Production
+    networks: [backend]
+    restart: unless-stopped
+
+  processor-worker:
+    image: ${IMAGE_REGISTRY}/fa-dc-processor:${IMAGE_TAG}
+    container_name: devdcp-processor
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-devdcp}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-devorg}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-collected}
+      PG_CONN: "Host=postgres;Username=${PG_USER:-devdcp};Password=${PG_PASSWORD};Database=${PG_DATABASE:-devdcp}"
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      influxdb: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    networks: [backend]
+    restart: unless-stopped
+
+  web:
+    image: ${IMAGE_REGISTRY}/fa-dc-web:${IMAGE_TAG}
+    container_name: devdcp-web
+    environment:
+      # 浏览器端真正可达的网关地址（绝对 URL 或相对路径）
+      VITE_SERVICE_BASE_URL: ${PUBLIC_API_BASE:?PUBLIC_API_BASE is required}
+      VITE_OTHER_SERVICE_BASE_URL: ${PUBLIC_OTHER_API_BASE:-'{}'}
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      gateway-api: { condition: service_started }
+    networks: [backend]
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+  pg-data:
+  influx-data:
+  redis-data:
+  gateway-logs:
