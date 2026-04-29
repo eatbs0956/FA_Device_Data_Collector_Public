@@ -90,9 +90,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       PG_CONN: "Host=postgres;Username=${PG_USER:-devdcp};Password=${PG_PASSWORD};Database=${PG_DATABASE:-devdcp}"
       PASSWORD_EXPIRE_DAYS: ${PASSWORD_EXPIRE_DAYS:-90}
-      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY is required}
-      JWT_ISSUER: ${JWT_ISSUER:-dcp-auth}
-      JWT_AUDIENCE: ${JWT_AUDIENCE:-dcp}
+      # 注意: 当前 Auth.Api 使用 RSA 2048 运行时生成 JWT 签名密钥（TokenService.EnsureKey），
+      # Issuer/Audience 在 Program.cs 中硬编码为 "devdcp.auth"/"devdcp.portal"。
+      # 因此不需要 JWT_SIGNING_KEY / JWT_ISSUER / JWT_AUDIENCE 环境变量。
+      # 如未来改为持久化密钥，请同步更新 .env.example 与本文件。
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }

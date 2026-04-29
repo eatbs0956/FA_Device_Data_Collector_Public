@@ -24,8 +24,8 @@
 
 > **⚠️ 项目状态：开发中（Alpha）**
 >
-> 已完成主体架构与核心模块：认证鉴权、API 网关、管理后台、数据处理 Worker、前端管理平台、边缘采集客户端及 Modbus TCP/RTU、Siemens S7 驱动。
-> 更多协议驱动（OPC UA、MQTT、三菱 MC 等）和高级功能（数据聚合、报表导出等）持续开发中，API 与数据结构可能变更。
+> 已完成主体架构与核心模块：认证鉴权、API 网关、管理后台、数据处理 Worker、前端管理平台、边缘采集客户端及 **10 大协议驱动**（Modbus TCP/RTU、OPC UA、OPC DA、Siemens S7、Mitsubishi MC、MQTT、HTTP、EtherNet/IP（CIP）、Beckhoff ADS）。
+> 高级功能（数据聚合、报表导出等）持续开发中，API 与数据结构可能变更。
 
 > **[English Version (README_en.md)](./README_en.md)**
 
@@ -55,7 +55,7 @@
 
 FA Device Data Collector（下称 **DCP**）是一个面向**制造业单工厂内部**的工业数据采集通用后台系统，解决以下核心问题：
 
-- **多协议统一接入** — OPC UA、Modbus TCP/RTU、MQTT、三菱 MC、西门子 S7 等
+- **多协议统一接入** — Modbus TCP/RTU、OPC UA / OPC DA、Siemens S7、Mitsubishi MC、MQTT、HTTP REST、EtherNet/IP (CIP)、Beckhoff ADS 等 10 大主流工业协议
 - **分布式边缘采集** — 车间 / 产线级部署边缘节点，秒级数据采集
 - **实时数据处理** — 消息驱动，支持数据清洗、聚合、时序存储
 - **可视化管理** — Web 管理平台：设备配置、实时监控、历史查询、告警管理

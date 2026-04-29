@@ -23,8 +23,8 @@
 
 > **⚠️ Project Status: In Development (Alpha)**
 >
-> The core architecture and key modules are complete: authentication service, API gateway, admin service, data processing worker, web frontend, edge collection client, and Modbus TCP/RTU, Siemens S7 drivers.
-> Additional protocol drivers (OPC UA, MQTT, Mitsubishi MC, etc.) and advanced features (aggregation, report export, etc.) are under active development. APIs and data structures may change across versions.
+> The core architecture and key modules are complete: authentication service, API gateway, admin service, data processing worker, web frontend, edge collection client, and **10 protocol drivers** (Modbus TCP/RTU, OPC UA, OPC DA, Siemens S7, Mitsubishi MC, MQTT, HTTP, EtherNet/IP (CIP), Beckhoff ADS).
+> Advanced features (aggregation, report export, etc.) are under active development. APIs and data structures may change across versions.
 
 > **[中文版 (README.md)](./README.md)**
 
@@ -54,7 +54,7 @@
 
 FA Device Data Collector (**DCP**) is an industrial data collection platform designed for **single-factory manufacturing environments**. It addresses the following challenges:
 
-- **Unified multi-protocol access** — OPC UA, Modbus TCP/RTU, MQTT, Mitsubishi MC, Siemens S7, and more
+- **Unified multi-protocol access** — Modbus TCP/RTU, OPC UA / OPC DA, Siemens S7, Mitsubishi MC, MQTT, HTTP REST, EtherNet/IP (CIP), Beckhoff ADS (10 mainstream industrial protocols)
 - **Distributed edge collection** — Deploy edge nodes at workshop / production-line level with sub-second sampling
 - **Real-time processing** — Message-driven architecture with data cleansing, aggregation, and time-series storage
 - **Visual management** — Web console for device configuration, real-time monitoring, historical queries, and alarms
