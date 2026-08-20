@@ -68,9 +68,8 @@ FA Device Data Collector（下称 **DCP**）是一个面向**制造业单工厂�
 | **前端** | Web 管理控制台（Vue 3 + Element Plus） | `ghcr.io/eatbs0956/fa-dc-web` |
 | **网关** | Gateway.Api（YARP 反向代理 + SignalR Hub） | `ghcr.io/eatbs0956/fa-dc-gateway` |
 | **中心服务** | Auth.Api（JWT / RBAC） | `ghcr.io/eatbs0956/fa-dc-auth` |
-|  | Admin.Api（设备 / 节点 / 查询聚合） | `ghcr.io/eatbs0956/fa-dc-admin` |
+|  | Admin.Api（设备 / 节点 / 查询聚合 / 监控） | `ghcr.io/eatbs0956/fa-dc-admin` |
 |  | Processor.Worker（消费 RabbitMQ、写 InfluxDB） | `ghcr.io/eatbs0956/fa-dc-processor` |
-|  | Monitor.Api（监控与健康检查） | `ghcr.io/eatbs0956/fa-dc-monitor` |
 | **边缘采集** | Collector.Agent（.NET 8 + Avalonia 桌面端） | `Collector.Agent-vX.Y.Z-win-x64.zip` |
 | **基础设施** | PostgreSQL + RabbitMQ + InfluxDB + Redis | 官方镜像 |
 
@@ -158,7 +157,7 @@ cp .env.example .env
 | `IMAGE_TAG` | 锁定镜像版本，如 `v0.1.0`（不建议 `latest`） |
 | `PUBLIC_API_BASE` | **浏览器可达**的网关地址，如 `https://dcp.example.com` 或 `http://10.0.0.5:18020` |
 | `PG_PASSWORD` / `RABBITMQ_PASSWORD` / `INFLUX_PASSWORD` / `INFLUX_TOKEN` / `REDIS_PASSWORD` | 强随机密码 |
-| `JWT_SIGNING_KEY` | JWT 签名密钥，建议 `openssl rand -base64 48` |
+| `JWT_PRIVATE_KEY_FILE` | PKCS#8/PKCS#1 PEM RSA 私钥路径；可用 `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out ./secrets/jwt-private.pem` 生成 |
 
 ### 第三步：拉取镜像并启动
 
@@ -209,9 +208,8 @@ dcp.example.com {
 | **web** | `80` | ✓ | Vue 3 管理控制台（nginx 托管） |
 | **gateway-api** | `18020` | ✓ | API 网关入口，所有前端请求由此转发；SignalR 实时推送 |
 | **auth-api** | 8080 | ✗ | JWT 认证、用户 / 角色 / 菜单 |
-| **admin-api** | 8080 | ✗ | 设备、节点、查询聚合 |
+| **admin-api** | 8080 | ✗ | 设备、节点、查询聚合、监控 API |
 | **processor-worker** | 8080 | ✗ | 消费 RabbitMQ，写 InfluxDB |
-| **monitor-api** | 8080 | ✗ | 监控与健康检查 |
 | **postgres** | 5432 | 可选 | 建议仅内网访问 |
 | **influxdb** | 8086 | 可选 | 同上 |
 | **rabbitmq** | 5672 / 15672 | 可选 | 5672=AMQP；15672=管理面板 |

@@ -10,7 +10,8 @@
 # 必需环境变量（见 .env.example）：
 #   - IMAGE_REGISTRY   : ghcr.io/<owner>
 #   - IMAGE_TAG        : 镜像版本，对应 Git Tag，例如 v0.1.0
-#   - PG_PASSWORD / INFLUX_TOKEN / RABBITMQ_PASSWORD / JWT_SIGNING_KEY 等
+#   - PG_PASSWORD / INFLUX_TOKEN / RABBITMQ_PASSWORD
+#   - JWT_PRIVATE_KEY_FILE: 宿主机上的 PKCS#8/PKCS#1 PEM RSA 私钥路径
 #   - PUBLIC_API_BASE  : 前端通过浏览器访问的网关地址，例如 https://dcp.example.com
 # ---------------------------------------------------------------------------
 services:
@@ -90,10 +91,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       PG_CONN: "Host=postgres;Username=${PG_USER:-devdcp};Password=${PG_PASSWORD};Database=${PG_DATABASE:-devdcp}"
       PASSWORD_EXPIRE_DAYS: ${PASSWORD_EXPIRE_DAYS:-90}
-      # 注意: 当前 Auth.Api 使用 RSA 2048 运行时生成 JWT 签名密钥（TokenService.EnsureKey），
-      # Issuer/Audience 在 Program.cs 中硬编码为 "devdcp.auth"/"devdcp.portal"。
-      # 因此不需要 JWT_SIGNING_KEY / JWT_ISSUER / JWT_AUDIENCE 环境变量。
-      # 如未来改为持久化密钥，请同步更新 .env.example 与本文件。
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+      JWT_KEY_ID: ${JWT_KEY_ID:-}
+    secrets:
+      - jwt_private_key
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -134,15 +135,6 @@ services:
     networks: [backend]
     restart: unless-stopped
 
-  monitor-api:
-    image: ${IMAGE_REGISTRY}/fa-dc-monitor:${IMAGE_TAG}
-    container_name: devdcp-monitor
-    environment:
-      ASPNETCORE_URLS: "http://+:8080"
-      ASPNETCORE_ENVIRONMENT: Production
-    networks: [backend]
-    restart: unless-stopped
-
   processor-worker:
     image: ${IMAGE_REGISTRY}/fa-dc-processor:${IMAGE_TAG}
     container_name: devdcp-processor
@@ -180,6 +172,10 @@ services:
 networks:
   backend:
     driver: bridge
+
+secrets:
+  jwt_private_key:
+    file: ${JWT_PRIVATE_KEY_FILE:?JWT_PRIVATE_KEY_FILE is required}
 
 volumes:
   rabbitmq-data:

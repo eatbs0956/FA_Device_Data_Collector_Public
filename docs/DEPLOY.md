@@ -10,8 +10,7 @@
 | `web` (nginx)    | 80          | ✓       | 管理前端 |
 | `gateway-api`    | 18020       | ✓       | 所有 API 请求、SignalR |
 | `auth-api`       | 8080        | ✗       | 仅集群内访问 |
-| `admin-api`      | 8080        | ✗       | 仅集群内访问 |
-| `monitor-api`    | 8080        | ✗       | 仅集群内访问 |
+| `admin-api`      | 8080        | ✗       | 设备/节点/监控 API，仅集群内访问 |
 | `processor-worker` | 8080      | ✗       | 后台 Worker |
 | `postgres`       | 5432        | 可选    | 仅本机访问建议 |
 | `influxdb`       | 8086        | 可选    |  |
@@ -24,13 +23,16 @@
 
 ```bash
 cp .env.example .env
-openssl rand -base64 48 > jwt.key   # JWT_SIGNING_KEY 可用此随机值
+mkdir -p secrets
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out ./secrets/jwt-private.pem
+chmod 600 ./secrets/jwt-private.pem
 ```
 
 必改项：
 - `IMAGE_TAG` — 锁定到具体版本（如 `v0.1.0`），避免 `latest` 导致不可预期升级
 - `PUBLIC_API_BASE` — **浏览器访问的网关地址**，如 `https://dcp.example.com`
-- `PG_PASSWORD` / `RABBITMQ_PASSWORD` / `INFLUX_TOKEN` / `INFLUX_PASSWORD` / `REDIS_PASSWORD` / `JWT_SIGNING_KEY` — 全部改强随机
+- `PG_PASSWORD` / `RABBITMQ_PASSWORD` / `INFLUX_TOKEN` / `INFLUX_PASSWORD` / `REDIS_PASSWORD` — 全部改强随机
+- `JWT_PRIVATE_KEY_FILE` — 指向上述 PKCS#8/PKCS#1 PEM RSA 私钥；该文件会以只读 Compose secret 挂载，必须纳入安全备份且不可提交
 
 ## 3. 启动
 
@@ -79,6 +81,7 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d
 | PostgreSQL | `docker exec devdcp-postgres pg_dump -U $PG_USER $PG_DATABASE` |
 | InfluxDB   | `docker exec devdcp-influx influx backup /var/lib/influxdb2/backup` |
 | 卷         | `docker run --rm -v devdcp_pg-data:/data -v $(pwd):/bk alpine tar czf /bk/pg.tgz /data` |
+| JWT 私钥   | 离线加密备份 `JWT_PRIVATE_KEY_FILE`；恢复时必须保持原私钥，才能继续验证重启前签发且未过期的令牌 |
 
 ## 7. 常见问题
 

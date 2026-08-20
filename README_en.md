@@ -67,9 +67,8 @@ FA Device Data Collector (**DCP**) is an industrial data collection platform des
 | **Frontend** | Web console (Vue 3 + Element Plus) | `ghcr.io/eatbs0956/fa-dc-web` |
 | **Gateway** | Gateway.Api (YARP reverse proxy + SignalR Hub) | `ghcr.io/eatbs0956/fa-dc-gateway` |
 | **Center services** | Auth.Api (JWT / RBAC) | `ghcr.io/eatbs0956/fa-dc-auth` |
-|  | Admin.Api (devices / nodes / query aggregation) | `ghcr.io/eatbs0956/fa-dc-admin` |
+|  | Admin.Api (devices / nodes / query aggregation / monitoring) | `ghcr.io/eatbs0956/fa-dc-admin` |
 |  | Processor.Worker (consume RabbitMQ → InfluxDB) | `ghcr.io/eatbs0956/fa-dc-processor` |
-|  | Monitor.Api (monitoring & health) | `ghcr.io/eatbs0956/fa-dc-monitor` |
 | **Edge** | Collector.Agent (.NET 8 + Avalonia desktop) | `Collector.Agent-vX.Y.Z-win-x64.zip` |
 | **Infrastructure** | PostgreSQL + RabbitMQ + InfluxDB + Redis | Official images |
 
@@ -157,7 +156,7 @@ Variables you **must** change:
 | `IMAGE_TAG` | Pin the image version, e.g. `v0.1.0` (avoid `latest` in production) |
 | `PUBLIC_API_BASE` | Gateway URL **reachable from the browser**, e.g. `https://dcp.example.com` or `http://10.0.0.5:18020` |
 | `PG_PASSWORD` / `RABBITMQ_PASSWORD` / `INFLUX_PASSWORD` / `INFLUX_TOKEN` / `REDIS_PASSWORD` | Strong random passwords |
-| `JWT_SIGNING_KEY` | JWT signing key, e.g. `openssl rand -base64 48` |
+| `JWT_PRIVATE_KEY_FILE` | Path to a PKCS#8/PKCS#1 PEM RSA private key; generate one with `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out ./secrets/jwt-private.pem` |
 
 ### Step 3: Pull images and start
 
@@ -208,9 +207,8 @@ Full deployment guide: [docs/DEPLOY.md](./docs/DEPLOY.md).
 | **web** | `80` | ✓ | Vue 3 console (served by nginx) |
 | **gateway-api** | `18020` | ✓ | API gateway entry, SignalR real-time push |
 | **auth-api** | 8080 | ✗ | JWT auth, user / role / menu |
-| **admin-api** | 8080 | ✗ | Devices, nodes, query aggregation |
+| **admin-api** | 8080 | ✗ | Devices, nodes, query aggregation, monitoring APIs |
 | **processor-worker** | 8080 | ✗ | Consumes RabbitMQ, writes InfluxDB |
-| **monitor-api** | 8080 | ✗ | Monitoring & health |
 | **postgres** | 5432 | optional | Keep internal in production |
 | **influxdb** | 8086 | optional | Keep internal in production |
 | **rabbitmq** | 5672 / 15672 | optional | 5672=AMQP; 15672=management UI |
